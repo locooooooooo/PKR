@@ -1,0 +1,30 @@
+{
+  "apiVersion": "pkr.dev/v0.7",
+  "kind": "PkrPublicAlphaAuditCase",
+  "observedAt": "2026-07-19",
+  "candidateVersion": "0.7.0-alpha.1",
+  "commit": "3827c7c0f775eee6402a631727717b83003b1cd9",
+  "case": "three-command-real-codex-demo",
+  "status": "verified",
+  "realCodex": {
+    "authenticated": true,
+    "providerOutcome": "partial",
+    "independentVerificationPassed": true,
+    "freshStatus": "completed",
+    "completedTasks": 1,
+    "elapsedSeconds": 70
+  },
+  "negativeCases": [
+    {
+      "case": "malicious verified Provider callback",
+      "result": "passed",
+      "assertion": "Task remained verifying and no acceptance Verification was created"
+    },
+    {
+      "case": "non-zero independent verification",
+      "result": "passed",
+      "assertion": "failed evidence persisted, Task remained blocked, and acceptance was absent"
+    }
+  ],
+  "redaction": "Temporary project path, full prompt, source content, credentials, and machine identifiers omitted."
+}
