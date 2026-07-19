@@ -8,7 +8,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 
 assert.equal(packageJson.name, "pkr-runtime");
-assert.equal(packageJson.version, "0.7.0");
+assert.equal(packageJson.version, "0.7.0-alpha.1");
 assert.equal(packageJson.private, undefined);
 assert.equal(packageJson.license, "Apache-2.0");
 assert.equal(packageJson.bin.pkr, "./dist/cli.js");

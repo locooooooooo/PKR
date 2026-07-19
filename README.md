@@ -5,14 +5,15 @@ software development. It keeps project state in the target Git repository,
 separates Agent work reports from acceptance, runs repository verification,
 and recovers the audit trail after process restart.
 
-PKR v0.7 is a public alpha. The API is pre-stable, execution is local, and the
+The current candidate is `pkr-runtime@0.7.0-alpha.1` (npm dist-tag `alpha` is
+reserved for a future authenticated publish). PKR v0.7 is a public alpha. The API is pre-stable, execution is local, and the
 current Provider integration is the Codex CLI. Hosted deployment, cloud
 Provider adapters, automatic model selection, and v0.8/v0.9 evolution features
 are not part of this release.
 
 ## Install from source
 
-The `pkr-runtime` package is **not currently published to npm**. Until an npm
+The `pkr-runtime@0.7.0-alpha.1` package is **not currently published to npm**. Until an npm
 release is completed, install the public Apache-2.0 source directly:
 
 ```shell

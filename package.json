@@ -1,6 +1,6 @@
 {
   "name": "pkr-runtime",
-  "version": "0.7.0",
+  "version": "0.7.0-alpha.1",
   "description": "Local authoritative runtime for governed AI-native software projects.",
   "license": "Apache-2.0",
   "repository": {
