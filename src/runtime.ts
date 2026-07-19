@@ -179,7 +179,7 @@ function validateRepositoryVerificationEvidence(
   const scopePassed = expectedOutsideAllowed.length === 0 && expectedForbidden.length === 0 &&
     (plan.requireChanges !== true || changedFiles.length > 0);
   if (
-    resolve(repository.repositoryRoot as string).toLowerCase() !== resolve(repositoryRoot).toLowerCase() ||
+    repository.repositoryRoot !== liveRepository.repositoryRoot ||
     repository.contentDigest !== expectedRepositoryDigest ||
     repository.contentDigest !== liveRepository.contentDigest ||
     repository.clean !== (changedFiles.length === 0) ||

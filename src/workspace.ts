@@ -1,3 +1,4 @@
+import { realpath } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { PkrError } from "./errors.js";
@@ -18,10 +19,6 @@ export interface RepositoryEvidence {
 }
 
 const REPOSITORY_PATHSPEC = ["--", ".", ":(exclude).pkr", ":(exclude).pkr/**"];
-
-function samePath(left: string, right: string): boolean {
-  return resolve(left).toLowerCase() === resolve(right).toLowerCase();
-}
 
 function parseChangedFiles(porcelain: string): string[] {
   const entries = porcelain.split("\0");
@@ -68,11 +65,12 @@ export async function collectRepositoryEvidence(
   projectRoot: string,
 ): Promise<RepositoryEvidence> {
   const root = resolve(projectRoot);
-  const gitRoot = (await git(root, ["rev-parse", "--show-toplevel"])).trim();
-  if (!gitRoot || !samePath(gitRoot, root)) {
+  const canonicalRoot = await realpath(root);
+  const gitRoot = await realpath((await git(root, ["rev-parse", "--show-toplevel"])).trim());
+  if (!gitRoot || gitRoot.toLowerCase() !== canonicalRoot.toLowerCase()) {
     throw new PkrError(
       "PKR-WORKSPACE-001",
-      `PKR project root ${root} must be the Git repository root ${gitRoot || "<unknown>"}`,
+      `PKR project root ${canonicalRoot} must be the Git repository root ${gitRoot || "<unknown>"}`,
     );
   }
   const head = (await git(root, ["rev-parse", "--verify", "HEAD"])).trim();
@@ -101,7 +99,7 @@ export async function collectRepositoryEvidence(
   const content = { head, status, diff, stagedDiff, changedFiles };
   return {
     adapter: "pkr.git-workspace/v1",
-    repositoryRoot: root,
+    repositoryRoot: canonicalRoot,
     ...content,
     clean: changedFiles.length === 0,
     contentDigest: digest(content),
