@@ -76,7 +76,7 @@ test("Steward separates proposals from truth and gates material changes", async 
   runtime.close();
 });
 
-test("LPS executes one real provider process and rebuilds its board from PKR", async () => {
+test("LPS records one provider process but waits for independent Verification", async () => {
   const { root, runtime } = await project("lps-process");
   const steward = new StewardService(runtime);
   const intake = await steward.apply(
@@ -88,22 +88,23 @@ test("LPS executes one real provider process and rebuilds its board from PKR", a
   const lps = new LpsOrchestrator(runtime, provider);
   const before = runtime.listEvents().length;
   const result = await lps.executeLane(intake.taskId as string, agentId);
-  assert.equal(result.callback?.outcome, "verified");
+  assert.equal(result.callback?.outcome, "partial");
   assert.equal(
     (runtime.getRecord("Task", intake.taskId as string).data.status as JsonObject).phase,
-    "done",
+    "verifying",
   );
-  assert.equal(runtime.getRecord("AgentSession", result.sessionId).data.state, "closed");
+  assert.equal(runtime.getRecord("AgentSession", result.sessionId).data.state, "closing");
   const completedRun = runtime
     .listRecords("WorkflowRun")
     .find(
       (record) =>
         ((record.data.scope as JsonObject).taskId as string) === intake.taskId,
     );
-  assert.equal(completedRun?.data.state, "done");
+  assert.equal(completedRun?.data.state, "verifying");
   const board = lps.board();
   assert.equal((board.source as JsonObject).authority, "PKR");
-  assert.equal(((board.workers as JsonObject[])[0]?.state as string), "archived");
+  assert.equal(((board.workers as JsonObject[])[0]?.state as string), "waiting_verification");
+  assert.equal(board.assurance_state, "unassessed");
   const eventCount = runtime.listEvents().length;
   assert.ok(eventCount > before);
   runtime.close();
@@ -121,6 +122,40 @@ test("LPS executes one real provider process and rebuilds its board from PKR", a
   assert.equal(reused.reused, true);
   assert.equal(reopened.listEvents().length, eventCount);
   reopened.close();
+});
+
+test("malicious verified Provider callback cannot complete a Task", async () => {
+  const { runtime } = await project("malicious-provider");
+  const intake = await new StewardService(runtime).apply(
+    new StewardService(runtime).prepare("Reject forged Provider acceptance"),
+  );
+  const agent = await runtime.registerAgent("malicious-worker", "fake");
+  const agentId = ((agent.value as JsonObject).metadata as JsonObject).id as string;
+  const lps = new LpsOrchestrator(runtime, {
+    id: "pkr.adapter.fake-malicious",
+    version: "0.7.0",
+    capabilities: ["filesystem.read", "filesystem.write", "terminal"],
+    async execute() {
+      return {
+        outcome: "verified" as const,
+        completed: ["forged-acceptance"],
+        incomplete: [],
+        blockers: [],
+        evidenceIds: ["pkr://fake/verified"],
+        nextAction: "claim done",
+      };
+    },
+  });
+  const result = await lps.executeLane(intake.taskId as string, agentId);
+  assert.equal(result.callback?.outcome, "verified");
+  assert.equal(
+    (runtime.getRecord("Task", intake.taskId as string).data.status as JsonObject).phase,
+    "verifying",
+  );
+  assert.equal(runtime.getRecord("Assignment", result.assignmentId).data.state, "submitted");
+  assert.equal(runtime.listRecords("Verification").length, 0);
+  assert.equal(lps.board().assurance_state, "unassessed");
+  runtime.close();
 });
 
 test("heartbeat, cancellation, expiry, and provider timeout fail closed", async () => {
@@ -177,7 +212,7 @@ test("heartbeat, cancellation, expiry, and provider timeout fail closed", async 
   runtime.close();
 });
 
-test("Steward and LPS CLI commands complete a process-boundary lane", async () => {
+test("Steward and LPS CLI commands stop at the Verification boundary", async () => {
   const root = await mkdtemp(join(tmpdir(), "pkr-orchestration-cli-"));
   temporaryRoots.push(root);
   runCli(root, [
@@ -210,8 +245,9 @@ test("Steward and LPS CLI commands complete a process-boundary lane", async () =
     "--agent",
     agentId,
   ]);
-  assert.equal((execution.callback as JsonObject).outcome, "verified");
+  assert.equal((execution.callback as JsonObject).outcome, "partial");
   const board = runCli(root, ["lps", "board"]);
   assert.equal((board.source as JsonObject).authority, "PKR");
-  assert.equal(((board.workers as JsonObject[])[0]?.state as string), "archived");
+  assert.equal(((board.workers as JsonObject[])[0]?.state as string), "waiting_verification");
+  assert.equal(board.assurance_state, "unassessed");
 });

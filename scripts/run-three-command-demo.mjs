@@ -45,14 +45,15 @@ const result = {
   projectRoot: target,
   elapsedSeconds: Math.round((Date.now() - startedAt) / 1000),
   initialized: initialized.projectId,
-  outcome: execution.execution?.callback?.outcome ?? null,
+  providerOutcome: execution.execution?.callback?.outcome ?? null,
+  verificationPassed: execution.verification?.passed ?? false,
   recoveredState: recovered.summary?.state ?? null,
   completedTasks: recovered.summary?.completedTasks ?? 0,
   stateDigest: recovered.stateDigest,
 };
 await writeFile(join(target, "demo-result.json"), `${JSON.stringify(result, null, 2)}\n`, "utf8");
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-if (result.outcome !== "verified" || result.recoveredState !== "completed") {
+if (!result.verificationPassed || result.recoveredState !== "completed") {
   process.exitCode = 2;
 }
 

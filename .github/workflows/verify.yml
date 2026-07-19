@@ -10,9 +10,16 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -21,3 +28,4 @@ jobs:
       - run: npm run verify
       - run: npm run check:package
       - run: node scripts/check-public-tree.mjs
+      - run: git diff --check

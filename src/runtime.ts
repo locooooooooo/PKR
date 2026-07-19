@@ -33,6 +33,7 @@ import type {
   StoredRecord,
 } from "./types.js";
 import { derivedId, digest, newId, now, slug, writeJsonAtomic } from "./util.js";
+import { collectRepositoryEvidence, type RepositoryEvidence } from "./workspace.js";
 import { evaluateExpression, parseWorkflowDefinition } from "./workflow.js";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -42,6 +43,181 @@ const PACKAGE_CAPABILITY_CEILING = new Set([
   "filesystem.write",
   "terminal",
 ]);
+
+function normalizeVerificationPattern(pattern: string): string {
+  return pattern.replaceAll("\\", "/").replace(/^\.\//, "");
+}
+
+function validVerificationPattern(pattern: string): boolean {
+  const normalized = normalizeVerificationPattern(pattern);
+  return normalized === "**" ||
+    (!!normalized && !normalized.startsWith("/") && !normalized.includes("..") &&
+      (!normalized.includes("*") || normalized.endsWith("/**")));
+}
+
+function matchesVerificationPath(path: string, pattern: string): boolean {
+  const normalized = normalizeVerificationPattern(pattern);
+  if (normalized === "**") {
+    return true;
+  }
+  if (normalized.endsWith("/**")) {
+    const prefix = normalized.slice(0, -3).replace(/\/$/, "");
+    return path === prefix || path.startsWith(`${prefix}/`);
+  }
+  return path === normalized;
+}
+
+function sameOrderedStrings(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function sameJson(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function validateProcessEvidence(evidence: JsonObject, repositoryRoot: string): void {
+  if (
+    !evidence ||
+    typeof evidence.executable !== "string" ||
+    !Array.isArray(evidence.args) ||
+    evidence.args.some((argument) => typeof argument !== "string") ||
+    typeof evidence.cwd !== "string" ||
+    resolve(evidence.cwd as string).toLowerCase() !== resolve(repositoryRoot).toLowerCase() ||
+    !(evidence.exitCode === null || Number.isInteger(evidence.exitCode)) ||
+    !(evidence.signal === null || typeof evidence.signal === "string") ||
+    typeof evidence.stdout !== "string" ||
+    typeof evidence.stderr !== "string" ||
+    typeof evidence.timedOut !== "boolean" ||
+    !(evidence.failureReason === null || typeof evidence.failureReason === "string") ||
+    typeof evidence.startedAt !== "string" ||
+    typeof evidence.completedAt !== "string" ||
+    !Number.isInteger(evidence.durationMs) ||
+    (evidence.durationMs as number) < 0
+  ) {
+    throw new PkrError("PKR-VERIFY-001", "verification process evidence is incomplete");
+  }
+}
+
+function validateRepositoryVerificationEvidence(
+  evidence: JsonObject,
+  taskId: string,
+  assignmentId: string,
+  repositoryRoot: string,
+  liveRepository: RepositoryEvidence,
+): { passed: boolean; evidenceDigest: string } {
+  if (!evidence || Array.isArray(evidence)) {
+    throw new PkrError("PKR-VERIFY-001", "formal repository verification evidence is required");
+  }
+  const suppliedDigest = evidence.digest;
+  const { digest: _ignored, ...content } = evidence;
+  const evidenceDigest = digest(content);
+  const plan = evidence.plan as JsonObject | undefined;
+  const planCommands = plan?.commands as JsonObject[] | undefined;
+  const repository = evidence.repository as JsonObject | undefined;
+  const scope = evidence.scope as JsonObject | undefined;
+  const commands = evidence.commands as JsonObject[] | undefined;
+  if (
+    evidence.adapter !== "pkr.local-verifier/v1" ||
+    evidence.taskId !== taskId ||
+    evidence.assignmentId !== assignmentId ||
+    suppliedDigest !== evidenceDigest ||
+    !plan ||
+    plan.version !== "pkr.verify/v1" ||
+    !Array.isArray(planCommands) ||
+    planCommands.length === 0 ||
+    evidence.planDigest !== digest(plan) ||
+    !Array.isArray(plan.allowedPaths) ||
+    (plan.allowedPaths as unknown[]).some((pattern) =>
+      typeof pattern !== "string" || !validVerificationPattern(pattern)
+    ) ||
+    !Array.isArray(plan.forbiddenPaths) ||
+    (plan.forbiddenPaths as unknown[]).some((pattern) =>
+      typeof pattern !== "string" || !validVerificationPattern(pattern)
+    ) ||
+    typeof plan.requireChanges !== "boolean" ||
+    !repository ||
+    repository.adapter !== "pkr.git-workspace/v1" ||
+    typeof repository.repositoryRoot !== "string" ||
+    typeof repository.contentDigest !== "string" ||
+    typeof repository.head !== "string" ||
+    typeof repository.status !== "string" ||
+    typeof repository.diff !== "string" ||
+    typeof repository.stagedDiff !== "string" ||
+    typeof repository.clean !== "boolean" ||
+    typeof repository.collectedAt !== "string" ||
+    !Array.isArray(repository.changedFiles) ||
+    (repository.changedFiles as unknown[]).some((path) => typeof path !== "string") ||
+    !scope ||
+    typeof scope.passed !== "boolean" ||
+    !Array.isArray(scope.allowedPaths) ||
+    !Array.isArray(scope.forbiddenPaths) ||
+    !Array.isArray(scope.outsideAllowed) ||
+    !Array.isArray(scope.forbidden) ||
+    !Array.isArray(commands) ||
+    commands.length !== planCommands.length
+  ) {
+    throw new PkrError("PKR-VERIFY-001", "repository verification evidence is incomplete or inconsistent");
+  }
+  const changedFiles = repository.changedFiles as string[];
+  const allowedPaths = plan.allowedPaths as string[];
+  const forbiddenPaths = plan.forbiddenPaths as string[];
+  const outsideAllowed = scope.outsideAllowed as string[];
+  const forbidden = scope.forbidden as string[];
+  const expectedRepositoryDigest = digest({
+    head: repository.head,
+    status: repository.status,
+    diff: repository.diff,
+    stagedDiff: repository.stagedDiff,
+    changedFiles,
+  });
+  const expectedOutsideAllowed = changedFiles.filter((path) =>
+    !allowedPaths.some((pattern) => matchesVerificationPath(path, pattern)),
+  );
+  const expectedForbidden = changedFiles.filter((path) =>
+    forbiddenPaths.some((pattern) => matchesVerificationPath(path, pattern)),
+  );
+  const scopePassed = expectedOutsideAllowed.length === 0 && expectedForbidden.length === 0 &&
+    (plan.requireChanges !== true || changedFiles.length > 0);
+  if (
+    resolve(repository.repositoryRoot as string).toLowerCase() !== resolve(repositoryRoot).toLowerCase() ||
+    repository.contentDigest !== expectedRepositoryDigest ||
+    repository.contentDigest !== liveRepository.contentDigest ||
+    repository.clean !== (changedFiles.length === 0) ||
+    !sameOrderedStrings(changedFiles, liveRepository.changedFiles) ||
+    !sameJson(scope.allowedPaths, allowedPaths) ||
+    !sameJson(scope.forbiddenPaths, forbiddenPaths) ||
+    scope.requireChanges !== plan.requireChanges ||
+    !sameOrderedStrings(outsideAllowed, expectedOutsideAllowed) ||
+    !sameOrderedStrings(forbidden, expectedForbidden) ||
+    scope.passed !== scopePassed
+  ) {
+    throw new PkrError("PKR-VERIFY-001", "repository or scope evidence conflicts with its source fields");
+  }
+  for (let index = 0; index < commands.length; index += 1) {
+    const command = commands[index]!;
+    const declared = planCommands[index]!;
+    validateProcessEvidence(command, repositoryRoot);
+    if (
+      typeof command.id !== "string" ||
+      command.id !== declared.id ||
+      command.executable !== declared.executable ||
+      !sameJson(command.args, declared.args)
+    ) {
+      throw new PkrError("PKR-VERIFY-001", "verification command evidence conflicts with its plan");
+    }
+  }
+  const commandsPassed = commands.every((command) =>
+    command.exitCode === 0 && command.timedOut === false && command.failureReason === null,
+  );
+  const passed = scopePassed && commandsPassed;
+  const expectedReason = !scopePassed
+    ? "RepositoryScopeFailed"
+    : !commandsPassed ? "VerificationCommandFailed" : "VerificationPassed";
+  if (evidence.passed !== passed || evidence.reason !== expectedReason) {
+    throw new PkrError("PKR-VERIFY-001", "verification verdict conflicts with its command or scope evidence");
+  }
+  return { passed, evidenceDigest };
+}
 
 function versionSatisfies(version: string, range: string): boolean {
   if (range === version || range === "*") {
@@ -720,10 +896,11 @@ export class PkrRuntime {
       transaction.putRecord("Assignment", assignmentId, assignmentRecord.revision, submitted);
       transaction.appendEvent("pkr.assignment.submitted", "Assignment", assignmentId, assignmentRecord.revision + 1, { outcome });
 
-      const nextTaskPhase = outcome === "verified" ? "verifying" : "blocked";
+      const canVerify = outcome === "verified" || outcome === "partial";
+      const nextTaskPhase = canVerify ? "verifying" : "blocked";
       const verifying = revisePom(taskRecord.data, taskRecord.revision + 1, {
         phase: nextTaskPhase,
-        reason: outcome === "verified" ? "CallbackSubmitted" : "ExecutionNotVerified",
+        reason: canVerify ? "ProviderResultSubmitted" : "ExecutionBlocked",
         acceptanceResults: [],
       });
       this.contracts.validateObject(verifying);
@@ -744,14 +921,14 @@ export class PkrRuntime {
       transaction.putRecord("AgentSession", sessionId, sessionRecord.revision, closing);
       transaction.appendEvent("pkr.agentSession.closing", "AgentSession", sessionId, sessionRecord.revision + 1);
       if (runRecord) {
-        const nextRunState = outcome === "verified" ? "verifying" : "blocked";
+        const nextRunState = canVerify ? "verifying" : "blocked";
         const nextRun = reviseControl(
           runRecord.data,
           runRecord.revision + 1,
           transaction.currentSequence() + 1,
           {
             state: nextRunState,
-            activeSteps: outcome === "verified" ? ["verify"] : [],
+            activeSteps: canVerify ? ["verify"] : [],
             completedSteps: ["plan", "implement"],
           },
         );
@@ -768,8 +945,20 @@ export class PkrRuntime {
     assignmentId: string,
     actorId = "agent_verifier",
     commandId = newId("command"),
+    verificationEvidence?: JsonObject,
   ): Promise<CommandResult<JsonObject>> {
-    const command = commandContent({ action: "verify", taskId, assignmentId });
+    if (!verificationEvidence) {
+      throw new PkrError(
+        "PKR-VERIFY-001",
+        "Runtime acceptance requires formal evidence from the independent repository Verifier",
+      );
+    }
+    const command = commandContent({
+      action: "verify",
+      taskId,
+      assignmentId,
+      evidenceEnvelopeDigest: digest(verificationEvidence),
+    });
     const replay = this.store.replay<JsonObject>(this.projectId, commandId, command);
     if (replay) {
       return replay;
@@ -779,15 +968,29 @@ export class PkrRuntime {
     if ((taskRecord.data.status as JsonObject).phase !== "verifying") {
       throw new PkrError("PKR-POM-006", "Task must be verifying before completion");
     }
-    if (assignmentRecord.data.state !== "submitted" || assignmentRecord.data.disposition !== "verified") {
-      throw new PkrError("PKR-COORD-008", "verified submitted callback is required");
+    if (assignmentRecord.data.state !== "submitted") {
+      throw new PkrError("PKR-COORD-008", "submitted Provider result is required before Verification");
     }
-    const artifactId = derivedId("artifact", `${commandId}:artifact`);
-    const testVerificationId = derivedId("verification", `${commandId}:test`);
-    const acceptanceVerificationId = derivedId("verification", `${commandId}:acceptance`);
     const leaseRecord = this.listRecords("Lease").find(
       (record) => record.data.assignmentId === assignmentId,
     );
+    if (actorId === leaseRecord?.data.agentId) {
+      throw new PkrError(
+        "PKR-VERIFY-002",
+        "Verifier must be distinct from the Agent that produced the Provider result",
+      );
+    }
+    const liveRepository = await collectRepositoryEvidence(this.paths.root);
+    const verdict = validateRepositoryVerificationEvidence(
+      verificationEvidence,
+      taskId,
+      assignmentId,
+      this.paths.root,
+      liveRepository,
+    );
+    const artifactId = derivedId("artifact", `${commandId}:repository-evidence`);
+    const testVerificationId = derivedId("verification", `${commandId}:test`);
+    const acceptanceVerificationId = derivedId("verification", `${commandId}:acceptance`);
     const sessionRecord = leaseRecord
       ? this.store.getRecord(
           this.projectId,
@@ -798,25 +1001,22 @@ export class PkrRuntime {
     const runRecord = this.listRecords("WorkflowRun").find(
       (record) => ((record.data.scope as JsonObject).taskId as string) === taskId,
     );
-    const callbackMessage = this.listRecords("AgentMessage").find(
-      (record) => record.data.assignmentId === assignmentId,
-    );
-    const evidenceIds = callbackMessage
-      ? (((callbackMessage.data.payload as JsonObject).evidenceIds as JsonValue[]) ?? [])
-      : [];
-    const artifactDigest = digest({
-      assignmentId,
-      callback: assignmentRecord.data.disposition,
-      evidenceIds,
-    });
     const artifact = artifactObject({
       id: artifactId,
       projectId: this.projectId,
       taskId,
-      digest: artifactDigest,
+      digest: verdict.evidenceDigest,
       commandId,
       createdBy: actorId,
     });
+    (artifact.spec as JsonObject).artifactType = "pkr/repository-verification";
+    (artifact.spec as JsonObject).locator = `.pkr/verifications/${artifactId}.json`;
+    (artifact.status as JsonObject).reason = "VerificationEvidenceAvailable";
+    artifact.relations = [{
+      type: "verifies",
+      target: { kind: "Task", id: taskId },
+      required: true,
+    }];
     const testVerification = verificationObject({
       id: testVerificationId,
       projectId: this.projectId,
@@ -825,8 +1025,13 @@ export class PkrRuntime {
       artifactId,
       createdBy: actorId,
       gate: "test",
+      passed: verdict.passed,
+      methodAdapter: "pkr/local-repository-verifier",
+      methodVersion: "0.7.0",
+      evidenceType: "pkr/repository-verification",
+      evidenceDigest: verdict.evidenceDigest,
     });
-    const acceptanceVerification = verificationObject({
+    const acceptanceVerification = verdict.passed ? verificationObject({
       id: acceptanceVerificationId,
       projectId: this.projectId,
       taskId,
@@ -834,24 +1039,113 @@ export class PkrRuntime {
       artifactId,
       createdBy: actorId,
       gate: "acceptance",
-    });
+      methodAdapter: "pkr/local-repository-verifier",
+      methodVersion: "0.7.0",
+      evidenceType: "pkr/repository-verification",
+      evidenceDigest: verdict.evidenceDigest,
+    }) : undefined;
     this.contracts.validateObject(artifact);
     this.contracts.validateObject(testVerification);
-    this.contracts.validateObject(acceptanceVerification);
+    if (acceptanceVerification) {
+      this.contracts.validateObject(acceptanceVerification);
+    }
+    await writeJsonAtomic(
+      join(this.paths.stateDir, "verifications", `${artifactId}.json`),
+      verificationEvidence,
+    );
 
-    return this.mutate(commandId, command, (transaction) => {
+    return this.mutate<JsonObject>(commandId, command, (transaction) => {
       transaction.putRecord("Artifact", artifactId, 0, artifact);
-      transaction.appendEvent("pkr.artifact.available", "Artifact", artifactId, 1);
+      transaction.appendEvent("pkr.artifact.available", "Artifact", artifactId, 1, {
+        artifactType: "pkr/repository-verification",
+        evidenceDigest: verdict.evidenceDigest,
+      });
       transaction.putRecord("Verification", testVerificationId, 0, testVerification);
-      transaction.appendEvent("pkr.verification.passed", "Verification", testVerificationId, 1, { gate: "test" });
-      transaction.putRecord("Verification", acceptanceVerificationId, 0, acceptanceVerification);
-      transaction.appendEvent("pkr.verification.passed", "Verification", acceptanceVerificationId, 1, { gate: "acceptance" });
+      transaction.appendEvent(
+        verdict.passed ? "pkr.verification.passed" : "pkr.verification.failed",
+        "Verification",
+        testVerificationId,
+        1,
+        { gate: "test", evidenceDigest: verdict.evidenceDigest },
+      );
 
       const relations = [...(taskRecord.data.relations as JsonValue[])];
       relations.push({
         type: "produces",
         target: { kind: "Artifact", id: artifactId },
         required: true,
+      });
+      if (!verdict.passed) {
+        const blocked = revisePom(
+          { ...taskRecord.data, relations },
+          taskRecord.revision + 1,
+          {
+            phase: "blocked",
+            reason: "VerificationFailed",
+            acceptanceResults: [{
+              criterionId: "task-accepted",
+              result: "unsatisfied",
+              evidenceDigests: [verdict.evidenceDigest],
+            }],
+          },
+        );
+        this.contracts.validateObject(blocked);
+        transaction.putRecord("Task", taskId, taskRecord.revision, blocked);
+        transaction.appendEvent("pkr.task.phaseChanged", "Task", taskId, taskRecord.revision + 1, {
+          from: "verifying",
+          to: "blocked",
+        });
+        const failedAssignment = reviseControl(
+          assignmentRecord.data,
+          assignmentRecord.revision + 1,
+          transaction.currentSequence() + 1,
+          { state: "failed", disposition: "VerificationFailed" },
+        );
+        this.contracts.validateCoordination(failedAssignment);
+        transaction.putRecord("Assignment", assignmentId, assignmentRecord.revision, failedAssignment);
+        transaction.appendEvent("pkr.assignment.failed", "Assignment", assignmentId, assignmentRecord.revision + 1, {
+          reason: "VerificationFailed",
+        });
+        if (sessionRecord && sessionRecord.data.state === "closing") {
+          const failedSession = reviseControl(
+            sessionRecord.data,
+            sessionRecord.revision + 1,
+            transaction.currentSequence() + 1,
+            { state: "failed" },
+          );
+          this.contracts.validateCoordination(failedSession);
+          transaction.putRecord("AgentSession", sessionRecord.id, sessionRecord.revision, failedSession);
+          transaction.appendEvent("pkr.agentSession.failed", "AgentSession", sessionRecord.id, sessionRecord.revision + 1, {
+            reason: "VerificationFailed",
+          });
+        }
+        if (runRecord) {
+          const blockedRun = reviseControl(
+            runRecord.data,
+            runRecord.revision + 1,
+            transaction.currentSequence() + 1,
+            { state: "blocked", activeSteps: [], pendingGates: ["test", "acceptance"] },
+          );
+          this.contracts.validateCoordination(blockedRun);
+          transaction.putRecord("WorkflowRun", runRecord.id, runRecord.revision, blockedRun);
+          transaction.appendEvent("pkr.workflowRun.transitioned", "WorkflowRun", runRecord.id, runRecord.revision + 1, {
+            from: "verifying",
+            to: "blocked",
+          });
+        }
+        return transaction.committed({
+          taskId,
+          assignmentId,
+          artifactId,
+          verificationIds: [testVerificationId],
+          passed: false,
+        });
+      }
+
+      transaction.putRecord("Verification", acceptanceVerificationId, 0, acceptanceVerification!);
+      transaction.appendEvent("pkr.verification.passed", "Verification", acceptanceVerificationId, 1, {
+        gate: "acceptance",
+        evidenceDigest: verdict.evidenceDigest,
       });
       const done = revisePom(
         { ...taskRecord.data, relations },
@@ -863,7 +1157,7 @@ export class PkrRuntime {
             {
               criterionId: "task-accepted",
               result: "satisfied",
-              evidenceDigests: [artifactDigest],
+              evidenceDigests: [verdict.evidenceDigest],
             },
           ],
         },
@@ -907,6 +1201,7 @@ export class PkrRuntime {
         assignmentId,
         artifactId,
         verificationIds: [testVerificationId, acceptanceVerificationId],
+        passed: true,
       });
     });
   }

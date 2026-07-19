@@ -67,7 +67,11 @@ export class LpsOrchestrator {
       loop_state: active ? "active" : "summarized",
       dispatch_state: active ? "dispatching" : "standby",
       delivery_state: active ? "implementing" : "planned",
-      assurance_state: workers.some((worker) => worker.state === "archived")
+      assurance_state: this.runtime.listRecords("Verification").some(
+        (record) =>
+          (record.data.spec as JsonObject).gate === "acceptance" &&
+          (record.data.status as JsonObject).phase === "passed",
+      )
         ? "verified"
         : "unassessed",
       active_gate: active
@@ -126,15 +130,6 @@ export class LpsOrchestrator {
 
     const assignment = this.runtime.getRecord("Assignment", assignmentId);
     if (assignment.data.state === "submitted") {
-      const outcome = assignment.data.disposition as string;
-      if (outcome === "verified") {
-        await this.runtime.verify(
-          taskId,
-          assignmentId,
-          "agent_verifier",
-          derivedId("command", `lps:${assignmentId}:verify`),
-        );
-      }
       return {
         assignmentId,
         sessionId,
@@ -163,14 +158,6 @@ export class LpsOrchestrator {
         nextAction: callback.nextAction,
       },
     );
-    if (callback.outcome === "verified") {
-      await this.runtime.verify(
-        taskId,
-        assignmentId,
-        "agent_verifier",
-        derivedId("command", `lps:${assignmentId}:verify`),
-      );
-    }
     return {
       assignmentId,
       sessionId,
@@ -245,7 +232,9 @@ function workerState(assignment: StoredRecord): string {
     case "running":
       return "active";
     case "submitted":
-      return assignment.data.disposition === "verified" ? "waiting_callback" : "blocked";
+      return ["verified", "partial"].includes(assignment.data.disposition as string)
+        ? "waiting_verification"
+        : "blocked";
     case "closed":
       return "archived";
     case "blocked":

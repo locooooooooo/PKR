@@ -9,5 +9,12 @@ export { LocalProcessAdapter } from "./provider.js";
 export { PkrRuntime } from "./runtime.js";
 export { StewardService } from "./steward.js";
 export { PkrStore } from "./store.js";
+export {
+  runLocalVerification,
+  shellVerificationPlan,
+  validateVerificationPlan,
+  type VerificationPlan,
+} from "./verifier.js";
+export { collectRepositoryEvidence, type RepositoryEvidence } from "./workspace.js";
 export { evaluateExpression, parseWorkflowDefinition } from "./workflow.js";
 export type * from "./types.js";

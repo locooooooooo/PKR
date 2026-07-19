@@ -1,5 +1,4 @@
 import { spawn } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -14,7 +13,6 @@ import type { JsonObject } from "./types.js";
 import { sha256 } from "./util.js";
 
 const DEFAULT_CODEX_TIMEOUT_MS = 20 * 60 * 1000;
-const DEFAULT_VERIFY_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_CAPTURE_BYTES = 8 * 1024 * 1024;
 
 interface ProcessResult {
@@ -28,13 +26,11 @@ interface ProcessResult {
 export interface CodexCliAdapterOptions {
   projectRoot: string;
   request: string;
-  verificationCommand: string;
   executable?: string;
   executableArgs?: string[];
   model?: string;
   reasoningEffort?: "low" | "medium" | "high" | "xhigh";
   timeoutMs?: number;
-  verificationTimeoutMs?: number;
 }
 
 interface AgentReport extends JsonObject {
@@ -106,9 +102,9 @@ export class CodexCliAdapter implements AgentProviderAdapter {
             ? "Codex CLI timed out"
             : `Codex CLI exited with ${codex.code ?? "no exit code"}`,
         ],
-        evidenceIds: evidenceIds(request.assignmentId, before, after, undefined),
+        evidenceIds: evidenceIds(request.assignmentId, before, after),
         nextAction: report?.nextAction ?? "inspect the Codex execution log and retry with a new Task",
-      }, before, after, undefined);
+      }, before, after, codex, executable, codexArgs);
     }
 
     if (!changed) {
@@ -117,56 +113,19 @@ export class CodexCliAdapter implements AgentProviderAdapter {
         completed: report.completed,
         incomplete: [...report.incomplete, "source-change"],
         blockers: [...report.blockers, "Codex completed without a repository change"],
-        evidenceIds: evidenceIds(request.assignmentId, before, after, undefined),
+        evidenceIds: evidenceIds(request.assignmentId, before, after),
         nextAction: report.nextAction || "create a replacement Task with a concrete code change",
-      }, before, after, undefined);
+      }, before, after, codex, executable, codexArgs);
     }
 
-    const verification = await runShellCommand(
-      this.options.verificationCommand,
-      this.options.projectRoot,
-      this.options.verificationTimeoutMs ?? DEFAULT_VERIFY_TIMEOUT_MS,
-    );
-    const verificationLog = [
-      `$ ${this.options.verificationCommand}`,
-      verification.stdout,
-      verification.stderr,
-      `exit=${verification.code ?? "none"} timedOut=${verification.timedOut}`,
-    ].join("\n");
-    await writeFile(join(runDirectory, "verification.log"), verificationLog, "utf8");
-    const verificationDigest = `sha256:${sha256(verificationLog)}`;
-    const passed = verification.code === 0 && !verification.timedOut;
-    const remainingIncomplete = report.incomplete.filter(
-      (item) => !/\b(test|tests|verification|verify)\b/i.test(item),
-    );
-    const verified = passed && report.blockers.length === 0 && remainingIncomplete.length === 0;
     return this.finish(runDirectory, request, {
-      outcome: verified ? "verified" : passed ? "partial" : "blocked",
-      completed: passed
-        ? [...report.completed, "agent-change-recorded", "independent-tests-passed"]
-        : [...report.completed, "agent-change-recorded"],
-      incomplete: passed ? remainingIncomplete : [...report.incomplete, "independent-tests"],
-      blockers: passed
-        ? report.blockers
-        : [
-            ...report.blockers,
-            verification.timedOut
-              ? "Independent verification timed out"
-              : `Independent verification exited with ${verification.code ?? "no exit code"}`,
-          ],
-      evidenceIds: evidenceIds(request.assignmentId, before, after, verificationDigest),
-      nextAction: verified
-        ? "restart PKR and inspect pkr status"
-        : passed
-          ? "complete the Agent-reported incomplete work in a replacement Task"
-          : "fix the independent verification failure in a replacement Task",
-    }, before, after, {
-      command: this.options.verificationCommand,
-      digest: verificationDigest,
-      exitCode: verification.code,
-      passed,
-      timedOut: verification.timedOut,
-    });
+      outcome: "partial",
+      completed: [...report.completed, "agent-change-recorded"],
+      incomplete: report.incomplete,
+      blockers: report.blockers,
+      evidenceIds: evidenceIds(request.assignmentId, before, after),
+      nextAction: "run the independent repository Verifier",
+    }, before, after, codex, executable, codexArgs);
   }
 
   private async finish(
@@ -175,7 +134,9 @@ export class CodexCliAdapter implements AgentProviderAdapter {
     callback: ProviderCallback,
     before: JsonObject,
     after: JsonObject,
-    verification: JsonObject | undefined,
+    processResult: ProcessResult,
+    executable: string,
+    args: string[],
   ): Promise<ProviderCallback> {
     await writeFile(
       join(runDirectory, "summary.json"),
@@ -187,7 +148,26 @@ export class CodexCliAdapter implements AgentProviderAdapter {
         provider: { id: this.id, version: this.version },
         callback,
         repository: { before, after, changed: before.digest !== after.digest },
-        verification: verification ?? null,
+        process: {
+          executable,
+          args,
+          cwd: this.options.projectRoot,
+          exitCode: processResult.code,
+          signal: processResult.signal,
+          timedOut: processResult.timedOut,
+          failureReason: processResult.timedOut
+            ? "TimedOut"
+            : processResult.code === 0
+              ? null
+              : processResult.code === null
+                ? "ProcessTerminated"
+                : `ExitCode:${processResult.code}`,
+          stdout: "codex.jsonl",
+          stderr: "codex.stderr.log",
+          stdoutDigest: `sha256:${sha256(processResult.stdout)}`,
+          stderrDigest: `sha256:${sha256(processResult.stderr)}`,
+        },
+        authority: "provider-work-report-only",
       }, null, 2)}\n`,
       "utf8",
     );
@@ -285,16 +265,12 @@ function evidenceIds(
   assignmentId: string,
   before: JsonObject,
   after: JsonObject,
-  verificationDigest: string | undefined,
 ): string[] {
   return [
     `pkr://runs/${assignmentId}/codex`,
     `pkr://runs/${assignmentId}/repository/${after.digest as string}`,
     ...(before.digest !== after.digest
       ? [`pkr://runs/${assignmentId}/change/${after.diffDigest as string}`]
-      : []),
-    ...(verificationDigest
-      ? [`pkr://runs/${assignmentId}/verification/${verificationDigest}`]
       : []),
   ];
 }
@@ -329,23 +305,6 @@ function codexProcessSpec(executable: string, args: string[]): [string, string[]
   };
   const command = [executable, ...args].map(quote).join(" ");
   return [process.env.ComSpec ?? "cmd.exe", ["/d", "/c", command]];
-}
-
-async function runShellCommand(
-  command: string,
-  cwd: string,
-  timeoutMs: number,
-): Promise<ProcessResult> {
-  if (process.platform === "win32") {
-    return runProcess(
-      process.env.ComSpec ?? "cmd.exe",
-      ["/d", "/s", "/c", command],
-      cwd,
-      undefined,
-      timeoutMs,
-    );
-  }
-  return runProcess("/bin/sh", ["-lc", command], cwd, undefined, timeoutMs);
 }
 
 function runProcess(

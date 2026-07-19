@@ -4,7 +4,11 @@ import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const files = execFileSync("git", ["ls-files", "-z"], { cwd: root })
+const files = execFileSync(
+  "git",
+  ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+  { cwd: root },
+)
   .toString("utf8")
   .split("\0")
   .filter(Boolean);

@@ -13,10 +13,13 @@
   },
   "keywords": [
     "ai-agent",
+    "agent-harness",
     "codex",
     "governance",
+    "local-first",
     "runtime",
-    "sqlite"
+    "sqlite",
+    "verification"
   ],
   "type": "module",
   "main": "./dist/index.js",
@@ -42,8 +45,8 @@
     "generate:v0.4": "node scripts/generate-v04-artifacts.mjs",
     "check:boundaries": "node scripts/check-runtime-boundaries.mjs",
     "build": "npm run check:boundaries && tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/runtime.test.js dist/orchestration.test.js dist/v07.test.js dist/release.test.js",
-    "verify:schemas": "py -3.11 -B conformance/validate_core_schema.py && py -3.11 -B conformance/validate_bootstrap_schema.py && py -3.11 -B conformance/validate_runtime_schema.py && py -3.11 -B conformance/validate_coordination_schema.py && py -3.11 -B conformance/validate_coordination_semantics.py",
+    "test": "npm run build && node --test dist/cli-safety.test.js dist/runtime.test.js dist/orchestration.test.js dist/v07.test.js dist/release.test.js",
+    "verify:schemas": "node scripts/run-conformance.mjs",
     "verify": "npm run generate:v0.4 && npm run verify:schemas && npm test",
     "check:package": "node scripts/check-package.mjs",
     "prepack": "npm run build && npm run check:package",

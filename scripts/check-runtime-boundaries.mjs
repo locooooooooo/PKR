@@ -8,13 +8,16 @@ const allowed = {
   types: [],
   errors: [],
   util: ["types"],
+  process: [],
   contracts: ["errors"],
   objects: ["types", "util"],
   workflow: ["errors", "types"],
   profiles: ["types", "workflow"],
   store: ["errors", "types", "util"],
   projection: ["store", "types", "util"],
-  runtime: ["contracts", "errors", "objects", "profiles", "projection", "store", "types", "util", "workflow"],
+  workspace: ["errors", "process", "util"],
+  verifier: ["errors", "process", "types", "util", "workspace"],
+  runtime: ["contracts", "errors", "objects", "profiles", "projection", "store", "types", "util", "workspace", "workflow"],
   memory: ["runtime", "types"],
   codex: ["errors", "provider", "types", "util"],
   packages: ["errors", "profiles", "runtime", "types"],
@@ -22,8 +25,8 @@ const allowed = {
   "provider-worker": [],
   lps: ["errors", "provider", "runtime", "types", "util"],
   steward: ["errors", "runtime", "types", "util"],
-  cli: ["codex", "errors", "lps", "memory", "packages", "profiles", "provider", "runtime", "steward", "types", "util"],
-  index: ["codex", "contracts", "errors", "lps", "memory", "packages", "profiles", "provider", "runtime", "steward", "store", "types", "workflow"],
+  cli: ["codex", "errors", "lps", "memory", "packages", "profiles", "provider", "runtime", "steward", "types", "util", "verifier"],
+  index: ["codex", "contracts", "errors", "lps", "memory", "packages", "profiles", "provider", "runtime", "steward", "store", "types", "verifier", "workspace", "workflow"],
 };
 
 const failures = [];

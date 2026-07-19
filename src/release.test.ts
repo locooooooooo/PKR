@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { afterEach, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { PkrRuntime } from "./runtime.js";
 import type { JsonObject } from "./types.js";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -18,7 +19,7 @@ afterEach(async () => {
   }
 });
 
-test("three-command flow records a Codex change, verifies it independently, and recovers status", async () => {
+test("three-command fake-Codex flow uses independent Verification and recovers status", async () => {
   const project = await fixtureProject(
     "release-success",
     "import { readFileSync } from 'node:fs';\n" +
@@ -33,7 +34,8 @@ test("three-command flow records a Codex change, verifies it independently, and 
     ["run", "Add answer.ts", "--verify", "node verify.mjs"],
     fake.environment,
   );
-  assert.equal(((execution.execution as JsonObject).callback as JsonObject).outcome, "verified");
+  assert.equal(((execution.execution as JsonObject).callback as JsonObject).outcome, "partial");
+  assert.equal((execution.verification as JsonObject).passed, true);
   assert.equal(
     (((execution.status as JsonObject).summary as JsonObject).state as string),
     "completed",
@@ -45,14 +47,15 @@ test("three-command flow records a Codex change, verifies it independently, and 
   assert.equal(((recovered.tasks as JsonObject[])[0]?.phase as string), "done");
   assert.equal(((recovered.assignments as JsonObject[])[0]?.state as string), "closed");
   const callback = (recovered.callbacks as JsonObject[])[0]!;
-  assert.equal(callback.outcome, "verified");
-  assert.equal((callback.evidenceIds as string[]).some((id) => id.includes("verification")), true);
-  assert.equal((callback.completed as string[]).includes("independent-tests-passed"), true);
-  assert.deepEqual(callback.incomplete, []);
+  assert.equal(callback.outcome, "partial");
+  assert.equal((callback.evidenceIds as string[]).some((id) => id.includes("verification")), false);
+  assert.equal((callback.completed as string[]).includes("agent-change-recorded"), true);
+  assert.equal((callback.incomplete as string[]).length > 0, true);
 
   const runDirectory = join(project, ".pkr", "runs", callback.assignmentId as string);
   assert.match(await readFile(join(runDirectory, "verification.log"), "utf8"), /exit=0/);
-  assert.equal(JSON.parse(await readFile(join(runDirectory, "summary.json"), "utf8")).callback.outcome, "verified");
+  assert.equal(JSON.parse(await readFile(join(runDirectory, "summary.json"), "utf8")).authority, "provider-work-report-only");
+  assert.equal(JSON.parse(await readFile(join(runDirectory, "verification.json"), "utf8")).passed, true);
 });
 
 test("independent verification failure is durably visible and cannot complete a Task", async () => {
@@ -66,14 +69,30 @@ test("independent verification failure is durably visible and cannot complete a 
   );
   assert.equal(result.status, 2, result.stderr || result.stdout);
   const execution = JSON.parse(result.stdout) as JsonObject;
-  assert.equal(((execution.execution as JsonObject).callback as JsonObject).outcome, "blocked");
+  assert.equal(((execution.execution as JsonObject).callback as JsonObject).outcome, "partial");
+  assert.equal((execution.verification as JsonObject).passed, false);
 
   const recovered = runCli(project, ["status"]);
   assert.equal((recovered.summary as JsonObject).state, "attentionRequired");
   assert.equal(((recovered.tasks as JsonObject[])[0]?.phase as string), "blocked");
-  assert.equal((recovered.recordCounts as JsonObject).Verification ?? 0, 0);
+  assert.equal(((recovered.assignments as JsonObject[])[0]?.state as string), "failed");
+  assert.equal((recovered.recordCounts as JsonObject).Verification, 1);
+  assert.equal((recovered.recordCounts as JsonObject).Artifact, 1);
   const callback = (recovered.callbacks as JsonObject[])[0]!;
-  assert.match((callback.blockers as string[]).join("\n"), /exited with 7/);
+  const runDirectory = join(project, ".pkr", "runs", callback.assignmentId as string);
+  assert.match(await readFile(join(runDirectory, "verification.log"), "utf8"), /exit=7/);
+  const reopened = await PkrRuntime.open(project, repositoryRoot);
+  assert.equal(
+    reopened.listRecords("Verification").filter((record) =>
+      (record.data.spec as JsonObject).gate === "acceptance"
+    ).length,
+    0,
+  );
+  assert.equal(
+    (reopened.listRecords("Verification")[0]!.data.status as JsonObject).phase,
+    "failed",
+  );
+  reopened.close();
 });
 
 async function fixtureProject(name: string, verificationBody: string): Promise<string> {

@@ -488,8 +488,14 @@ export function verificationObject(options: {
   artifactId: string;
   createdBy: string;
   gate: "test" | "acceptance";
+  passed?: boolean;
+  methodAdapter?: string;
+  methodVersion?: string;
+  evidenceType?: string;
+  evidenceDigest?: string;
 }): JsonObject {
   const timestamp = now();
+  const passed = options.passed ?? true;
   return pomObject({
     kind: "Verification",
     id: options.id,
@@ -501,17 +507,19 @@ export function verificationObject(options: {
     spec: {
       gate: options.gate,
       method: {
-        adapter: "pkr/local",
-        version: "0.5.0",
-        parameters: {},
+        adapter: options.methodAdapter ?? "pkr/local",
+        version: options.methodVersion ?? "0.5.0",
+        parameters: options.evidenceDigest
+          ? { evidenceDigest: options.evidenceDigest }
+          : {},
       },
-      requiredEvidence: ["pkr/artifact"],
+      requiredEvidence: [options.evidenceType ?? "pkr/artifact"],
       waivable: false,
       owners: [accountableOwner(options.createdBy)],
     },
     status: {
-      phase: "passed",
-      reason: "VerificationPassed",
+      phase: passed ? "passed" : "failed",
+      reason: passed ? "VerificationPassed" : "VerificationFailed",
       attempt: 1,
       targetRevision: options.taskRevision,
       startedAt: timestamp,

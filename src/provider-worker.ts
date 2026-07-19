@@ -27,9 +27,9 @@ process.stdin.on("end", () => {
         .slice(0, 32);
       process.stdout.write(
         JSON.stringify({
-          outcome: "verified",
-          completed: ["task-accepted"],
-          incomplete: [],
+          outcome: "partial",
+          completed: ["provider-work-reported"],
+          incomplete: ["independent-verification"],
           blockers: [],
           evidenceIds: [`artifact_provider_${hash}`],
           nextAction: "verify",

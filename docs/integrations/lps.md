@@ -13,14 +13,15 @@ remains the authority; the LPS board is rebuilt from current records and events.
 | current gate | active Assignment and Lease | execution requires a live Lease |
 | worker lifecycle | Assignment, Session, and Lease states | board state is derived |
 | callback package | AgentMessage callback payload | Runtime validates before absorption |
-| outcome `verified` | callback claim plus Verification | callback alone cannot complete Task |
+| outcome `verified` | non-authoritative Provider claim | callback alone cannot complete Task |
 | assurance state | Verification and Artifact records | missing evidence never means pass |
 | board project sequence | latest Runtime event | stale boards cannot authorize commands |
 
 ## Worker state projection
 
 - Assignment `running` -> LPS `active`;
-- Assignment `submitted` -> LPS `waiting_callback`;
+- Assignment `submitted` -> LPS `waiting_verification` for a successful work
+  report, otherwise `blocked`;
 - Assignment `closed`, `cancelled`, or `rejected` -> LPS `archived`;
 - Assignment `blocked`, `expired`, or `failed` -> LPS `blocked`.
 
@@ -38,8 +39,9 @@ second truth file.
 4. builds a sequence-bound Workspace;
 5. invokes the provider adapter;
 6. commits the callback AgentMessage;
-7. runs required Verification when the callback claims `verified`;
-8. closes Assignment, Session, and WorkflowRun only after verification.
+7. leaves a successful Provider result at the `verifying` gate;
+8. requires a distinct repository Verifier and Runtime-validated evidence
+   before closing Assignment, Session, and WorkflowRun.
 
 Duplicate execution requests for a closed Task return the existing Assignment
 without invoking the provider again. A terminal failed or cancelled Assignment
@@ -59,5 +61,10 @@ requires an explicit replacement or recovery path.
 
 v0.6 proves one real local process adapter. It starts a separate process, sends
 an actual Workspace over stdin, enforces a timeout, and parses a callback from
-stdout. It does not claim a live cloud-model integration. Provider-specific
-Codex, Claude, or Gemini adapters remain part of the v0.9 compatibility scope.
+stdout. v0.7 adds one local Codex CLI adapter. Cloud-model integrations and
+Claude or Gemini adapters remain outside the public v0.7 boundary.
+
+The Codex CLI and verification command are trusted host processes. A separate
+process is not by itself an independent trust boundary: v0.7 relies on the
+Runtime re-collecting Git evidence and recomputing the submitted verdict. PKR
+does not provide an OS sandbox for Provider or Verifier commands.

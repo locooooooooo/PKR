@@ -1,21 +1,94 @@
 #!/usr/bin/env node
 
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { isPkrError } from "./errors.js";
-import { CodexCliAdapter } from "./codex.js";
-import { LpsOrchestrator } from "./lps.js";
-import { MemoryService } from "./memory.js";
-import { PackageService } from "./packages.js";
-import { STARTER_PROFILES, type StarterProfileName } from "./profiles.js";
-import { LocalProcessAdapter } from "./provider.js";
-import { PkrRuntime } from "./runtime.js";
-import { StewardService } from "./steward.js";
+import type { StarterProfileName } from "./profiles.js";
+import type { PkrRuntime } from "./runtime.js";
 import type { InitOptions, JsonObject } from "./types.js";
 import { derivedId } from "./util.js";
+import { runLocalVerification, shellVerificationPlan } from "./verifier.js";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+const COMMAND_OPTIONS: Record<string, Set<string>> = {
+  init: new Set(["--name", "--title", "--outcome", "--description", "--authority", "--command-id", "--project", "--help"]),
+  run: new Set(["--verify", "--model", "--reasoning", "--approve", "--request", "--project", "--help"]),
+  status: new Set(["--project", "--help"]),
+  goal: new Set(["--outcome", "--actor", "--command-id", "--project", "--help"]),
+  decision: new Set(["--question", "--choice", "--reason", "--affected", "--actor", "--command-id", "--project", "--help"]),
+  task: new Set(["--goal", "--objective", "--actor", "--command-id", "--project", "--help"]),
+  agent: new Set(["--name", "--provider", "--actor", "--command-id", "--project", "--help"]),
+  dispatch: new Set(["--task", "--agent", "--command-id", "--project", "--help"]),
+  callback: new Set(["--assignment", "--outcome", "--evidence", "--command-id", "--project", "--help"]),
+  verify: new Set(["--task", "--assignment", "--actor", "--command-id", "--evidence-file", "--project", "--help"]),
+  events: new Set(["--after", "--project", "--help"]),
+  workspace: new Set(["--task", "--assignment", "--principal", "--project", "--help"]),
+  memory: new Set(["--summary", "--source-kind", "--source-id", "--source-revision", "--visibility", "--principal", "--roles", "--memory", "--title", "--actor", "--command-id", "--project", "--help"]),
+  profile: new Set(["--name", "--decision", "--capabilities", "--actor", "--command-id", "--project", "--help"]),
+  workflow: new Set(["--workflow", "--task", "--run", "--to", "--context", "--command-id", "--project", "--help"]),
+  package: new Set(["--package", "--target", "--actor", "--command-id", "--project", "--help"]),
+  steward: new Set(["--request", "--approve-by", "--project", "--help"]),
+  lps: new Set(["--task", "--agent", "--project", "--help"]),
+  assignment: new Set(["--assignment", "--reason", "--project", "--help"]),
+  lease: new Set(["--assignment", "--project", "--help"]),
+  digest: new Set(["--project", "--help"]),
+  projection: new Set(["--project", "--help"]),
+};
+
+const OPTIONS_WITH_VALUES = new Set([
+  "--name", "--title", "--outcome", "--description", "--authority", "--command-id",
+  "--verify", "--model", "--reasoning", "--request", "--question", "--choice", "--reason",
+  "--affected", "--actor", "--goal", "--objective", "--provider", "--task", "--agent",
+  "--assignment", "--evidence", "--evidence-file", "--after", "--principal", "--source-kind",
+  "--source-id", "--source-revision", "--visibility", "--roles", "--memory", "--decision",
+  "--capabilities", "--workflow", "--run", "--to", "--context", "--package", "--target",
+  "--approve-by", "--description", "--project",
+]);
+
+const HELP_TEXT: Record<string, string> = {
+  root: `PKR local authoritative Runtime\n\nUsage:\n  pkr init [options]\n  pkr run "<task>" [--verify "<command>"] [options]\n  pkr status [--project <path>]\n\nCommands:\n  init       initialize .pkr state in a Git repository\n  run        execute one Provider step, independent verification, and status\n  status     reopen and report persisted project state\n\nAdvanced commands: goal, decision, task, agent, dispatch, callback, verify, events, workspace, memory, profile, workflow, package, steward, lps, assignment, lease, digest, projection`,
+  init: "Usage: pkr init [--project <path>] [--name <name>] [--title <title>] [--outcome <outcome>]",
+  run: "Usage: pkr run \"<task>\" [--project <path>] [--verify \"<command>\"] [--model <model>] [--reasoning <level>] [--approve]",
+  status: "Usage: pkr status [--project <path>]",
+  verify: "Usage: pkr verify --task <task-id> --assignment <assignment-id> --evidence-file <path> [--actor <id>]",
+};
+
+function preflight(args: string[]): { command?: string; help?: string } {
+  const command = args[0];
+  if (!command || command === "--help" || command === "help") {
+    if (command && command !== "--help" && command !== "help") {
+      throw new Error(`unknown command ${command}`);
+    }
+    return { help: HELP_TEXT.root! };
+  }
+  const allowed = COMMAND_OPTIONS[command];
+  if (!allowed) {
+    throw new Error(`unknown command ${command}`);
+  }
+  for (let index = 1; index < args.length; index += 1) {
+    const token = args[index]!;
+    if (!token.startsWith("--")) {
+      continue;
+    }
+    if (!allowed.has(token)) {
+      throw new Error(`unknown option ${token} for command ${command}`);
+    }
+    if (OPTIONS_WITH_VALUES.has(token) && (!args[index + 1] || args[index + 1]!.startsWith("--"))) {
+      throw new Error(`option ${token} requires a value`);
+    }
+    if (OPTIONS_WITH_VALUES.has(token)) {
+      index += 1;
+    }
+  }
+  if (args.includes("--help")) {
+    const help = HELP_TEXT[command] ?? `Usage: pkr ${command} [options]`;
+    return { command, help };
+  }
+  return { command };
+}
 
 function option(args: string[], name: string, fallback?: string): string | undefined {
   const index = args.indexOf(name);
@@ -94,8 +167,32 @@ function operationalStatus(runtime: PkrRuntime): JsonObject {
 
 async function main(): Promise<number> {
   const args = process.argv.slice(2);
+  const preflightResult = preflight(args);
+  if (preflightResult.help) {
+    process.stdout.write(`${preflightResult.help}\n`);
+    return 0;
+  }
   const projectRoot = resolve(option(args, "--project", process.cwd())!);
-  const command = args[0];
+  const command = preflightResult.command;
+  const [
+    { CodexCliAdapter },
+    { LpsOrchestrator },
+    { MemoryService },
+    { PackageService },
+    { STARTER_PROFILES },
+    { LocalProcessAdapter },
+    { PkrRuntime },
+    { StewardService },
+  ] = await Promise.all([
+    import("./codex.js"),
+    import("./lps.js"),
+    import("./memory.js"),
+    import("./packages.js"),
+    import("./profiles.js"),
+    import("./provider.js"),
+    import("./runtime.js"),
+    import("./steward.js"),
+  ]);
 
   if (command === "init") {
     const name = option(args, "--name", basename(projectRoot))!;
@@ -148,10 +245,10 @@ async function main(): Promise<number> {
         derivedId("command", `${runtime.projectId}:codex-cli-agent`),
       );
       const agentId = ((agent.value as JsonObject).metadata as JsonObject).id as string;
+      const verificationCommand = option(args, "--verify", "npm test")!;
       const adapter = new CodexCliAdapter({
         projectRoot,
         request,
-        verificationCommand: option(args, "--verify", "npm test")!,
         ...(option(args, "--model") ? { model: option(args, "--model")! } : {}),
         ...(option(args, "--reasoning")
           ? {
@@ -173,14 +270,54 @@ async function main(): Promise<number> {
         intake.taskId as string,
         agentId,
       );
+      let verification: JsonObject | null = null;
+      const task = runtime.getRecord("Task", intake.taskId as string);
+      if ((task.data.status as JsonObject).phase === "verifying") {
+        const evidence = await runLocalVerification(
+          projectRoot,
+          intake.taskId as string,
+          result.assignmentId,
+          shellVerificationPlan(verificationCommand),
+        );
+        const runDirectory = resolve(projectRoot, ".pkr", "runs", result.assignmentId);
+        await mkdir(runDirectory, { recursive: true });
+        await writeFile(
+          resolve(runDirectory, "verification.json"),
+          `${JSON.stringify(evidence, null, 2)}\n`,
+          "utf8",
+        );
+        const commandEvidence = (evidence.commands as JsonObject[])[0]!;
+        await writeFile(
+          resolve(runDirectory, "verification.log"),
+          [
+            `$ ${verificationCommand}`,
+            commandEvidence.stdout as string,
+            commandEvidence.stderr as string,
+            `exit=${commandEvidence.exitCode as number | null} timedOut=${commandEvidence.timedOut as boolean}`,
+          ].join("\n"),
+          "utf8",
+        );
+        const accepted = await runtime.verify(
+          intake.taskId as string,
+          result.assignmentId,
+          "agent_repository_verifier",
+          derivedId("command", `pkr-run:${result.assignmentId}:repository-verify`),
+          evidence,
+        );
+        verification = accepted.value as JsonObject;
+      }
       print({
         command: "run",
         provider: { id: adapter.id, version: adapter.version },
         intake,
         execution: result,
+        verification,
         status: operationalStatus(runtime),
       });
-      return result.callback?.outcome === "verified" || result.reused ? 0 : 2;
+      return verification?.passed === true ||
+          (runtime.getRecord("Task", intake.taskId as string).data.status as JsonObject).phase === "done"
+        ? 0
+        : 2;
     }
     if (command === "goal" && args[1] === "create") {
       print(
@@ -238,7 +375,7 @@ async function main(): Promise<number> {
       return 0;
     }
     if (command === "callback") {
-      const rawOutcome = option(args, "--outcome", "verified")!;
+      const rawOutcome = option(args, "--outcome", "partial")!;
       if (!["verified", "partial", "blocked", "externalSignoffBlocked"].includes(rawOutcome)) {
         throw new Error(`invalid callback outcome ${rawOutcome}`);
       }
@@ -253,12 +390,16 @@ async function main(): Promise<number> {
       return 0;
     }
     if (command === "verify") {
+      const evidence = JSON.parse(
+        await readFile(required(args, "--evidence-file"), "utf8"),
+      ) as JsonObject;
       print(
         await runtime.verify(
           required(args, "--task"),
           required(args, "--assignment"),
           option(args, "--actor", "agent_verifier"),
           option(args, "--command-id"),
+          evidence,
         ),
       );
       return 0;

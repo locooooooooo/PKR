@@ -29,10 +29,11 @@ pkr status
 Acceptance requires all of the following:
 
 1. Codex changes `src/counter.js` without changing the test.
-2. PKR records the Assignment, callback, repository digest, and verification
-   log digest.
-3. A separate `node --test` process exits with zero.
-4. A fresh `pkr status` process reports `summary.state = completed` and the
+2. The Codex callback remains a non-authoritative work report.
+3. The repository Verifier records Git and process evidence for `node --test`.
+4. The Runtime re-collects Git evidence, recomputes the verdict, and creates
+   acceptance only when the command exits with zero.
+5. A fresh `pkr status` process reports `summary.state = completed` and the
    Task phase `done`.
 
 The demo uses `gpt-5.4-mini` with low reasoning to keep this one-line proof
@@ -40,3 +41,5 @@ within the target time. Normal project runs may omit both options and use the
 Codex CLI defaults.
 
 Run evidence is under `<temporary-project>/.pkr/runs/<assignment>/`.
+Codex and the Verifier run as trusted host commands; this demo does not provide
+an OS sandbox.
