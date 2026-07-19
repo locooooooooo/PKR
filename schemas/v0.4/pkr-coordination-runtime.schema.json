@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkr.dev/schemas/v0.4/pkr-coordination-runtime.schema.json",
+  "$ref": "https://pkr.dev/schemas/v0.4/pkr-coordination.schema.json#/$defs/ProtocolFamily"
+}

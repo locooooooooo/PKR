@@ -1,0 +1,603 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json",
+  "title": "PKR v0.2 Project Manifest and Bootstrap Records",
+  "description": "Structural contract for project bootstrap input and committed identity records.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ProjectBootstrapRequest"
+    },
+    {
+      "$ref": "#/$defs/ProjectManifest"
+    },
+    {
+      "$ref": "#/$defs/ProjectGenesisRecord"
+    }
+  ],
+  "$defs": {
+    "HumanAuthority": {
+      "type": "object",
+      "properties": {
+        "principalType": {
+          "const": "human"
+        },
+        "principalId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "principalType",
+        "principalId"
+      ],
+      "additionalProperties": false
+    },
+    "BootstrapDecisionBasis": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "genesis"
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/NonEmptyString"
+        }
+      },
+      "required": [
+        "type",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "ProjectRequestIdentity": {
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        }
+      },
+      "required": [
+        "projectId",
+        "name",
+        "title"
+      ],
+      "additionalProperties": false
+    },
+    "MissionSeed": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/MissionSpec"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "title",
+        "spec"
+      ],
+      "additionalProperties": false
+    },
+    "RoleSeed": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/RoleSpec"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "title",
+        "spec"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowSeed": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/WorkflowSpec"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "title",
+        "spec"
+      ],
+      "additionalProperties": false
+    },
+    "BootstrapSeeds": {
+      "type": "object",
+      "properties": {
+        "mission": {
+          "$ref": "#/$defs/MissionSeed"
+        },
+        "ownerRole": {
+          "$ref": "#/$defs/RoleSeed"
+        },
+        "governanceWorkflow": {
+          "$ref": "#/$defs/WorkflowSeed"
+        }
+      },
+      "required": [
+        "mission",
+        "ownerRole",
+        "governanceWorkflow"
+      ],
+      "additionalProperties": false
+    },
+    "ManifestMetadata": {
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "projectId",
+        "name",
+        "title",
+        "revision",
+        "createdAt",
+        "createdBy",
+        "updatedAt"
+      ],
+      "additionalProperties": false
+    },
+    "RuntimeBindings": {
+      "type": "object",
+      "properties": {
+        "pkrVersion": {
+          "const": "0.2"
+        },
+        "objectApiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "objectSchemaId": {
+          "const": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json"
+        },
+        "bootstrapSchemaId": {
+          "const": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json"
+        },
+        "missionMode": {
+          "const": "single"
+        }
+      },
+      "required": [
+        "pkrVersion",
+        "objectApiVersion",
+        "objectSchemaId",
+        "bootstrapSchemaId",
+        "missionMode"
+      ],
+      "additionalProperties": false
+    },
+    "GovernanceBinding": {
+      "type": "object",
+      "properties": {
+        "ownerRoleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "governanceWorkflowId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "ownerRoleId",
+        "governanceWorkflowId"
+      ],
+      "additionalProperties": false
+    },
+    "MissionBinding": {
+      "type": "object",
+      "properties": {
+        "activeMissionId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "activeMissionId"
+      ],
+      "additionalProperties": false
+    },
+    "EventRange": {
+      "type": "object",
+      "properties": {
+        "firstSequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lastSequence": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "firstSequence",
+        "lastSequence"
+      ],
+      "additionalProperties": false
+    },
+    "GenesisBinding": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "transactionId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "eventRange": {
+          "$ref": "#/$defs/EventRange"
+        },
+        "terminalEventId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "committedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "requestId",
+        "transactionId",
+        "eventRange",
+        "terminalEventId",
+        "committedAt"
+      ],
+      "additionalProperties": false
+    },
+    "ManifestStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "active",
+            "suspended",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "BuiltInPolicy": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "const": "pkr/bootstrap"
+        },
+        "version": {
+          "const": "0.2"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "CreatedObject": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "Mission",
+            "Role",
+            "Workflow"
+          ]
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "ProjectBootstrapRequest": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "ProjectBootstrapRequest"
+        },
+        "requestId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/BootstrapDecisionBasis"
+        },
+        "authority": {
+          "$ref": "#/$defs/HumanAuthority"
+        },
+        "project": {
+          "$ref": "#/$defs/ProjectRequestIdentity"
+        },
+        "seeds": {
+          "$ref": "#/$defs/BootstrapSeeds"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "requestId",
+        "issuedAt",
+        "decisionBasis",
+        "authority",
+        "project",
+        "seeds",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "ProjectManifest": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "ProjectManifest"
+        },
+        "metadata": {
+          "$ref": "#/$defs/ManifestMetadata"
+        },
+        "runtime": {
+          "$ref": "#/$defs/RuntimeBindings"
+        },
+        "governance": {
+          "$ref": "#/$defs/GovernanceBinding"
+        },
+        "mission": {
+          "$ref": "#/$defs/MissionBinding"
+        },
+        "genesis": {
+          "$ref": "#/$defs/GenesisBinding"
+        },
+        "status": {
+          "$ref": "#/$defs/ManifestStatus"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "runtime",
+        "governance",
+        "mission",
+        "genesis",
+        "status",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "ProjectGenesisRecord": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "ProjectGenesisRecord"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "requestId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "transactionId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "authority": {
+          "$ref": "#/$defs/HumanAuthority"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/BootstrapDecisionBasis"
+        },
+        "policy": {
+          "$ref": "#/$defs/BuiltInPolicy"
+        },
+        "committedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "manifestRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "createdObjects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CreatedObject"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "Mission"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "Role"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "Workflow"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          ]
+        },
+        "eventRange": {
+          "$ref": "#/$defs/EventRange"
+        },
+        "terminalEventId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "projectId",
+        "requestId",
+        "transactionId",
+        "authority",
+        "decisionBasis",
+        "policy",
+        "committedAt",
+        "manifestRevision",
+        "createdObjects",
+        "eventRange",
+        "terminalEventId",
+        "extensions"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

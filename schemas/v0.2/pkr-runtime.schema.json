@@ -1,0 +1,2877 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkr.dev/schemas/v0.2/pkr-runtime.schema.json",
+  "title": "PKR v0.2 Runtime Protocol",
+  "description": "Transport-neutral structural contract for PKR commands, events, and command results.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/CreateObjectCommand"
+    },
+    {
+      "$ref": "#/$defs/ReplaceObjectCommand"
+    },
+    {
+      "$ref": "#/$defs/AddRelationCommand"
+    },
+    {
+      "$ref": "#/$defs/RemoveRelationCommand"
+    },
+    {
+      "$ref": "#/$defs/UpdateManifestCommand"
+    },
+    {
+      "$ref": "#/$defs/MissionTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/GoalTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/TaskTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/KnowledgeTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/DecisionTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/ConstraintTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/WorkflowTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/VerificationTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/ArtifactTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/MetricTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/AgentTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/RoleTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/IssueTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/ReleaseTransitionCommand"
+    },
+    {
+      "$ref": "#/$defs/RuntimeEvent"
+    },
+    {
+      "$ref": "#/$defs/CommandResult"
+    }
+  ],
+  "$defs": {
+    "WorkflowBinding": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "TaskScope": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "task"
+        },
+        "taskId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "type",
+        "taskId"
+      ],
+      "additionalProperties": false
+    },
+    "GovernanceScope": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "governance"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/NamespacedName"
+        }
+      },
+      "required": [
+        "type",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "CommandScope": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TaskScope"
+        },
+        {
+          "$ref": "#/$defs/GovernanceScope"
+        }
+      ]
+    },
+    "DecisionBasis": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "decision"
+            },
+            "decisionId": {
+              "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+            }
+          },
+          "required": [
+            "type",
+            "decisionId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "operational"
+            },
+            "reason": {
+              "$ref": "pkr-object.schema.json#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "type",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ManifestTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "ProjectManifest"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "CommandTarget": {
+      "oneOf": [
+        {
+          "$ref": "pkr-object.schema.json#/$defs/Target"
+        },
+        {
+          "$ref": "#/$defs/ManifestTarget"
+        }
+      ]
+    },
+    "EventType": {
+      "type": "string",
+      "pattern": "^(?:pkr(?:\\.[a-z][A-Za-z0-9]*){2,}|[a-z][a-z0-9.-]*/[a-z][A-Za-z0-9._-]*)$"
+    },
+    "MissionIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Mission"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/MissionSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "GoalIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Goal"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/GoalSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "TaskIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Task"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/TaskSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "KnowledgeIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Knowledge"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/KnowledgeSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "DecisionIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Decision"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/DecisionSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "ConstraintIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Constraint"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/ConstraintSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Workflow"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/WorkflowSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Verification"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/VerificationSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "ArtifactIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Artifact"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/ArtifactSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "MetricIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Metric"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/MetricSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "AgentIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Agent"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/AgentSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "RoleIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Role"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/RoleSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "IssueIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Issue"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/IssueSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "ReleaseIntent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Release"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "pkr-object.schema.json#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "spec": {
+          "$ref": "pkr-object.schema.json#/$defs/ReleaseSpec"
+        },
+        "relations": {
+          "$ref": "pkr-object.schema.json#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "title",
+        "spec",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "ObjectIntent": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/MissionIntent"
+        },
+        {
+          "$ref": "#/$defs/GoalIntent"
+        },
+        {
+          "$ref": "#/$defs/TaskIntent"
+        },
+        {
+          "$ref": "#/$defs/KnowledgeIntent"
+        },
+        {
+          "$ref": "#/$defs/DecisionIntent"
+        },
+        {
+          "$ref": "#/$defs/ConstraintIntent"
+        },
+        {
+          "$ref": "#/$defs/WorkflowIntent"
+        },
+        {
+          "$ref": "#/$defs/VerificationIntent"
+        },
+        {
+          "$ref": "#/$defs/ArtifactIntent"
+        },
+        {
+          "$ref": "#/$defs/MetricIntent"
+        },
+        {
+          "$ref": "#/$defs/AgentIntent"
+        },
+        {
+          "$ref": "#/$defs/RoleIntent"
+        },
+        {
+          "$ref": "#/$defs/IssueIntent"
+        },
+        {
+          "$ref": "#/$defs/ReleaseIntent"
+        }
+      ]
+    },
+    "CreateObjectPayload": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "$ref": "#/$defs/ObjectIntent"
+        }
+      },
+      "required": [
+        "object"
+      ],
+      "additionalProperties": false
+    },
+    "ReplaceObjectPayload": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "$ref": "#/$defs/ObjectIntent"
+        }
+      },
+      "required": [
+        "object"
+      ],
+      "additionalProperties": false
+    },
+    "RelationPayload": {
+      "type": "object",
+      "properties": {
+        "relation": {
+          "$ref": "pkr-object.schema.json#/$defs/Relation"
+        }
+      },
+      "required": [
+        "relation"
+      ],
+      "additionalProperties": false
+    },
+    "UpdateManifestPayload": {
+      "type": "object",
+      "properties": {
+        "manifest": {
+          "$ref": "pkr-bootstrap.schema.json#/$defs/ProjectManifest"
+        }
+      },
+      "required": [
+        "manifest"
+      ],
+      "additionalProperties": false
+    },
+    "CreateObjectCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "createObject"
+        },
+        "target": {
+          "$ref": "pkr-object.schema.json#/$defs/Target"
+        },
+        "expectedRevision": {
+          "const": 0
+        },
+        "payload": {
+          "$ref": "#/$defs/CreateObjectPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "ReplaceObjectCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "replaceObject"
+        },
+        "target": {
+          "$ref": "pkr-object.schema.json#/$defs/Target"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/ReplaceObjectPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "AddRelationCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "addRelation"
+        },
+        "target": {
+          "$ref": "pkr-object.schema.json#/$defs/Target"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/RelationPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "RemoveRelationCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "removeRelation"
+        },
+        "target": {
+          "$ref": "pkr-object.schema.json#/$defs/Target"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/RelationPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "UpdateManifestCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "updateManifest"
+        },
+        "target": {
+          "$ref": "#/$defs/ManifestTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/UpdateManifestPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "MissionTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Mission"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "MissionTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "draft",
+            "active",
+            "achieved",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "MissionTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/MissionTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/MissionTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "GoalTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Goal"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "GoalTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "proposed",
+            "active",
+            "blocked",
+            "achieved",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "GoalTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/GoalTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/GoalTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "TaskTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Task"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "TaskTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "backlog",
+            "ready",
+            "inProgress",
+            "blocked",
+            "verifying",
+            "done",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "TaskTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/TaskTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/TaskTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "KnowledgeTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Knowledge"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "KnowledgeTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "draft",
+            "active",
+            "deprecated"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "KnowledgeTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/KnowledgeTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/KnowledgeTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "DecisionTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Decision"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "DecisionTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "proposed",
+            "accepted",
+            "rejected",
+            "superseded"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "DecisionTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/DecisionTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/DecisionTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "ConstraintTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Constraint"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "ConstraintTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "proposed",
+            "active",
+            "waived",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "ConstraintTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/ConstraintTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/ConstraintTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Workflow"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "draft",
+            "active",
+            "deprecated"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/WorkflowTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/WorkflowTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Verification"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "pending",
+            "running",
+            "passed",
+            "failed",
+            "waived",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/VerificationTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/VerificationTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "ArtifactTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Artifact"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "ArtifactTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "declared",
+            "available",
+            "invalidated",
+            "archived"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "ArtifactTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/ArtifactTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/ArtifactTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "MetricTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Metric"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "MetricTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "defined",
+            "collecting",
+            "healthy",
+            "breached",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "MetricTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/MetricTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/MetricTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "AgentTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Agent"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "AgentTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "registered",
+            "active",
+            "suspended",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "AgentTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/AgentTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/AgentTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "RoleTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Role"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "RoleTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "draft",
+            "active",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "RoleTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/RoleTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/RoleTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "IssueTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Issue"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "IssueTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "open",
+            "triaged",
+            "inProgress",
+            "resolved",
+            "closed",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "IssueTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/IssueTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/IssueTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "ReleaseTransitionTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "Release"
+        },
+        "id": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "ReleaseTransitionPayload": {
+      "type": "object",
+      "properties": {
+        "toPhase": {
+          "enum": [
+            "planned",
+            "assembling",
+            "verifying",
+            "released",
+            "rolledBack",
+            "superseded",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "pkr-object.schema.json#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "toPhase",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "ReleaseTransitionCommand": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeCommand"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "const": "transitionObject"
+        },
+        "target": {
+          "$ref": "#/$defs/ReleaseTransitionTarget"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "payload": {
+          "$ref": "#/$defs/ReleaseTransitionPayload"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "RuntimeEvent": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "RuntimeEvent"
+        },
+        "eventId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "type": {
+          "$ref": "#/$defs/EventType"
+        },
+        "subject": {
+          "$ref": "#/$defs/CommandTarget"
+        },
+        "subjectRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "actor": {
+          "$ref": "pkr-object.schema.json#/$defs/PrincipalIdentity"
+        },
+        "roleId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowBinding"
+        },
+        "scope": {
+          "$ref": "#/$defs/CommandScope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "occurredAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "object"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "eventId",
+        "projectId",
+        "sequence",
+        "type",
+        "subject",
+        "subjectRevision",
+        "commandId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "decisionBasis",
+        "occurredAt",
+        "data",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "RuntimeError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^PKR-(?:RUNTIME|POM|BOOTSTRAP|SCHEMA)-[A-Z0-9-]+$"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "CommandResult": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "CommandResult"
+        },
+        "commandId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "pkr-object.schema.json#/$defs/ObjectId"
+        },
+        "status": {
+          "enum": [
+            "committed",
+            "rejected",
+            "conflict"
+          ]
+        },
+        "target": {
+          "$ref": "#/$defs/CommandTarget"
+        },
+        "targetRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "eventRange": {
+          "$ref": "pkr-bootstrap.schema.json#/$defs/EventRange"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RuntimeError"
+          },
+          "minItems": 0
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "extensions": {
+          "$ref": "pkr-object.schema.json#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "status",
+        "target",
+        "errors",
+        "completedAt",
+        "extensions"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "committed"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "targetRevision",
+              "eventRange"
+            ],
+            "properties": {
+              "errors": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "rejected",
+                  "conflict"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "errors": {
+                "minItems": 1
+              }
+            },
+            "not": {
+              "required": [
+                "eventRange"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

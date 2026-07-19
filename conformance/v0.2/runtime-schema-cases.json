@@ -1,0 +1,2028 @@
+{
+  "schema": "../../schemas/v0.2/pkr-runtime.schema.json",
+  "resources": [
+    "../../schemas/v0.2/pkr-object.schema.json",
+    "../../schemas/v0.2/pkr-bootstrap.schema.json"
+  ],
+  "description": "Structural conformance cases for PKR v0.2 Runtime commands, events, and results.",
+  "cases": [
+    {
+      "name": "valid-create-mission",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_001",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Mission",
+          "id": "mission_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Mission",
+            "id": "mission_001",
+            "name": "mission-001",
+            "title": "Mission fixture 1",
+            "spec": {
+              "outcome": "Ship a usable PKR reference specification.",
+              "successCriteria": [
+                {
+                  "id": "runtime-defined",
+                  "statement": "Core runtime behavior is specified.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "fixed",
+                "amount": 200000,
+                "currency": "CNY"
+              },
+              "deadline": {
+                "mode": "fixed",
+                "at": "2027-01-01T00:00:00Z"
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-goal",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_002",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Goal",
+          "id": "goal_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Goal",
+            "id": "goal_001",
+            "name": "goal-001",
+            "title": "Goal fixture 1",
+            "spec": {
+              "outcome": "Define the PKR v0.2 object contract.",
+              "measures": [
+                {
+                  "id": "kind-coverage",
+                  "statement": "All core kinds have schemas.",
+                  "operator": "eq",
+                  "target": 14,
+                  "unit": "kinds"
+                }
+              ],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [
+              {
+                "type": "contributesTo",
+                "target": {
+                  "kind": "Mission",
+                  "id": "mission_001"
+                },
+                "required": true
+              }
+            ],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-task",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_003",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Task",
+            "id": "task_001",
+            "name": "task-001",
+            "title": "Task fixture 1",
+            "spec": {
+              "objective": "Publish the field-level Task schema.",
+              "acceptance": [
+                {
+                  "id": "schema-valid",
+                  "statement": "Schema passes Draft 2020-12 validation.",
+                  "required": true
+                }
+              ],
+              "verificationPolicy": [
+                {
+                  "gate": "test",
+                  "required": true,
+                  "allowWaiver": false
+                }
+              ],
+              "deliverables": [
+                {
+                  "id": "core-schema",
+                  "artifactType": "json-schema",
+                  "required": true
+                }
+              ],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [
+              {
+                "type": "contributesTo",
+                "target": {
+                  "kind": "Goal",
+                  "id": "goal_001"
+                },
+                "required": true
+              },
+              {
+                "type": "governedBy",
+                "target": {
+                  "kind": "Workflow",
+                  "id": "workflow_001"
+                },
+                "required": true
+              }
+            ],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-knowledge",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_004",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Knowledge",
+          "id": "knowledge_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Knowledge",
+            "id": "knowledge_001",
+            "name": "knowledge-001",
+            "title": "Knowledge fixture 1",
+            "spec": {
+              "knowledgeType": "fact",
+              "content": {
+                "statement": "PKR has fourteen core kinds."
+              },
+              "sources": [
+                {
+                  "uri": "https://example.com/pkr/spec",
+                  "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                }
+              ],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-decision",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_005",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Decision",
+          "id": "decision_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Decision",
+            "id": "decision_001",
+            "name": "decision-001",
+            "title": "Decision fixture 1",
+            "spec": {
+              "question": "Which schema draft should PKR v0.2 use?",
+              "choice": "Use JSON Schema Draft 2020-12.",
+              "reasons": [
+                "It supports conditional validation and current tooling."
+              ],
+              "alternatives": [],
+              "alternativeOmissionReason": "No older draft provides a project benefit.",
+              "scope": {
+                "kinds": [
+                  "Mission",
+                  "Goal",
+                  "Task",
+                  "Knowledge",
+                  "Decision",
+                  "Constraint",
+                  "Workflow",
+                  "Verification",
+                  "Artifact",
+                  "Metric",
+                  "Agent",
+                  "Role",
+                  "Issue",
+                  "Release"
+                ]
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-constraint",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_006",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Constraint",
+          "id": "constraint_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Constraint",
+            "id": "constraint_001",
+            "name": "constraint-001",
+            "title": "Constraint fixture 1",
+            "spec": {
+              "rule": "Core extensions must be namespaced.",
+              "scope": {
+                "kinds": [
+                  "Mission",
+                  "Goal",
+                  "Task",
+                  "Knowledge",
+                  "Decision",
+                  "Constraint",
+                  "Workflow",
+                  "Verification",
+                  "Artifact",
+                  "Metric",
+                  "Agent",
+                  "Role",
+                  "Issue",
+                  "Release"
+                ]
+              },
+              "severity": "error",
+              "enforcement": "blocking",
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-workflow",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_007",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Workflow",
+          "id": "workflow_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "name": "workflow-001",
+            "title": "Workflow fixture 1",
+            "spec": {
+              "appliesTo": [
+                "Task"
+              ],
+              "steps": [
+                {
+                  "id": "execute",
+                  "title": "Execute governed work",
+                  "action": "task/execute",
+                  "allowedRoleNames": [
+                    "developer"
+                  ],
+                  "entryConditionRefs": [],
+                  "exitConditionRefs": [
+                    "verification/passed"
+                  ]
+                }
+              ],
+              "transitions": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-verification",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_008",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Verification",
+          "id": "verification_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Verification",
+            "id": "verification_001",
+            "name": "verification-001",
+            "title": "Verification fixture 1",
+            "spec": {
+              "gate": "test",
+              "method": {
+                "adapter": "json-schema/validate",
+                "version": "2020-12",
+                "parameters": {}
+              },
+              "requiredEvidence": [
+                "validation-report"
+              ],
+              "waivable": false,
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [
+              {
+                "type": "verifies",
+                "target": {
+                  "kind": "Task",
+                  "id": "task_001"
+                },
+                "required": true
+              }
+            ],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-artifact",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_009",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Artifact",
+          "id": "artifact_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Artifact",
+            "id": "artifact_001",
+            "name": "artifact-001",
+            "title": "Artifact fixture 1",
+            "spec": {
+              "artifactType": "json-schema",
+              "provenance": {
+                "declaredBy": "human_001",
+                "sourceDigests": []
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-metric",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_010",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Metric",
+          "id": "metric_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Metric",
+            "id": "metric_001",
+            "name": "metric-001",
+            "title": "Metric fixture 1",
+            "spec": {
+              "measure": "Number of core kinds covered by valid fixtures.",
+              "source": {
+                "adapter": "conformance/count",
+                "configuration": {}
+              },
+              "window": "P7D",
+              "thresholds": [
+                {
+                  "operator": "gte",
+                  "value": 14,
+                  "severity": "error"
+                }
+              ],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-agent",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_011",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Agent",
+          "id": "agent_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Agent",
+            "id": "agent_001",
+            "name": "agent-001",
+            "title": "Agent fixture 1",
+            "spec": {
+              "provider": {
+                "vendor": "openai",
+                "model": "gpt-5"
+              },
+              "capabilities": [
+                "code",
+                "specification/write"
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/write",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Task"
+                    ]
+                  }
+                }
+              ],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [
+              {
+                "type": "actsAs",
+                "target": {
+                  "kind": "Role",
+                  "id": "role_001"
+                },
+                "required": true
+              }
+            ],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-role",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_012",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Role",
+          "id": "role_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Role",
+            "id": "role_001",
+            "name": "role-001",
+            "title": "Role fixture 1",
+            "spec": {
+              "responsibilities": [
+                "Maintain the PKR specification."
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/write",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Task"
+                    ]
+                  }
+                }
+              ],
+              "separationRules": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-issue",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_013",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Issue",
+          "id": "issue_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Issue",
+            "id": "issue_001",
+            "name": "issue-001",
+            "title": "Issue fixture 1",
+            "spec": {
+              "issueType": "risk",
+              "summary": "Schema and semantic validation may be confused.",
+              "severity": "warning",
+              "impact": "Clients may treat structurally valid objects as executable.",
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-create-release",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_014",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Release",
+          "id": "release_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Release",
+            "id": "release_001",
+            "name": "release-001",
+            "title": "Release fixture 1",
+            "spec": {
+              "version": "0.2.0-draft.1",
+              "verificationPolicy": [
+                {
+                  "gate": "test",
+                  "required": true,
+                  "allowWaiver": false
+                }
+              ],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [
+              {
+                "type": "includes",
+                "target": {
+                  "kind": "Artifact",
+                  "id": "artifact_001"
+                },
+                "required": true
+              }
+            ],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-replace-object",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_101",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "replaceObject",
+        "target": {
+          "kind": "Goal",
+          "id": "goal_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Goal",
+            "id": "goal_001",
+            "name": "goal-001",
+            "title": "Goal fixture 1",
+            "spec": {
+              "outcome": "Define the PKR v0.2 object contract.",
+              "measures": [
+                {
+                  "id": "kind-coverage",
+                  "statement": "All core kinds have schemas.",
+                  "operator": "eq",
+                  "target": 14,
+                  "unit": "kinds"
+                }
+              ],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [
+              {
+                "type": "contributesTo",
+                "target": {
+                  "kind": "Mission",
+                  "id": "mission_001"
+                },
+                "required": true
+              }
+            ],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-add-relation",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_102",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "addRelation",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "relation": {
+            "type": "informedBy",
+            "target": {
+              "kind": "Knowledge",
+              "id": "knowledge_001"
+            },
+            "required": false
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-remove-relation",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_103",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "removeRelation",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 2,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "relation": {
+            "type": "informedBy",
+            "target": {
+              "kind": "Knowledge",
+              "id": "knowledge_001"
+            },
+            "required": false
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-transition-task",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_104",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "transitionObject",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "The Task has a complete workflow and verification policy."
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "toPhase": "ready",
+          "reason": "ReadyForExecution"
+        }
+      }
+    },
+    {
+      "name": "valid-update-manifest",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_105",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/manifest"
+        },
+        "action": "updateManifest",
+        "target": {
+          "kind": "ProjectManifest",
+          "id": "project_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "manifest": {
+            "apiVersion": "pkr.dev/v0.2",
+            "kind": "ProjectManifest",
+            "metadata": {
+              "projectId": "project_001",
+              "name": "pkr",
+              "title": "Project Kernel Runtime",
+              "description": "An open runtime specification for AI-native projects.",
+              "revision": 1,
+              "createdAt": "2026-07-17T12:00:01Z",
+              "createdBy": "human_001",
+              "updatedAt": "2026-07-17T12:00:01Z"
+            },
+            "runtime": {
+              "pkrVersion": "0.2",
+              "objectApiVersion": "pkr.dev/v0.2",
+              "objectSchemaId": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json",
+              "bootstrapSchemaId": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json",
+              "missionMode": "single"
+            },
+            "governance": {
+              "ownerRoleId": "role_001",
+              "governanceWorkflowId": "workflow_001"
+            },
+            "mission": {
+              "activeMissionId": "mission_001"
+            },
+            "genesis": {
+              "requestId": "request_001",
+              "transactionId": "transaction_001",
+              "eventRange": {
+                "firstSequence": 1,
+                "lastSequence": 8
+              },
+              "terminalEventId": "event_008",
+              "committedAt": "2026-07-17T12:00:01Z"
+            },
+            "status": {
+              "phase": "active",
+              "reason": "BootstrapCommitted",
+              "observedRevision": 1
+            },
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "valid-runtime-event",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeEvent",
+        "eventId": "event_101",
+        "projectId": "project_001",
+        "sequence": 9,
+        "type": "pkr.task.phaseChanged",
+        "subject": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "subjectRevision": 2,
+        "commandId": "command_104",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "The Task has a complete workflow and verification policy."
+        },
+        "occurredAt": "2026-07-17T13:00:01Z",
+        "data": {
+          "from": "backlog",
+          "to": "ready"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-committed-result",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "CommandResult",
+        "commandId": "command_104",
+        "projectId": "project_001",
+        "status": "committed",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "targetRevision": 2,
+        "eventRange": {
+          "firstSequence": 9,
+          "lastSequence": 9
+        },
+        "errors": [],
+        "completedAt": "2026-07-17T13:00:01Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-rejected-result",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "CommandResult",
+        "commandId": "command_106",
+        "projectId": "project_001",
+        "status": "rejected",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "errors": [
+          {
+            "code": "PKR-RUNTIME-004",
+            "message": "The selected Role cannot execute this Workflow.",
+            "path": "/roleId"
+          }
+        ],
+        "completedAt": "2026-07-17T13:00:01Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-conflict-result",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "CommandResult",
+        "commandId": "command_107",
+        "projectId": "project_001",
+        "status": "conflict",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "errors": [
+          {
+            "code": "PKR-RUNTIME-005",
+            "message": "Expected revision 2 but found revision 3.",
+            "path": "/expectedRevision"
+          }
+        ],
+        "completedAt": "2026-07-17T13:00:01Z",
+        "extensions": {},
+        "targetRevision": 3
+      }
+    },
+    {
+      "name": "invalid-command-genesis-basis",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_104",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "transitionObject",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Bypass normal governance."
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "toPhase": "ready",
+          "reason": "ReadyForExecution"
+        }
+      }
+    },
+    {
+      "name": "invalid-create-positive-revision",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_001",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Mission",
+          "id": "mission_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Mission",
+            "id": "mission_001",
+            "name": "mission-001",
+            "title": "Mission fixture 1",
+            "spec": {
+              "outcome": "Ship a usable PKR reference specification.",
+              "successCriteria": [
+                {
+                  "id": "runtime-defined",
+                  "statement": "Core runtime behavior is specified.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "fixed",
+                "amount": 200000,
+                "currency": "CNY"
+              },
+              "deadline": {
+                "mode": "fixed",
+                "at": "2027-01-01T00:00:00Z"
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "invalid-task-transition-goal-phase",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_104",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "transitionObject",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "The Task has a complete workflow and verification policy."
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "toPhase": "achieved",
+          "reason": "ReadyForExecution"
+        }
+      }
+    },
+    {
+      "name": "invalid-update-manifest-core-target",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_105",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/manifest"
+        },
+        "action": "updateManifest",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "manifest": {
+            "apiVersion": "pkr.dev/v0.2",
+            "kind": "ProjectManifest",
+            "metadata": {
+              "projectId": "project_001",
+              "name": "pkr",
+              "title": "Project Kernel Runtime",
+              "description": "An open runtime specification for AI-native projects.",
+              "revision": 1,
+              "createdAt": "2026-07-17T12:00:01Z",
+              "createdBy": "human_001",
+              "updatedAt": "2026-07-17T12:00:01Z"
+            },
+            "runtime": {
+              "pkrVersion": "0.2",
+              "objectApiVersion": "pkr.dev/v0.2",
+              "objectSchemaId": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json",
+              "bootstrapSchemaId": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json",
+              "missionMode": "single"
+            },
+            "governance": {
+              "ownerRoleId": "role_001",
+              "governanceWorkflowId": "workflow_001"
+            },
+            "mission": {
+              "activeMissionId": "mission_001"
+            },
+            "genesis": {
+              "requestId": "request_001",
+              "transactionId": "transaction_001",
+              "eventRange": {
+                "firstSequence": 1,
+                "lastSequence": 8
+              },
+              "terminalEventId": "event_008",
+              "committedAt": "2026-07-17T12:00:01Z"
+            },
+            "status": {
+              "phase": "active",
+              "reason": "BootstrapCommitted",
+              "observedRevision": 1
+            },
+            "extensions": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "invalid-command-action",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_102",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "patchObject",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "relation": {
+            "type": "informedBy",
+            "target": {
+              "kind": "Knowledge",
+              "id": "knowledge_001"
+            },
+            "required": false
+          }
+        }
+      }
+    },
+    {
+      "name": "invalid-command-missing-role",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_104",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "transitionObject",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "The Task has a complete workflow and verification policy."
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "toPhase": "ready",
+          "reason": "ReadyForExecution"
+        }
+      }
+    },
+    {
+      "name": "invalid-object-intent-field",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_001",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "governance",
+          "name": "project/change"
+        },
+        "action": "createObject",
+        "target": {
+          "kind": "Mission",
+          "id": "mission_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "decision",
+          "decisionId": "decision_001"
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "object": {
+            "kind": "Mission",
+            "id": "mission_001",
+            "name": "mission-001",
+            "title": "Mission fixture 1",
+            "spec": {
+              "outcome": "Ship a usable PKR reference specification.",
+              "successCriteria": [
+                {
+                  "id": "runtime-defined",
+                  "statement": "Core runtime behavior is specified.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "fixed",
+                "amount": 200000,
+                "currency": "CNY"
+              },
+              "deadline": {
+                "mode": "fixed",
+                "at": "2027-01-01T00:00:00Z"
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "relations": [],
+            "extensions": {},
+            "status": {
+              "phase": "draft"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "invalid-workflow-revision",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeCommand",
+        "commandId": "command_104",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 0
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "transitionObject",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "The Task has a complete workflow and verification policy."
+        },
+        "issuedAt": "2026-07-17T13:00:00Z",
+        "payload": {
+          "toPhase": "ready",
+          "reason": "ReadyForExecution"
+        }
+      }
+    },
+    {
+      "name": "invalid-event-type",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeEvent",
+        "eventId": "event_101",
+        "projectId": "project_001",
+        "sequence": 9,
+        "type": "phaseChanged",
+        "subject": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "subjectRevision": 2,
+        "commandId": "command_104",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "The Task has a complete workflow and verification policy."
+        },
+        "occurredAt": "2026-07-17T13:00:01Z",
+        "data": {
+          "from": "backlog",
+          "to": "ready"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-event-genesis-basis",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeEvent",
+        "eventId": "event_101",
+        "projectId": "project_001",
+        "sequence": 9,
+        "type": "pkr.task.phaseChanged",
+        "subject": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "subjectRevision": 2,
+        "commandId": "command_104",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Not allowed after bootstrap."
+        },
+        "occurredAt": "2026-07-17T13:00:01Z",
+        "data": {
+          "from": "backlog",
+          "to": "ready"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-committed-result-missing-range",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "CommandResult",
+        "commandId": "command_104",
+        "projectId": "project_001",
+        "status": "committed",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "targetRevision": 2,
+        "errors": [],
+        "completedAt": "2026-07-17T13:00:01Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-committed-result-errors",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "CommandResult",
+        "commandId": "command_104",
+        "projectId": "project_001",
+        "status": "committed",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "targetRevision": 2,
+        "eventRange": {
+          "firstSequence": 9,
+          "lastSequence": 9
+        },
+        "errors": [
+          {
+            "code": "PKR-RUNTIME-011",
+            "message": "Commit failed."
+          }
+        ],
+        "completedAt": "2026-07-17T13:00:01Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-rejected-result-no-errors",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "CommandResult",
+        "commandId": "command_106",
+        "projectId": "project_001",
+        "status": "rejected",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "errors": [],
+        "completedAt": "2026-07-17T13:00:01Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-rejected-result-event-range",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "CommandResult",
+        "commandId": "command_106",
+        "projectId": "project_001",
+        "status": "rejected",
+        "target": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "errors": [
+          {
+            "code": "PKR-RUNTIME-004",
+            "message": "The selected Role cannot execute this Workflow.",
+            "path": "/roleId"
+          }
+        ],
+        "completedAt": "2026-07-17T13:00:01Z",
+        "extensions": {},
+        "eventRange": {
+          "firstSequence": 10,
+          "lastSequence": 10
+        }
+      }
+    },
+    {
+      "name": "invalid-runtime-record-field",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "RuntimeEvent",
+        "eventId": "event_101",
+        "projectId": "project_001",
+        "sequence": 9,
+        "type": "pkr.task.phaseChanged",
+        "subject": {
+          "kind": "Task",
+          "id": "task_001"
+        },
+        "subjectRevision": 2,
+        "commandId": "command_104",
+        "actor": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "The Task has a complete workflow and verification policy."
+        },
+        "occurredAt": "2026-07-17T13:00:01Z",
+        "data": {
+          "from": "backlog",
+          "to": "ready"
+        },
+        "extensions": {},
+        "mutable": true
+      }
+    }
+  ]
+}

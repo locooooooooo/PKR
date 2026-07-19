@@ -1,0 +1,1646 @@
+{
+  "schema": "../../schemas/v0.2/pkr-object.schema.json",
+  "description": "Structural conformance cases for the PKR v0.2 core object schema.",
+  "cases": [
+    {
+      "name": "valid-mission",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Mission",
+        "metadata": {
+          "id": "mission_001",
+          "projectId": "project_001",
+          "name": "mission-001",
+          "title": "Mission fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "outcome": "Ship a usable PKR reference specification.",
+          "successCriteria": [
+            {
+              "id": "runtime-defined",
+              "statement": "Core runtime behavior is specified.",
+              "required": true
+            }
+          ],
+          "budget": {
+            "mode": "fixed",
+            "amount": 200000,
+            "currency": "CNY"
+          },
+          "deadline": {
+            "mode": "fixed",
+            "at": "2027-01-01T00:00:00Z"
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "draft",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-goal",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Goal",
+        "metadata": {
+          "id": "goal_001",
+          "projectId": "project_001",
+          "name": "goal-001",
+          "title": "Goal fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "outcome": "Define the PKR v0.2 object contract.",
+          "measures": [
+            {
+              "id": "kind-coverage",
+              "statement": "All core kinds have schemas.",
+              "operator": "eq",
+              "target": 14,
+              "unit": "kinds"
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "proposed",
+          "reason": "Created",
+          "observedRevision": 1,
+          "measureResults": []
+        },
+        "relations": [
+          {
+            "type": "contributesTo",
+            "target": {
+              "kind": "Mission",
+              "id": "mission_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-task",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Task",
+        "metadata": {
+          "id": "task_001",
+          "projectId": "project_001",
+          "name": "task-001",
+          "title": "Task fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "objective": "Publish the field-level Task schema.",
+          "acceptance": [
+            {
+              "id": "schema-valid",
+              "statement": "Schema passes Draft 2020-12 validation.",
+              "required": true
+            }
+          ],
+          "verificationPolicy": [
+            {
+              "gate": "test",
+              "required": true,
+              "allowWaiver": false
+            }
+          ],
+          "deliverables": [
+            {
+              "id": "core-schema",
+              "artifactType": "json-schema",
+              "required": true
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "backlog",
+          "reason": "Created",
+          "observedRevision": 1,
+          "acceptanceResults": []
+        },
+        "relations": [
+          {
+            "type": "contributesTo",
+            "target": {
+              "kind": "Goal",
+              "id": "goal_001"
+            },
+            "required": true
+          },
+          {
+            "type": "governedBy",
+            "target": {
+              "kind": "Workflow",
+              "id": "workflow_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-knowledge",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Knowledge",
+        "metadata": {
+          "id": "knowledge_001",
+          "projectId": "project_001",
+          "name": "knowledge-001",
+          "title": "Knowledge fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "knowledgeType": "fact",
+          "content": {
+            "statement": "PKR has fourteen core kinds."
+          },
+          "sources": [
+            {
+              "uri": "https://example.com/pkr/spec",
+              "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "draft",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-decision",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Decision",
+        "metadata": {
+          "id": "decision_001",
+          "projectId": "project_001",
+          "name": "decision-001",
+          "title": "Decision fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "question": "Which schema draft should PKR v0.2 use?",
+          "choice": "Use JSON Schema Draft 2020-12.",
+          "reasons": [
+            "It supports conditional validation and current tooling."
+          ],
+          "alternatives": [],
+          "alternativeOmissionReason": "No older draft provides a project benefit.",
+          "scope": {
+            "kinds": [
+              "Mission",
+              "Goal",
+              "Task",
+              "Knowledge",
+              "Decision",
+              "Constraint",
+              "Workflow",
+              "Verification",
+              "Artifact",
+              "Metric",
+              "Agent",
+              "Role",
+              "Issue",
+              "Release"
+            ]
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "proposed",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-constraint",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Constraint",
+        "metadata": {
+          "id": "constraint_001",
+          "projectId": "project_001",
+          "name": "constraint-001",
+          "title": "Constraint fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "rule": "Core extensions must be namespaced.",
+          "scope": {
+            "kinds": [
+              "Mission",
+              "Goal",
+              "Task",
+              "Knowledge",
+              "Decision",
+              "Constraint",
+              "Workflow",
+              "Verification",
+              "Artifact",
+              "Metric",
+              "Agent",
+              "Role",
+              "Issue",
+              "Release"
+            ]
+          },
+          "severity": "error",
+          "enforcement": "blocking",
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "proposed",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-workflow",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Workflow",
+        "metadata": {
+          "id": "workflow_001",
+          "projectId": "project_001",
+          "name": "workflow-001",
+          "title": "Workflow fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "appliesTo": [
+            "Task"
+          ],
+          "steps": [
+            {
+              "id": "execute",
+              "title": "Execute governed work",
+              "action": "task/execute",
+              "allowedRoleNames": [
+                "developer"
+              ],
+              "entryConditionRefs": [],
+              "exitConditionRefs": [
+                "verification/passed"
+              ]
+            }
+          ],
+          "transitions": [],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "draft",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-verification",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Verification",
+        "metadata": {
+          "id": "verification_001",
+          "projectId": "project_001",
+          "name": "verification-001",
+          "title": "Verification fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "gate": "test",
+          "method": {
+            "adapter": "json-schema/validate",
+            "version": "2020-12",
+            "parameters": {}
+          },
+          "requiredEvidence": [
+            "validation-report"
+          ],
+          "waivable": false,
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "pending",
+          "reason": "Created",
+          "observedRevision": 1,
+          "attempt": 1
+        },
+        "relations": [
+          {
+            "type": "verifies",
+            "target": {
+              "kind": "Task",
+              "id": "task_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-artifact",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Artifact",
+        "metadata": {
+          "id": "artifact_001",
+          "projectId": "project_001",
+          "name": "artifact-001",
+          "title": "Artifact fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "artifactType": "json-schema",
+          "provenance": {
+            "declaredBy": "human_001",
+            "sourceDigests": []
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "declared",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-metric",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Metric",
+        "metadata": {
+          "id": "metric_001",
+          "projectId": "project_001",
+          "name": "metric-001",
+          "title": "Metric fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "measure": "Number of core kinds covered by valid fixtures.",
+          "source": {
+            "adapter": "conformance/count",
+            "configuration": {}
+          },
+          "window": "P7D",
+          "thresholds": [
+            {
+              "operator": "gte",
+              "value": 14,
+              "severity": "error"
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "defined",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-agent",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Agent",
+        "metadata": {
+          "id": "agent_001",
+          "projectId": "project_001",
+          "name": "agent-001",
+          "title": "Agent fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "provider": {
+            "vendor": "openai",
+            "model": "gpt-5"
+          },
+          "capabilities": [
+            "code",
+            "specification/write"
+          ],
+          "permissions": [
+            {
+              "action": "pkr/write",
+              "effect": "allow",
+              "scope": {
+                "kinds": [
+                  "Task"
+                ]
+              }
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "registered",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [
+          {
+            "type": "actsAs",
+            "target": {
+              "kind": "Role",
+              "id": "role_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-role",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Role",
+        "metadata": {
+          "id": "role_001",
+          "projectId": "project_001",
+          "name": "role-001",
+          "title": "Role fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "responsibilities": [
+            "Maintain the PKR specification."
+          ],
+          "permissions": [
+            {
+              "action": "pkr/write",
+              "effect": "allow",
+              "scope": {
+                "kinds": [
+                  "Task"
+                ]
+              }
+            }
+          ],
+          "separationRules": [],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "draft",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-issue",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Issue",
+        "metadata": {
+          "id": "issue_001",
+          "projectId": "project_001",
+          "name": "issue-001",
+          "title": "Issue fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "issueType": "risk",
+          "summary": "Schema and semantic validation may be confused.",
+          "severity": "warning",
+          "impact": "Clients may treat structurally valid objects as executable.",
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "open",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-release",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Release",
+        "metadata": {
+          "id": "release_001",
+          "projectId": "project_001",
+          "name": "release-001",
+          "title": "Release fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "version": "0.2.0-draft.1",
+          "verificationPolicy": [
+            {
+              "gate": "test",
+              "required": true,
+              "allowWaiver": false
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "planned",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [
+          {
+            "type": "includes",
+            "target": {
+              "kind": "Artifact",
+              "id": "artifact_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-decision-with-alternative",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Decision",
+        "metadata": {
+          "id": "decision_002",
+          "projectId": "project_001",
+          "name": "decision-002",
+          "title": "Decision fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "question": "Which schema draft should PKR v0.2 use?",
+          "choice": "Use JSON Schema Draft 2020-12.",
+          "reasons": [
+            "It supports conditional validation and current tooling."
+          ],
+          "alternatives": [
+            {
+              "id": "draft-07",
+              "description": "Use JSON Schema Draft-07.",
+              "assessment": "Mature, but lacks newer vocabulary behavior."
+            }
+          ],
+          "scope": {
+            "kinds": [
+              "Mission",
+              "Goal",
+              "Task",
+              "Knowledge",
+              "Decision",
+              "Constraint",
+              "Workflow",
+              "Verification",
+              "Artifact",
+              "Metric",
+              "Agent",
+              "Role",
+              "Issue",
+              "Release"
+            ]
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "proposed",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-available-artifact",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Artifact",
+        "metadata": {
+          "id": "artifact_002",
+          "projectId": "project_001",
+          "name": "artifact-002",
+          "title": "Artifact fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "artifactType": "json-schema",
+          "provenance": {
+            "declaredBy": "human_001",
+            "sourceDigests": [],
+            "generation": {
+              "actorId": "agent_001",
+              "commandId": "command_001",
+              "generatedAt": "2026-07-17T11:00:00Z"
+            }
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ],
+          "locator": "schemas/v0.2/pkr-object.schema.json",
+          "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "status": {
+          "phase": "available",
+          "reason": "ContentAvailable",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-missing-task-acceptance",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Task",
+        "metadata": {
+          "id": "task_001",
+          "projectId": "project_001",
+          "name": "task-001",
+          "title": "Task fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "objective": "Publish the field-level Task schema.",
+          "verificationPolicy": [
+            {
+              "gate": "test",
+              "required": true,
+              "allowWaiver": false
+            }
+          ],
+          "deliverables": [
+            {
+              "id": "core-schema",
+              "artifactType": "json-schema",
+              "required": true
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "backlog",
+          "reason": "Created",
+          "observedRevision": 1,
+          "acceptanceResults": []
+        },
+        "relations": [
+          {
+            "type": "contributesTo",
+            "target": {
+              "kind": "Goal",
+              "id": "goal_001"
+            },
+            "required": true
+          },
+          {
+            "type": "governedBy",
+            "target": {
+              "kind": "Workflow",
+              "id": "workflow_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-unknown-task-field",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Task",
+        "metadata": {
+          "id": "task_001",
+          "projectId": "project_001",
+          "name": "task-001",
+          "title": "Task fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "objective": "Publish the field-level Task schema.",
+          "acceptance": [
+            {
+              "id": "schema-valid",
+              "statement": "Schema passes Draft 2020-12 validation.",
+              "required": true
+            }
+          ],
+          "verificationPolicy": [
+            {
+              "gate": "test",
+              "required": true,
+              "allowWaiver": false
+            }
+          ],
+          "deliverables": [
+            {
+              "id": "core-schema",
+              "artifactType": "json-schema",
+              "required": true
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ],
+          "repoPath": "src"
+        },
+        "status": {
+          "phase": "backlog",
+          "reason": "Created",
+          "observedRevision": 1,
+          "acceptanceResults": []
+        },
+        "relations": [
+          {
+            "type": "contributesTo",
+            "target": {
+              "kind": "Goal",
+              "id": "goal_001"
+            },
+            "required": true
+          },
+          {
+            "type": "governedBy",
+            "target": {
+              "kind": "Workflow",
+              "id": "workflow_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-task-phase",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Task",
+        "metadata": {
+          "id": "task_001",
+          "projectId": "project_001",
+          "name": "task-001",
+          "title": "Task fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "objective": "Publish the field-level Task schema.",
+          "acceptance": [
+            {
+              "id": "schema-valid",
+              "statement": "Schema passes Draft 2020-12 validation.",
+              "required": true
+            }
+          ],
+          "verificationPolicy": [
+            {
+              "gate": "test",
+              "required": true,
+              "allowWaiver": false
+            }
+          ],
+          "deliverables": [
+            {
+              "id": "core-schema",
+              "artifactType": "json-schema",
+              "required": true
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "todo",
+          "reason": "Created",
+          "observedRevision": 1,
+          "acceptanceResults": []
+        },
+        "relations": [
+          {
+            "type": "contributesTo",
+            "target": {
+              "kind": "Goal",
+              "id": "goal_001"
+            },
+            "required": true
+          },
+          {
+            "type": "governedBy",
+            "target": {
+              "kind": "Workflow",
+              "id": "workflow_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-decision-empty-reasons",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Decision",
+        "metadata": {
+          "id": "decision_001",
+          "projectId": "project_001",
+          "name": "decision-001",
+          "title": "Decision fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "question": "Which schema draft should PKR v0.2 use?",
+          "choice": "Use JSON Schema Draft 2020-12.",
+          "reasons": [],
+          "alternatives": [],
+          "alternativeOmissionReason": "No older draft provides a project benefit.",
+          "scope": {
+            "kinds": [
+              "Mission",
+              "Goal",
+              "Task",
+              "Knowledge",
+              "Decision",
+              "Constraint",
+              "Workflow",
+              "Verification",
+              "Artifact",
+              "Metric",
+              "Agent",
+              "Role",
+              "Issue",
+              "Release"
+            ]
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "proposed",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-decision-no-omission-reason",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Decision",
+        "metadata": {
+          "id": "decision_001",
+          "projectId": "project_001",
+          "name": "decision-001",
+          "title": "Decision fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "question": "Which schema draft should PKR v0.2 use?",
+          "choice": "Use JSON Schema Draft 2020-12.",
+          "reasons": [
+            "It supports conditional validation and current tooling."
+          ],
+          "alternatives": [],
+          "scope": {
+            "kinds": [
+              "Mission",
+              "Goal",
+              "Task",
+              "Knowledge",
+              "Decision",
+              "Constraint",
+              "Workflow",
+              "Verification",
+              "Artifact",
+              "Metric",
+              "Agent",
+              "Role",
+              "Issue",
+              "Release"
+            ]
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "proposed",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-available-artifact-incomplete",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Artifact",
+        "metadata": {
+          "id": "artifact_001",
+          "projectId": "project_001",
+          "name": "artifact-001",
+          "title": "Artifact fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "artifactType": "json-schema",
+          "provenance": {
+            "declaredBy": "human_001",
+            "sourceDigests": []
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "available",
+          "reason": "ContentAvailable",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-waived-verification-no-waiver",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Verification",
+        "metadata": {
+          "id": "verification_001",
+          "projectId": "project_001",
+          "name": "verification-001",
+          "title": "Verification fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "gate": "test",
+          "method": {
+            "adapter": "json-schema/validate",
+            "version": "2020-12",
+            "parameters": {}
+          },
+          "requiredEvidence": [
+            "validation-report"
+          ],
+          "waivable": false,
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "waived",
+          "reason": "WaiverApproved",
+          "observedRevision": 1,
+          "attempt": 1,
+          "completedAt": "2026-07-17T11:00:00Z"
+        },
+        "relations": [
+          {
+            "type": "verifies",
+            "target": {
+              "kind": "Task",
+              "id": "task_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-owner-without-accountable",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Mission",
+        "metadata": {
+          "id": "mission_001",
+          "projectId": "project_001",
+          "name": "mission-001",
+          "title": "Mission fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "outcome": "Ship a usable PKR reference specification.",
+          "successCriteria": [
+            {
+              "id": "runtime-defined",
+              "statement": "Core runtime behavior is specified.",
+              "required": true
+            }
+          ],
+          "budget": {
+            "mode": "fixed",
+            "amount": 200000,
+            "currency": "CNY"
+          },
+          "deadline": {
+            "mode": "fixed",
+            "at": "2027-01-01T00:00:00Z"
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "responsible"
+            }
+          ]
+        },
+        "status": {
+          "phase": "draft",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-extension-without-namespace",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Task",
+        "metadata": {
+          "id": "task_001",
+          "projectId": "project_001",
+          "name": "task-001",
+          "title": "Task fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "objective": "Publish the field-level Task schema.",
+          "acceptance": [
+            {
+              "id": "schema-valid",
+              "statement": "Schema passes Draft 2020-12 validation.",
+              "required": true
+            }
+          ],
+          "verificationPolicy": [
+            {
+              "gate": "test",
+              "required": true,
+              "allowWaiver": false
+            }
+          ],
+          "deliverables": [
+            {
+              "id": "core-schema",
+              "artifactType": "json-schema",
+              "required": true
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "backlog",
+          "reason": "Created",
+          "observedRevision": 1,
+          "acceptanceResults": []
+        },
+        "relations": [
+          {
+            "type": "contributesTo",
+            "target": {
+              "kind": "Goal",
+              "id": "goal_001"
+            },
+            "required": true
+          },
+          {
+            "type": "governedBy",
+            "target": {
+              "kind": "Workflow",
+              "id": "workflow_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {
+          "local": {}
+        }
+      }
+    },
+    {
+      "name": "invalid-resolved-issue-no-resolution",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Issue",
+        "metadata": {
+          "id": "issue_001",
+          "projectId": "project_001",
+          "name": "issue-001",
+          "title": "Issue fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "issueType": "risk",
+          "summary": "Schema and semantic validation may be confused.",
+          "severity": "warning",
+          "impact": "Clients may treat structurally valid objects as executable.",
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "resolved",
+          "reason": "IssueResolved",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-released-release-no-publication",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Release",
+        "metadata": {
+          "id": "release_001",
+          "projectId": "project_001",
+          "name": "release-001",
+          "title": "Release fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "version": "0.2.0-draft.1",
+          "verificationPolicy": [
+            {
+              "gate": "test",
+              "required": true,
+              "allowWaiver": false
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "released",
+          "reason": "ReleasePublished",
+          "observedRevision": 1
+        },
+        "relations": [
+          {
+            "type": "includes",
+            "target": {
+              "kind": "Artifact",
+              "id": "artifact_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-object-id",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Goal",
+        "metadata": {
+          "id": "goal",
+          "projectId": "project_001",
+          "name": "goal-001",
+          "title": "Goal fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "outcome": "Define the PKR v0.2 object contract.",
+          "measures": [
+            {
+              "id": "kind-coverage",
+              "statement": "All core kinds have schemas.",
+              "operator": "eq",
+              "target": 14,
+              "unit": "kinds"
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "proposed",
+          "reason": "Created",
+          "observedRevision": 1,
+          "measureResults": []
+        },
+        "relations": [
+          {
+            "type": "contributesTo",
+            "target": {
+              "kind": "Mission",
+              "id": "mission_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-extra-top-level-field",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Goal",
+        "metadata": {
+          "id": "goal_001",
+          "projectId": "project_001",
+          "name": "goal-001",
+          "title": "Goal fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "outcome": "Define the PKR v0.2 object contract.",
+          "measures": [
+            {
+              "id": "kind-coverage",
+              "statement": "All core kinds have schemas.",
+              "operator": "eq",
+              "target": 14,
+              "unit": "kinds"
+            }
+          ],
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "proposed",
+          "reason": "Created",
+          "observedRevision": 1,
+          "measureResults": []
+        },
+        "relations": [
+          {
+            "type": "contributesTo",
+            "target": {
+              "kind": "Mission",
+              "id": "mission_001"
+            },
+            "required": true
+          }
+        ],
+        "extensions": {},
+        "runtime": {}
+      }
+    },
+    {
+      "name": "invalid-deadline-format",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "Mission",
+        "metadata": {
+          "id": "mission_001",
+          "projectId": "project_001",
+          "name": "mission-001",
+          "title": "Mission fixture 1",
+          "revision": 1,
+          "createdAt": "2026-07-17T10:00:00Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T10:00:00Z"
+        },
+        "spec": {
+          "outcome": "Ship a usable PKR reference specification.",
+          "successCriteria": [
+            {
+              "id": "runtime-defined",
+              "statement": "Core runtime behavior is specified.",
+              "required": true
+            }
+          ],
+          "budget": {
+            "mode": "fixed",
+            "amount": 200000,
+            "currency": "CNY"
+          },
+          "deadline": {
+            "mode": "fixed",
+            "at": "2027/01/01"
+          },
+          "owners": [
+            {
+              "principalType": "human",
+              "principalId": "human_001",
+              "accountability": "accountable"
+            }
+          ]
+        },
+        "status": {
+          "phase": "draft",
+          "reason": "Created",
+          "observedRevision": 1
+        },
+        "relations": [],
+        "extensions": {}
+      }
+    }
+  ]
+}

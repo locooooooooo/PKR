@@ -1,0 +1,132 @@
+{
+  "projectId": "project_001",
+  "initialSources": [
+    "mission_001",
+    "goal_001",
+    "task_001",
+    "workflow_001",
+    "agent_001",
+    "role_001"
+  ],
+  "steps": [
+    {
+      "operation": "offerAssignment",
+      "commandId": "command_offer_001",
+      "assignmentId": "assignment_001",
+      "taskRevision": 3,
+      "workflowRevision": 2,
+      "objective": "Implement the bounded golden-path lane."
+    },
+    {
+      "operation": "openSession",
+      "sessionId": "session_001",
+      "agentId": "agent_001",
+      "capabilities": [
+        "filesystem.read",
+        "terminal"
+      ]
+    },
+    {
+      "operation": "acquireLease",
+      "leaseId": "lease_001",
+      "assignmentId": "assignment_001",
+      "sessionId": "session_001",
+      "mode": "exclusive"
+    },
+    {
+      "operation": "startAssignment",
+      "assignmentId": "assignment_001"
+    },
+    {
+      "operation": "issueWorkspace",
+      "workspaceId": "workspace_001",
+      "assignmentId": "assignment_001"
+    },
+    {
+      "operation": "addMemory",
+      "memoryId": "memory_001",
+      "sourceIds": [
+        "workflow_001",
+        "task_001"
+      ]
+    },
+    {
+      "operation": "callback",
+      "messageId": "message_callback_001",
+      "assignmentId": "assignment_001",
+      "leaseId": "lease_001",
+      "outcome": "verified",
+      "evidenceIds": [
+        "artifact_001"
+      ]
+    },
+    {
+      "operation": "verify",
+      "verificationId": "verification_001",
+      "assignmentId": "assignment_001",
+      "gate": "test",
+      "result": "passed"
+    },
+    {
+      "operation": "completeTask",
+      "taskId": "task_001",
+      "assignmentId": "assignment_001"
+    },
+    {
+      "operation": "stagePackage",
+      "installationId": "installation_001",
+      "packageId": "dev.pkr.web",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "verificationIds": [
+        "verification_001"
+      ]
+    },
+    {
+      "operation": "activatePackage",
+      "installationId": "installation_001"
+    },
+    {
+      "operation": "proposeEvolution",
+      "proposalId": "proposal_001",
+      "sourceIds": [
+        "memory_001",
+        "verification_001"
+      ],
+      "state": "inactive"
+    }
+  ],
+  "rejections": [
+    {
+      "name": "duplicate-exclusive-lease",
+      "expectedCode": "PKR-COORD-007"
+    },
+    {
+      "name": "expired-lease-callback",
+      "expectedCode": "PKR-COORD-008"
+    },
+    {
+      "name": "stale-workspace-mutation",
+      "expectedCode": "PKR-COORD-003"
+    },
+    {
+      "name": "orphan-memory-source",
+      "expectedCode": "PKR-COORD-009"
+    },
+    {
+      "name": "failed-package-activation",
+      "expectedCode": "PKR-COORD-011"
+    },
+    {
+      "name": "idempotency-reuse",
+      "expectedCode": "PKR-COORD-012"
+    }
+  ],
+  "expected": {
+    "assignmentState": "submitted",
+    "sessionState": "active",
+    "leaseState": "active",
+    "taskState": "done",
+    "packageState": "active",
+    "evolutionState": "inactive"
+  }
+}

@@ -1,0 +1,12 @@
+/.agents/
+/release/
+__pycache__/
+*.py[cod]
+.DS_Store
+node_modules/
+dist/
+coverage/
+.pkr/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

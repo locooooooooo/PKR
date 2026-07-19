@@ -1,0 +1,1477 @@
+{
+  "schema": "../../schemas/v0.2/pkr-bootstrap.schema.json",
+  "resources": [
+    "../../schemas/v0.2/pkr-object.schema.json"
+  ],
+  "description": "Structural conformance cases for PKR v0.2 manifest and bootstrap records.",
+  "cases": [
+    {
+      "name": "valid-bootstrap-request",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectBootstrapRequest",
+        "requestId": "request_001",
+        "issuedAt": "2026-07-17T12:00:00Z",
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "project": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects."
+        },
+        "seeds": {
+          "mission": {
+            "id": "mission_001",
+            "name": "pkr-mission",
+            "title": "Define and prove PKR",
+            "spec": {
+              "outcome": "Deliver a usable PKR specification and reference runtime.",
+              "successCriteria": [
+                {
+                  "id": "runtime-proven",
+                  "statement": "The specification is proven by a conforming reference runtime.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "notSet",
+                "reason": "Budget is not committed during specification bootstrap."
+              },
+              "deadline": {
+                "mode": "none",
+                "reason": "A release deadline is not committed during bootstrap."
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "ownerRole": {
+            "id": "role_001",
+            "name": "owner",
+            "title": "Project Owner",
+            "spec": {
+              "responsibilities": [
+                "Own project governance and authorize changes to project policy."
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/governance",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Mission",
+                      "Goal",
+                      "Task",
+                      "Knowledge",
+                      "Decision",
+                      "Constraint",
+                      "Workflow",
+                      "Verification",
+                      "Artifact",
+                      "Metric",
+                      "Agent",
+                      "Role",
+                      "Issue",
+                      "Release"
+                    ]
+                  }
+                }
+              ],
+              "separationRules": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "governanceWorkflow": {
+            "id": "workflow_001",
+            "name": "governance",
+            "title": "Project Governance",
+            "spec": {
+              "appliesTo": [
+                "Mission",
+                "Goal",
+                "Task",
+                "Knowledge",
+                "Decision",
+                "Constraint",
+                "Workflow",
+                "Verification",
+                "Artifact",
+                "Metric",
+                "Agent",
+                "Role",
+                "Issue",
+                "Release"
+              ],
+              "steps": [
+                {
+                  "id": "govern",
+                  "title": "Execute an authorized governance change",
+                  "action": "governance/execute",
+                  "allowedRoleNames": [
+                    "owner"
+                  ],
+                  "entryConditionRefs": [
+                    "governance/authorized"
+                  ],
+                  "exitConditionRefs": [
+                    "governance/recorded"
+                  ]
+                }
+              ],
+              "transitions": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          }
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-project-manifest",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectManifest",
+        "metadata": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects.",
+          "revision": 1,
+          "createdAt": "2026-07-17T12:00:01Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T12:00:01Z"
+        },
+        "runtime": {
+          "pkrVersion": "0.2",
+          "objectApiVersion": "pkr.dev/v0.2",
+          "objectSchemaId": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json",
+          "bootstrapSchemaId": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json",
+          "missionMode": "single"
+        },
+        "governance": {
+          "ownerRoleId": "role_001",
+          "governanceWorkflowId": "workflow_001"
+        },
+        "mission": {
+          "activeMissionId": "mission_001"
+        },
+        "genesis": {
+          "requestId": "request_001",
+          "transactionId": "transaction_001",
+          "eventRange": {
+            "firstSequence": 1,
+            "lastSequence": 8
+          },
+          "terminalEventId": "event_008",
+          "committedAt": "2026-07-17T12:00:01Z"
+        },
+        "status": {
+          "phase": "active",
+          "reason": "BootstrapCommitted",
+          "observedRevision": 1
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-genesis-record",
+      "expectedValid": true,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectGenesisRecord",
+        "projectId": "project_001",
+        "requestId": "request_001",
+        "transactionId": "transaction_001",
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "policy": {
+          "name": "pkr/bootstrap",
+          "version": "0.2"
+        },
+        "committedAt": "2026-07-17T12:00:01Z",
+        "manifestRevision": 1,
+        "createdObjects": [
+          {
+            "kind": "Role",
+            "id": "role_001",
+            "revision": 2
+          },
+          {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "revision": 2
+          },
+          {
+            "kind": "Mission",
+            "id": "mission_001",
+            "revision": 2
+          }
+        ],
+        "eventRange": {
+          "firstSequence": 1,
+          "lastSequence": 8
+        },
+        "terminalEventId": "event_008",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-agent-genesis-authority",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectBootstrapRequest",
+        "requestId": "request_001",
+        "issuedAt": "2026-07-17T12:00:00Z",
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "authority": {
+          "principalType": "agent",
+          "principalId": "human_001"
+        },
+        "project": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects."
+        },
+        "seeds": {
+          "mission": {
+            "id": "mission_001",
+            "name": "pkr-mission",
+            "title": "Define and prove PKR",
+            "spec": {
+              "outcome": "Deliver a usable PKR specification and reference runtime.",
+              "successCriteria": [
+                {
+                  "id": "runtime-proven",
+                  "statement": "The specification is proven by a conforming reference runtime.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "notSet",
+                "reason": "Budget is not committed during specification bootstrap."
+              },
+              "deadline": {
+                "mode": "none",
+                "reason": "A release deadline is not committed during bootstrap."
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "ownerRole": {
+            "id": "role_001",
+            "name": "owner",
+            "title": "Project Owner",
+            "spec": {
+              "responsibilities": [
+                "Own project governance and authorize changes to project policy."
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/governance",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Mission",
+                      "Goal",
+                      "Task",
+                      "Knowledge",
+                      "Decision",
+                      "Constraint",
+                      "Workflow",
+                      "Verification",
+                      "Artifact",
+                      "Metric",
+                      "Agent",
+                      "Role",
+                      "Issue",
+                      "Release"
+                    ]
+                  }
+                }
+              ],
+              "separationRules": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "governanceWorkflow": {
+            "id": "workflow_001",
+            "name": "governance",
+            "title": "Project Governance",
+            "spec": {
+              "appliesTo": [
+                "Mission",
+                "Goal",
+                "Task",
+                "Knowledge",
+                "Decision",
+                "Constraint",
+                "Workflow",
+                "Verification",
+                "Artifact",
+                "Metric",
+                "Agent",
+                "Role",
+                "Issue",
+                "Release"
+              ],
+              "steps": [
+                {
+                  "id": "govern",
+                  "title": "Execute an authorized governance change",
+                  "action": "governance/execute",
+                  "allowedRoleNames": [
+                    "owner"
+                  ],
+                  "entryConditionRefs": [
+                    "governance/authorized"
+                  ],
+                  "exitConditionRefs": [
+                    "governance/recorded"
+                  ]
+                }
+              ],
+              "transitions": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          }
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-bootstrap-missing-mission",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectBootstrapRequest",
+        "requestId": "request_001",
+        "issuedAt": "2026-07-17T12:00:00Z",
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "project": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects."
+        },
+        "seeds": {
+          "ownerRole": {
+            "id": "role_001",
+            "name": "owner",
+            "title": "Project Owner",
+            "spec": {
+              "responsibilities": [
+                "Own project governance and authorize changes to project policy."
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/governance",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Mission",
+                      "Goal",
+                      "Task",
+                      "Knowledge",
+                      "Decision",
+                      "Constraint",
+                      "Workflow",
+                      "Verification",
+                      "Artifact",
+                      "Metric",
+                      "Agent",
+                      "Role",
+                      "Issue",
+                      "Release"
+                    ]
+                  }
+                }
+              ],
+              "separationRules": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "governanceWorkflow": {
+            "id": "workflow_001",
+            "name": "governance",
+            "title": "Project Governance",
+            "spec": {
+              "appliesTo": [
+                "Mission",
+                "Goal",
+                "Task",
+                "Knowledge",
+                "Decision",
+                "Constraint",
+                "Workflow",
+                "Verification",
+                "Artifact",
+                "Metric",
+                "Agent",
+                "Role",
+                "Issue",
+                "Release"
+              ],
+              "steps": [
+                {
+                  "id": "govern",
+                  "title": "Execute an authorized governance change",
+                  "action": "governance/execute",
+                  "allowedRoleNames": [
+                    "owner"
+                  ],
+                  "entryConditionRefs": [
+                    "governance/authorized"
+                  ],
+                  "exitConditionRefs": [
+                    "governance/recorded"
+                  ]
+                }
+              ],
+              "transitions": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          }
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-seed-runtime-status",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectBootstrapRequest",
+        "requestId": "request_001",
+        "issuedAt": "2026-07-17T12:00:00Z",
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "project": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects."
+        },
+        "seeds": {
+          "mission": {
+            "id": "mission_001",
+            "name": "pkr-mission",
+            "title": "Define and prove PKR",
+            "spec": {
+              "outcome": "Deliver a usable PKR specification and reference runtime.",
+              "successCriteria": [
+                {
+                  "id": "runtime-proven",
+                  "statement": "The specification is proven by a conforming reference runtime.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "notSet",
+                "reason": "Budget is not committed during specification bootstrap."
+              },
+              "deadline": {
+                "mode": "none",
+                "reason": "A release deadline is not committed during bootstrap."
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            },
+            "status": {
+              "phase": "active"
+            }
+          },
+          "ownerRole": {
+            "id": "role_001",
+            "name": "owner",
+            "title": "Project Owner",
+            "spec": {
+              "responsibilities": [
+                "Own project governance and authorize changes to project policy."
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/governance",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Mission",
+                      "Goal",
+                      "Task",
+                      "Knowledge",
+                      "Decision",
+                      "Constraint",
+                      "Workflow",
+                      "Verification",
+                      "Artifact",
+                      "Metric",
+                      "Agent",
+                      "Role",
+                      "Issue",
+                      "Release"
+                    ]
+                  }
+                }
+              ],
+              "separationRules": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "governanceWorkflow": {
+            "id": "workflow_001",
+            "name": "governance",
+            "title": "Project Governance",
+            "spec": {
+              "appliesTo": [
+                "Mission",
+                "Goal",
+                "Task",
+                "Knowledge",
+                "Decision",
+                "Constraint",
+                "Workflow",
+                "Verification",
+                "Artifact",
+                "Metric",
+                "Agent",
+                "Role",
+                "Issue",
+                "Release"
+              ],
+              "steps": [
+                {
+                  "id": "govern",
+                  "title": "Execute an authorized governance change",
+                  "action": "governance/execute",
+                  "allowedRoleNames": [
+                    "owner"
+                  ],
+                  "entryConditionRefs": [
+                    "governance/authorized"
+                  ],
+                  "exitConditionRefs": [
+                    "governance/recorded"
+                  ]
+                }
+              ],
+              "transitions": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          }
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-bootstrap-extension-name",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectBootstrapRequest",
+        "requestId": "request_001",
+        "issuedAt": "2026-07-17T12:00:00Z",
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "project": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects."
+        },
+        "seeds": {
+          "mission": {
+            "id": "mission_001",
+            "name": "pkr-mission",
+            "title": "Define and prove PKR",
+            "spec": {
+              "outcome": "Deliver a usable PKR specification and reference runtime.",
+              "successCriteria": [
+                {
+                  "id": "runtime-proven",
+                  "statement": "The specification is proven by a conforming reference runtime.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "notSet",
+                "reason": "Budget is not committed during specification bootstrap."
+              },
+              "deadline": {
+                "mode": "none",
+                "reason": "A release deadline is not committed during bootstrap."
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "ownerRole": {
+            "id": "role_001",
+            "name": "owner",
+            "title": "Project Owner",
+            "spec": {
+              "responsibilities": [
+                "Own project governance and authorize changes to project policy."
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/governance",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Mission",
+                      "Goal",
+                      "Task",
+                      "Knowledge",
+                      "Decision",
+                      "Constraint",
+                      "Workflow",
+                      "Verification",
+                      "Artifact",
+                      "Metric",
+                      "Agent",
+                      "Role",
+                      "Issue",
+                      "Release"
+                    ]
+                  }
+                }
+              ],
+              "separationRules": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "governanceWorkflow": {
+            "id": "workflow_001",
+            "name": "governance",
+            "title": "Project Governance",
+            "spec": {
+              "appliesTo": [
+                "Mission",
+                "Goal",
+                "Task",
+                "Knowledge",
+                "Decision",
+                "Constraint",
+                "Workflow",
+                "Verification",
+                "Artifact",
+                "Metric",
+                "Agent",
+                "Role",
+                "Issue",
+                "Release"
+              ],
+              "steps": [
+                {
+                  "id": "govern",
+                  "title": "Execute an authorized governance change",
+                  "action": "governance/execute",
+                  "allowedRoleNames": [
+                    "owner"
+                  ],
+                  "entryConditionRefs": [
+                    "governance/authorized"
+                  ],
+                  "exitConditionRefs": [
+                    "governance/recorded"
+                  ]
+                }
+              ],
+              "transitions": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          }
+        },
+        "extensions": {
+          "local": {}
+        }
+      }
+    },
+    {
+      "name": "invalid-bootstrap-issued-at",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectBootstrapRequest",
+        "requestId": "request_001",
+        "issuedAt": "2026/07/17",
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "project": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects."
+        },
+        "seeds": {
+          "mission": {
+            "id": "mission_001",
+            "name": "pkr-mission",
+            "title": "Define and prove PKR",
+            "spec": {
+              "outcome": "Deliver a usable PKR specification and reference runtime.",
+              "successCriteria": [
+                {
+                  "id": "runtime-proven",
+                  "statement": "The specification is proven by a conforming reference runtime.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "notSet",
+                "reason": "Budget is not committed during specification bootstrap."
+              },
+              "deadline": {
+                "mode": "none",
+                "reason": "A release deadline is not committed during bootstrap."
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "ownerRole": {
+            "id": "role_001",
+            "name": "owner",
+            "title": "Project Owner",
+            "spec": {
+              "responsibilities": [
+                "Own project governance and authorize changes to project policy."
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/governance",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Mission",
+                      "Goal",
+                      "Task",
+                      "Knowledge",
+                      "Decision",
+                      "Constraint",
+                      "Workflow",
+                      "Verification",
+                      "Artifact",
+                      "Metric",
+                      "Agent",
+                      "Role",
+                      "Issue",
+                      "Release"
+                    ]
+                  }
+                }
+              ],
+              "separationRules": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "governanceWorkflow": {
+            "id": "workflow_001",
+            "name": "governance",
+            "title": "Project Governance",
+            "spec": {
+              "appliesTo": [
+                "Mission",
+                "Goal",
+                "Task",
+                "Knowledge",
+                "Decision",
+                "Constraint",
+                "Workflow",
+                "Verification",
+                "Artifact",
+                "Metric",
+                "Agent",
+                "Role",
+                "Issue",
+                "Release"
+              ],
+              "steps": [
+                {
+                  "id": "govern",
+                  "title": "Execute an authorized governance change",
+                  "action": "governance/execute",
+                  "allowedRoleNames": [
+                    "owner"
+                  ],
+                  "entryConditionRefs": [
+                    "governance/authorized"
+                  ],
+                  "exitConditionRefs": [
+                    "governance/recorded"
+                  ]
+                }
+              ],
+              "transitions": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          }
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-project-name",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectBootstrapRequest",
+        "requestId": "request_001",
+        "issuedAt": "2026-07-17T12:00:00Z",
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "project": {
+          "projectId": "project_001",
+          "name": "PKR Runtime",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects."
+        },
+        "seeds": {
+          "mission": {
+            "id": "mission_001",
+            "name": "pkr-mission",
+            "title": "Define and prove PKR",
+            "spec": {
+              "outcome": "Deliver a usable PKR specification and reference runtime.",
+              "successCriteria": [
+                {
+                  "id": "runtime-proven",
+                  "statement": "The specification is proven by a conforming reference runtime.",
+                  "required": true
+                }
+              ],
+              "budget": {
+                "mode": "notSet",
+                "reason": "Budget is not committed during specification bootstrap."
+              },
+              "deadline": {
+                "mode": "none",
+                "reason": "A release deadline is not committed during bootstrap."
+              },
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "ownerRole": {
+            "id": "role_001",
+            "name": "owner",
+            "title": "Project Owner",
+            "spec": {
+              "responsibilities": [
+                "Own project governance and authorize changes to project policy."
+              ],
+              "permissions": [
+                {
+                  "action": "pkr/governance",
+                  "effect": "allow",
+                  "scope": {
+                    "kinds": [
+                      "Mission",
+                      "Goal",
+                      "Task",
+                      "Knowledge",
+                      "Decision",
+                      "Constraint",
+                      "Workflow",
+                      "Verification",
+                      "Artifact",
+                      "Metric",
+                      "Agent",
+                      "Role",
+                      "Issue",
+                      "Release"
+                    ]
+                  }
+                }
+              ],
+              "separationRules": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          },
+          "governanceWorkflow": {
+            "id": "workflow_001",
+            "name": "governance",
+            "title": "Project Governance",
+            "spec": {
+              "appliesTo": [
+                "Mission",
+                "Goal",
+                "Task",
+                "Knowledge",
+                "Decision",
+                "Constraint",
+                "Workflow",
+                "Verification",
+                "Artifact",
+                "Metric",
+                "Agent",
+                "Role",
+                "Issue",
+                "Release"
+              ],
+              "steps": [
+                {
+                  "id": "govern",
+                  "title": "Execute an authorized governance change",
+                  "action": "governance/execute",
+                  "allowedRoleNames": [
+                    "owner"
+                  ],
+                  "entryConditionRefs": [
+                    "governance/authorized"
+                  ],
+                  "exitConditionRefs": [
+                    "governance/recorded"
+                  ]
+                }
+              ],
+              "transitions": [],
+              "owners": [
+                {
+                  "principalType": "human",
+                  "principalId": "human_001",
+                  "accountability": "accountable"
+                }
+              ]
+            }
+          }
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-manifest-api-version",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.3",
+        "kind": "ProjectManifest",
+        "metadata": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects.",
+          "revision": 1,
+          "createdAt": "2026-07-17T12:00:01Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T12:00:01Z"
+        },
+        "runtime": {
+          "pkrVersion": "0.2",
+          "objectApiVersion": "pkr.dev/v0.2",
+          "objectSchemaId": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json",
+          "bootstrapSchemaId": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json",
+          "missionMode": "single"
+        },
+        "governance": {
+          "ownerRoleId": "role_001",
+          "governanceWorkflowId": "workflow_001"
+        },
+        "mission": {
+          "activeMissionId": "mission_001"
+        },
+        "genesis": {
+          "requestId": "request_001",
+          "transactionId": "transaction_001",
+          "eventRange": {
+            "firstSequence": 1,
+            "lastSequence": 8
+          },
+          "terminalEventId": "event_008",
+          "committedAt": "2026-07-17T12:00:01Z"
+        },
+        "status": {
+          "phase": "active",
+          "reason": "BootstrapCommitted",
+          "observedRevision": 1
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-manifest-phase",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectManifest",
+        "metadata": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects.",
+          "revision": 1,
+          "createdAt": "2026-07-17T12:00:01Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T12:00:01Z"
+        },
+        "runtime": {
+          "pkrVersion": "0.2",
+          "objectApiVersion": "pkr.dev/v0.2",
+          "objectSchemaId": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json",
+          "bootstrapSchemaId": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json",
+          "missionMode": "single"
+        },
+        "governance": {
+          "ownerRoleId": "role_001",
+          "governanceWorkflowId": "workflow_001"
+        },
+        "mission": {
+          "activeMissionId": "mission_001"
+        },
+        "genesis": {
+          "requestId": "request_001",
+          "transactionId": "transaction_001",
+          "eventRange": {
+            "firstSequence": 1,
+            "lastSequence": 8
+          },
+          "terminalEventId": "event_008",
+          "committedAt": "2026-07-17T12:00:01Z"
+        },
+        "status": {
+          "phase": "initializing",
+          "reason": "BootstrapCommitted",
+          "observedRevision": 1
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-manifest-missing-governance",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectManifest",
+        "metadata": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "An open runtime specification for AI-native projects.",
+          "revision": 1,
+          "createdAt": "2026-07-17T12:00:01Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T12:00:01Z"
+        },
+        "runtime": {
+          "pkrVersion": "0.2",
+          "objectApiVersion": "pkr.dev/v0.2",
+          "objectSchemaId": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json",
+          "bootstrapSchemaId": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json",
+          "missionMode": "single"
+        },
+        "mission": {
+          "activeMissionId": "mission_001"
+        },
+        "genesis": {
+          "requestId": "request_001",
+          "transactionId": "transaction_001",
+          "eventRange": {
+            "firstSequence": 1,
+            "lastSequence": 8
+          },
+          "terminalEventId": "event_008",
+          "committedAt": "2026-07-17T12:00:01Z"
+        },
+        "status": {
+          "phase": "active",
+          "reason": "BootstrapCommitted",
+          "observedRevision": 1
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-manifest-empty-description",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectManifest",
+        "metadata": {
+          "projectId": "project_001",
+          "name": "pkr",
+          "title": "Project Kernel Runtime",
+          "description": "",
+          "revision": 1,
+          "createdAt": "2026-07-17T12:00:01Z",
+          "createdBy": "human_001",
+          "updatedAt": "2026-07-17T12:00:01Z"
+        },
+        "runtime": {
+          "pkrVersion": "0.2",
+          "objectApiVersion": "pkr.dev/v0.2",
+          "objectSchemaId": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json",
+          "bootstrapSchemaId": "https://pkr.dev/schemas/v0.2/pkr-bootstrap.schema.json",
+          "missionMode": "single"
+        },
+        "governance": {
+          "ownerRoleId": "role_001",
+          "governanceWorkflowId": "workflow_001"
+        },
+        "mission": {
+          "activeMissionId": "mission_001"
+        },
+        "genesis": {
+          "requestId": "request_001",
+          "transactionId": "transaction_001",
+          "eventRange": {
+            "firstSequence": 1,
+            "lastSequence": 8
+          },
+          "terminalEventId": "event_008",
+          "committedAt": "2026-07-17T12:00:01Z"
+        },
+        "status": {
+          "phase": "active",
+          "reason": "BootstrapCommitted",
+          "observedRevision": 1
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-genesis-too-few-objects",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectGenesisRecord",
+        "projectId": "project_001",
+        "requestId": "request_001",
+        "transactionId": "transaction_001",
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "policy": {
+          "name": "pkr/bootstrap",
+          "version": "0.2"
+        },
+        "committedAt": "2026-07-17T12:00:01Z",
+        "manifestRevision": 1,
+        "createdObjects": [
+          {
+            "kind": "Role",
+            "id": "role_001",
+            "revision": 2
+          },
+          {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "revision": 2
+          }
+        ],
+        "eventRange": {
+          "firstSequence": 1,
+          "lastSequence": 8
+        },
+        "terminalEventId": "event_008",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-genesis-created-kind",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectGenesisRecord",
+        "projectId": "project_001",
+        "requestId": "request_001",
+        "transactionId": "transaction_001",
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "policy": {
+          "name": "pkr/bootstrap",
+          "version": "0.2"
+        },
+        "committedAt": "2026-07-17T12:00:01Z",
+        "manifestRevision": 1,
+        "createdObjects": [
+          {
+            "kind": "Task",
+            "id": "role_001",
+            "revision": 2
+          },
+          {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "revision": 2
+          },
+          {
+            "kind": "Mission",
+            "id": "mission_001",
+            "revision": 2
+          }
+        ],
+        "eventRange": {
+          "firstSequence": 1,
+          "lastSequence": 8
+        },
+        "terminalEventId": "event_008",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-genesis-policy-version",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectGenesisRecord",
+        "projectId": "project_001",
+        "requestId": "request_001",
+        "transactionId": "transaction_001",
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "policy": {
+          "name": "pkr/bootstrap",
+          "version": "0.3"
+        },
+        "committedAt": "2026-07-17T12:00:01Z",
+        "manifestRevision": 1,
+        "createdObjects": [
+          {
+            "kind": "Role",
+            "id": "role_001",
+            "revision": 2
+          },
+          {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "revision": 2
+          },
+          {
+            "kind": "Mission",
+            "id": "mission_001",
+            "revision": 2
+          }
+        ],
+        "eventRange": {
+          "firstSequence": 1,
+          "lastSequence": 8
+        },
+        "terminalEventId": "event_008",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-genesis-missing-workflow-kind",
+      "expectedValid": false,
+      "instance": {
+        "apiVersion": "pkr.dev/v0.2",
+        "kind": "ProjectGenesisRecord",
+        "projectId": "project_001",
+        "requestId": "request_001",
+        "transactionId": "transaction_001",
+        "authority": {
+          "principalType": "human",
+          "principalId": "human_001"
+        },
+        "decisionBasis": {
+          "type": "genesis",
+          "reason": "Create the PKR project under an explicit human-owned mission."
+        },
+        "policy": {
+          "name": "pkr/bootstrap",
+          "version": "0.2"
+        },
+        "committedAt": "2026-07-17T12:00:01Z",
+        "manifestRevision": 1,
+        "createdObjects": [
+          {
+            "kind": "Role",
+            "id": "role_002",
+            "revision": 2
+          },
+          {
+            "kind": "Role",
+            "id": "role_001",
+            "revision": 2
+          },
+          {
+            "kind": "Mission",
+            "id": "mission_001",
+            "revision": 2
+          }
+        ],
+        "eventRange": {
+          "firstSequence": 1,
+          "lastSequence": 8
+        },
+        "terminalEventId": "event_008",
+        "extensions": {}
+      }
+    }
+  ]
+}

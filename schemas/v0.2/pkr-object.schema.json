@@ -1,0 +1,2628 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkr.dev/schemas/v0.2/pkr-object.schema.json",
+  "title": "PKR v0.2 Core Object",
+  "description": "Canonical field-level schema for the fourteen PKR core object kinds.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Mission"
+    },
+    {
+      "$ref": "#/$defs/Goal"
+    },
+    {
+      "$ref": "#/$defs/Task"
+    },
+    {
+      "$ref": "#/$defs/Knowledge"
+    },
+    {
+      "$ref": "#/$defs/Decision"
+    },
+    {
+      "$ref": "#/$defs/Constraint"
+    },
+    {
+      "$ref": "#/$defs/Workflow"
+    },
+    {
+      "$ref": "#/$defs/Verification"
+    },
+    {
+      "$ref": "#/$defs/Artifact"
+    },
+    {
+      "$ref": "#/$defs/Metric"
+    },
+    {
+      "$ref": "#/$defs/Agent"
+    },
+    {
+      "$ref": "#/$defs/Role"
+    },
+    {
+      "$ref": "#/$defs/Issue"
+    },
+    {
+      "$ref": "#/$defs/Release"
+    }
+  ],
+  "$defs": {
+    "ObjectId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,31}_[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "Name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 63,
+      "pattern": "^[a-z0-9](?:[a-z0-9._-]{0,61}[a-z0-9])?$"
+    },
+    "NonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000
+    },
+    "ReasonCode": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]{2,63}$"
+    },
+    "NamespacedName": {
+      "type": "string",
+      "pattern": "^(?:[a-z][a-z0-9.-]*/)?[a-z][a-z0-9._-]*$"
+    },
+    "Digest": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*:[A-Fa-f0-9]{16,}$"
+    },
+    "Labels": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/Name"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 256
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ObjectId"
+        },
+        "projectId": {
+          "$ref": "#/$defs/ObjectId"
+        },
+        "name": {
+          "$ref": "#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "$ref": "#/$defs/ObjectId"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "labels": {
+          "$ref": "#/$defs/Labels"
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "name",
+        "title",
+        "revision",
+        "createdAt",
+        "createdBy",
+        "updatedAt"
+      ],
+      "additionalProperties": false
+    },
+    "PrincipalRef": {
+      "type": "object",
+      "properties": {
+        "principalType": {
+          "enum": [
+            "agent",
+            "human"
+          ]
+        },
+        "principalId": {
+          "$ref": "#/$defs/ObjectId"
+        },
+        "accountability": {
+          "enum": [
+            "accountable",
+            "responsible",
+            "consulted",
+            "informed"
+          ]
+        }
+      },
+      "required": [
+        "principalType",
+        "principalId",
+        "accountability"
+      ],
+      "additionalProperties": false
+    },
+    "PrincipalIdentity": {
+      "type": "object",
+      "properties": {
+        "principalType": {
+          "enum": [
+            "agent",
+            "human"
+          ]
+        },
+        "principalId": {
+          "$ref": "#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "principalType",
+        "principalId"
+      ],
+      "additionalProperties": false
+    },
+    "Owners": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PrincipalRef"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "contains": {
+        "type": "object",
+        "properties": {
+          "accountability": {
+            "const": "accountable"
+          }
+        },
+        "required": [
+          "accountability"
+        ]
+      },
+      "minContains": 1
+    },
+    "Target": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "Mission",
+            "Goal",
+            "Task",
+            "Knowledge",
+            "Decision",
+            "Constraint",
+            "Workflow",
+            "Verification",
+            "Artifact",
+            "Metric",
+            "Agent",
+            "Role",
+            "Issue",
+            "Release"
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/ObjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "Relation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "oneOf": [
+            {
+              "enum": [
+                "contributesTo",
+                "governedBy",
+                "constrainedBy",
+                "informedBy",
+                "decidedBy",
+                "assignedTo",
+                "actsAs",
+                "produces",
+                "verifies",
+                "blocks",
+                "includes",
+                "supersedes",
+                "derivedFrom"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9.-]*/[a-z][a-z0-9._-]*$"
+            }
+          ]
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "slot": {
+          "$ref": "#/$defs/Name"
+        }
+      },
+      "required": [
+        "type",
+        "target",
+        "required"
+      ],
+      "additionalProperties": false
+    },
+    "Relations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Relation"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "Extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9.-]*/[a-z][a-z0-9._-]*$"
+      },
+      "additionalProperties": true
+    },
+    "Scope": {
+      "type": "object",
+      "properties": {
+        "kinds": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "Mission",
+              "Goal",
+              "Task",
+              "Knowledge",
+              "Decision",
+              "Constraint",
+              "Workflow",
+              "Verification",
+              "Artifact",
+              "Metric",
+              "Agent",
+              "Role",
+              "Issue",
+              "Release"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "objectIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ObjectId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "labels": {
+          "$ref": "#/$defs/Labels"
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "Criterion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Name"
+        },
+        "statement": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "required"
+      ],
+      "additionalProperties": false
+    },
+    "Measure": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Name"
+        },
+        "statement": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "operator": {
+          "enum": [
+            "eq",
+            "neq",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "range"
+          ]
+        },
+        "target": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "upperTarget": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "operator",
+        "target"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operator": {
+                "const": "range"
+              }
+            },
+            "required": [
+              "operator"
+            ]
+          },
+          "then": {
+            "required": [
+              "upperTarget"
+            ]
+          }
+        }
+      ]
+    },
+    "Budget": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "const": "fixed"
+            },
+            "amount": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          },
+          "required": [
+            "mode",
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "unbounded",
+                "notSet"
+              ]
+            },
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "mode",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Deadline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "const": "fixed"
+            },
+            "at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "mode",
+            "at"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "const": "none"
+            },
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "mode",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "GateRequirement": {
+      "type": "object",
+      "properties": {
+        "gate": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "allowWaiver": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "gate",
+        "required",
+        "allowWaiver"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationPolicy": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GateRequirement"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "Deliverable": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Name"
+        },
+        "artifactType": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "artifactType",
+        "required"
+      ],
+      "additionalProperties": false
+    },
+    "Source": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uri"
+      ],
+      "additionalProperties": false
+    },
+    "Alternative": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Name"
+        },
+        "description": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "assessment": {
+          "$ref": "#/$defs/NonEmptyString"
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "assessment"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowStep": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Name"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "action": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "allowedRoleNames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Name"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "entryConditionRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NamespacedName"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "exitConditionRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NamespacedName"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "action",
+        "allowedRoleNames",
+        "entryConditionRefs",
+        "exitConditionRefs"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowTransition": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/Name"
+        },
+        "to": {
+          "$ref": "#/$defs/Name"
+        },
+        "on": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "requiredGates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NamespacedName"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "on",
+        "requiredGates"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationMethod": {
+      "type": "object",
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "parameters": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "adapter",
+        "version",
+        "parameters"
+      ],
+      "additionalProperties": false
+    },
+    "ArtifactProvenance": {
+      "type": "object",
+      "properties": {
+        "declaredBy": {
+          "$ref": "#/$defs/ObjectId"
+        },
+        "generation": {
+          "type": "object",
+          "properties": {
+            "actorId": {
+              "$ref": "#/$defs/ObjectId"
+            },
+            "commandId": {
+              "$ref": "#/$defs/ObjectId"
+            },
+            "generatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "actorId",
+            "commandId",
+            "generatedAt"
+          ],
+          "additionalProperties": false
+        },
+        "sourceDigests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Digest"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "declaredBy",
+        "sourceDigests"
+      ],
+      "additionalProperties": false
+    },
+    "MetricSource": {
+      "type": "object",
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "configuration": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "adapter",
+        "configuration"
+      ],
+      "additionalProperties": false
+    },
+    "Threshold": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "enum": [
+            "eq",
+            "neq",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ]
+        },
+        "value": {
+          "type": [
+            "number",
+            "string",
+            "boolean"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error",
+            "critical"
+          ]
+        }
+      },
+      "required": [
+        "operator",
+        "value",
+        "severity"
+      ],
+      "additionalProperties": false
+    },
+    "Permission": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "effect": {
+          "enum": [
+            "allow",
+            "deny"
+          ]
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        }
+      },
+      "required": [
+        "action",
+        "effect",
+        "scope"
+      ],
+      "additionalProperties": false
+    },
+    "SeparationRule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Name"
+        },
+        "statement": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "enforcement": {
+          "enum": [
+            "advisory",
+            "blocking"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "enforcement"
+      ],
+      "additionalProperties": false
+    },
+    "AcceptanceResult": {
+      "type": "object",
+      "properties": {
+        "criterionId": {
+          "$ref": "#/$defs/Name"
+        },
+        "result": {
+          "enum": [
+            "pending",
+            "satisfied",
+            "unsatisfied"
+          ]
+        },
+        "evidenceDigests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Digest"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "criterionId",
+        "result",
+        "evidenceDigests"
+      ],
+      "additionalProperties": false
+    },
+    "MeasureResult": {
+      "type": "object",
+      "properties": {
+        "measureId": {
+          "$ref": "#/$defs/Name"
+        },
+        "result": {
+          "enum": [
+            "unknown",
+            "met",
+            "notMet"
+          ]
+        },
+        "value": {
+          "type": [
+            "number",
+            "string",
+            "boolean",
+            "null"
+          ]
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "measureId",
+        "result",
+        "value",
+        "observedAt"
+      ],
+      "additionalProperties": false
+    },
+    "Waiver": {
+      "type": "object",
+      "properties": {
+        "approvedBy": {
+          "$ref": "#/$defs/PrincipalIdentity"
+        },
+        "reason": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "approvedBy",
+        "reason",
+        "expiresAt"
+      ],
+      "additionalProperties": false
+    },
+    "MissionSpec": {
+      "type": "object",
+      "properties": {
+        "outcome": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "successCriteria": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Criterion"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "budget": {
+          "$ref": "#/$defs/Budget"
+        },
+        "deadline": {
+          "$ref": "#/$defs/Deadline"
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "outcome",
+        "successCriteria",
+        "budget",
+        "deadline",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "GoalSpec": {
+      "type": "object",
+      "properties": {
+        "outcome": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "measures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Measure"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "outcome",
+        "measures",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "TaskSpec": {
+      "type": "object",
+      "properties": {
+        "objective": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "acceptance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Criterion"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "verificationPolicy": {
+          "$ref": "#/$defs/VerificationPolicy"
+        },
+        "deliverables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Deliverable"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "objective",
+        "acceptance",
+        "verificationPolicy",
+        "deliverables",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "KnowledgeSpec": {
+      "type": "object",
+      "properties": {
+        "knowledgeType": {
+          "enum": [
+            "fact",
+            "capability",
+            "prompt",
+            "document"
+          ]
+        },
+        "content": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "object",
+            "array"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "knowledgeType",
+        "content",
+        "sources",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "DecisionSpec": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "choice": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Alternative"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "alternativeOmissionReason": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "question",
+        "choice",
+        "reasons",
+        "alternatives",
+        "scope",
+        "owners"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "alternatives": {
+                "maxItems": 0
+              }
+            },
+            "required": [
+              "alternatives"
+            ]
+          },
+          "then": {
+            "required": [
+              "alternativeOmissionReason"
+            ]
+          }
+        }
+      ]
+    },
+    "ConstraintSpec": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error",
+            "critical"
+          ]
+        },
+        "enforcement": {
+          "enum": [
+            "advisory",
+            "blocking"
+          ]
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "rule",
+        "scope",
+        "severity",
+        "enforcement",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowSpec": {
+      "type": "object",
+      "properties": {
+        "appliesTo": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "Mission",
+              "Goal",
+              "Task",
+              "Knowledge",
+              "Decision",
+              "Constraint",
+              "Workflow",
+              "Verification",
+              "Artifact",
+              "Metric",
+              "Agent",
+              "Role",
+              "Issue",
+              "Release"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WorkflowStep"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WorkflowTransition"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "appliesTo",
+        "steps",
+        "transitions",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationSpec": {
+      "type": "object",
+      "properties": {
+        "gate": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "method": {
+          "$ref": "#/$defs/VerificationMethod"
+        },
+        "requiredEvidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NamespacedName"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "waivable": {
+          "type": "boolean"
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "gate",
+        "method",
+        "requiredEvidence",
+        "waivable",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "ArtifactSpec": {
+      "type": "object",
+      "properties": {
+        "artifactType": {
+          "$ref": "#/$defs/NamespacedName"
+        },
+        "locator": {
+          "type": "string",
+          "format": "uri-reference",
+          "minLength": 1
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "provenance": {
+          "$ref": "#/$defs/ArtifactProvenance"
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "artifactType",
+        "provenance",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "MetricSpec": {
+      "type": "object",
+      "properties": {
+        "measure": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "source": {
+          "$ref": "#/$defs/MetricSource"
+        },
+        "window": {
+          "type": "string",
+          "pattern": "^P(?!$).+"
+        },
+        "thresholds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Threshold"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "measure",
+        "source",
+        "window",
+        "thresholds",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "AgentSpec": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "object",
+          "properties": {
+            "vendor": {
+              "$ref": "#/$defs/Name"
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "instance": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          "required": [
+            "vendor"
+          ],
+          "additionalProperties": false
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NamespacedName"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Permission"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "provider",
+        "capabilities",
+        "permissions",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "RoleSpec": {
+      "type": "object",
+      "properties": {
+        "responsibilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Permission"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "separationRules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SeparationRule"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "responsibilities",
+        "permissions",
+        "separationRules",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "IssueSpec": {
+      "type": "object",
+      "properties": {
+        "issueType": {
+          "enum": [
+            "defect",
+            "risk",
+            "question",
+            "feedback"
+          ]
+        },
+        "summary": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error",
+            "critical"
+          ]
+        },
+        "impact": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "issueType",
+        "summary",
+        "severity",
+        "impact",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "ReleaseSpec": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "verificationPolicy": {
+          "$ref": "#/$defs/VerificationPolicy"
+        },
+        "owners": {
+          "$ref": "#/$defs/Owners"
+        }
+      },
+      "required": [
+        "version",
+        "verificationPolicy",
+        "owners"
+      ],
+      "additionalProperties": false
+    },
+    "MissionStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "draft",
+            "active",
+            "achieved",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "GoalStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "proposed",
+            "active",
+            "blocked",
+            "achieved",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "measureResults": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MeasureResult"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision",
+        "measureResults"
+      ],
+      "additionalProperties": false
+    },
+    "TaskStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "backlog",
+            "ready",
+            "inProgress",
+            "blocked",
+            "verifying",
+            "done",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "acceptanceResults": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AcceptanceResult"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision",
+        "acceptanceResults"
+      ],
+      "additionalProperties": false
+    },
+    "KnowledgeStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "draft",
+            "active",
+            "deprecated"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "DecisionStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "proposed",
+            "accepted",
+            "rejected",
+            "superseded"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "ConstraintStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "proposed",
+            "active",
+            "waived",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "waiver": {
+          "$ref": "#/$defs/Waiver"
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "const": "waived"
+              }
+            },
+            "required": [
+              "phase"
+            ]
+          },
+          "then": {
+            "required": [
+              "waiver"
+            ]
+          }
+        }
+      ]
+    },
+    "WorkflowStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "draft",
+            "active",
+            "deprecated"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "VerificationStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "pending",
+            "running",
+            "passed",
+            "failed",
+            "waived",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "targetRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "executor": {
+          "$ref": "#/$defs/PrincipalIdentity"
+        },
+        "waiver": {
+          "$ref": "#/$defs/Waiver"
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision",
+        "attempt"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "enum": [
+                  "running",
+                  "passed",
+                  "failed"
+                ]
+              }
+            },
+            "required": [
+              "phase"
+            ]
+          },
+          "then": {
+            "required": [
+              "targetRevision",
+              "startedAt",
+              "executor"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "enum": [
+                  "passed",
+                  "failed",
+                  "waived",
+                  "cancelled"
+                ]
+              }
+            },
+            "required": [
+              "phase"
+            ]
+          },
+          "then": {
+            "required": [
+              "completedAt"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "const": "waived"
+              }
+            },
+            "required": [
+              "phase"
+            ]
+          },
+          "then": {
+            "required": [
+              "waiver"
+            ]
+          }
+        }
+      ]
+    },
+    "ArtifactStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "declared",
+            "available",
+            "invalidated",
+            "archived"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "MetricStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "defined",
+            "collecting",
+            "healthy",
+            "breached",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lastValue": {
+          "type": [
+            "number",
+            "string",
+            "boolean",
+            "null"
+          ]
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "AgentStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "registered",
+            "active",
+            "suspended",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lastSeenAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "RoleStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "draft",
+            "active",
+            "retired"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "IssueStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "open",
+            "triaged",
+            "inProgress",
+            "resolved",
+            "closed",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "resolution": {
+          "$ref": "#/$defs/NonEmptyString"
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "enum": [
+                  "resolved",
+                  "closed"
+                ]
+              }
+            },
+            "required": [
+              "phase"
+            ]
+          },
+          "then": {
+            "required": [
+              "resolution"
+            ]
+          }
+        }
+      ]
+    },
+    "ReleaseStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": [
+            "planned",
+            "assembling",
+            "verifying",
+            "released",
+            "rolledBack",
+            "superseded",
+            "cancelled"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/ReasonCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "observedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "publishedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "manifestDigest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "phase",
+        "reason",
+        "observedRevision"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "enum": [
+                  "released",
+                  "rolledBack",
+                  "superseded"
+                ]
+              }
+            },
+            "required": [
+              "phase"
+            ]
+          },
+          "then": {
+            "required": [
+              "publishedAt",
+              "manifestDigest"
+            ]
+          }
+        }
+      ]
+    },
+    "Mission": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Mission"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/MissionSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/MissionStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Goal": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Goal"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/GoalSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/GoalStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Task": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Task"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/TaskSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/TaskStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Knowledge": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Knowledge"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/KnowledgeSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/KnowledgeStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Decision": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Decision"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/DecisionSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/DecisionStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Constraint": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Constraint"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/ConstraintSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/ConstraintStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Workflow": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Workflow"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/WorkflowSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/WorkflowStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Verification": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Verification"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/VerificationSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/VerificationStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Artifact": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Artifact"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/ArtifactSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/ArtifactStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "enum": [
+                      "available",
+                      "invalidated",
+                      "archived"
+                    ]
+                  }
+                },
+                "required": [
+                  "phase"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "type": "object",
+                "required": [
+                  "locator",
+                  "digest"
+                ],
+                "properties": {
+                  "provenance": {
+                    "type": "object",
+                    "required": [
+                      "generation"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Metric": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Metric"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/MetricSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/MetricStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Agent": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Agent"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/AgentSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/AgentStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Role": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Role"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/RoleSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/RoleStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Issue": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Issue"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/IssueSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/IssueStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Release": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "pkr.dev/v0.2"
+        },
+        "kind": {
+          "const": "Release"
+        },
+        "metadata": {
+          "$ref": "#/$defs/Metadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/ReleaseSpec"
+        },
+        "status": {
+          "$ref": "#/$defs/ReleaseStatus"
+        },
+        "relations": {
+          "$ref": "#/$defs/Relations"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status",
+        "relations",
+        "extensions"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

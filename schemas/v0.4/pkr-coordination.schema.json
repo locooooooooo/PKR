@@ -1,0 +1,3834 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pkr.dev/schemas/v0.4/pkr-coordination.schema.json",
+  "title": "PKR v0.4 Coordination Contract",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/WorkflowFamily"
+    },
+    {
+      "$ref": "#/$defs/AgentFamily"
+    },
+    {
+      "$ref": "#/$defs/ContextFamily"
+    },
+    {
+      "$ref": "#/$defs/PackageFamily"
+    },
+    {
+      "$ref": "#/$defs/ProtocolFamily"
+    }
+  ],
+  "$defs": {
+    "ApiVersion": {
+      "const": "pkr.dev/v0.4"
+    },
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*_[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "NonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "Sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "Semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "Extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(?:[a-z0-9]+(?:[.-][a-z0-9]+)*)/[A-Za-z0-9_.-]+$"
+      },
+      "additionalProperties": true
+    },
+    "Actor": {
+      "type": "object",
+      "properties": {
+        "principalType": {
+          "enum": [
+            "human",
+            "agent",
+            "service"
+          ]
+        },
+        "principalId": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "required": [
+        "principalType",
+        "principalId"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "TaskScope": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "task"
+        },
+        "taskId": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "required": [
+        "type",
+        "taskId"
+      ],
+      "additionalProperties": false
+    },
+    "GovernanceScope": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "governance"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9.-]*/[a-z][a-z0-9.-]*$"
+        }
+      },
+      "required": [
+        "type",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "Scope": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TaskScope"
+        },
+        {
+          "$ref": "#/$defs/GovernanceScope"
+        }
+      ]
+    },
+    "DecisionBasis": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "decision"
+            },
+            "decisionId": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "type",
+            "decisionId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "operational"
+            },
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "type",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "StringList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/NonEmptyString"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "IdList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Id"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "SourceRef": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "EventRange": {
+      "type": "object",
+      "properties": {
+        "firstSequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lastSequence": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "firstSequence",
+        "lastSequence"
+      ],
+      "additionalProperties": false
+    },
+    "WorkflowRun": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "WorkflowRun"
+        },
+        "runId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "workflowId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflowRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "state": {
+          "type": "string",
+          "pattern": "^[a-z][A-Za-z0-9.-]*$"
+        },
+        "activeSteps": {
+          "$ref": "#/$defs/StringList"
+        },
+        "completedSteps": {
+          "$ref": "#/$defs/StringList"
+        },
+        "pendingGates": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "test",
+              "security",
+              "performance",
+              "business",
+              "acceptance"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "runId",
+        "projectId",
+        "revision",
+        "projectSequence",
+        "createdAt",
+        "updatedAt",
+        "workflowId",
+        "workflowRevision",
+        "scope",
+        "state",
+        "activeSteps",
+        "completedSteps",
+        "pendingGates",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "CapabilityStatement": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CapabilityStatement"
+        },
+        "capabilityStatementId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "agentId": {
+          "$ref": "#/$defs/Id"
+        },
+        "adapter": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "version": {
+              "$ref": "#/$defs/Semver"
+            }
+          },
+          "required": [
+            "id",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "protocolVersions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^pkr\\.dev/v[0-9]+\\.[0-9]+$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]*$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "maxConcurrency": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxDurationSeconds": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "maxConcurrency",
+            "maxDurationSeconds"
+          ],
+          "additionalProperties": false
+        },
+        "isolation": {
+          "type": "object",
+          "properties": {
+            "filesystem": {
+              "enum": [
+                "none",
+                "scoped",
+                "unrestricted"
+              ]
+            },
+            "network": {
+              "enum": [
+                "none",
+                "scoped",
+                "unrestricted"
+              ]
+            },
+            "credentials": {
+              "enum": [
+                "none",
+                "references-only",
+                "host-managed"
+              ]
+            }
+          },
+          "required": [
+            "filesystem",
+            "network",
+            "credentials"
+          ],
+          "additionalProperties": false
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "capabilityStatementId",
+        "projectId",
+        "agentId",
+        "adapter",
+        "protocolVersions",
+        "capabilities",
+        "limits",
+        "isolation",
+        "issuedAt",
+        "expiresAt",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Assignment": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "Assignment"
+        },
+        "assignmentId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "idempotencyKey": {
+          "$ref": "#/$defs/Id"
+        },
+        "taskId": {
+          "$ref": "#/$defs/Id"
+        },
+        "taskRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "workflowId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflowRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "objective": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "allowedScope": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "forbiddenScope": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "acceptanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "verificationPolicyRef": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "expectedArtifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "callbackContract": {
+          "type": "object",
+          "properties": {
+            "outcomes": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "verified",
+                  "partial",
+                  "blocked",
+                  "externalSignoffBlocked"
+                ]
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "evidenceRequired": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "outcomes",
+            "evidenceRequired"
+          ],
+          "additionalProperties": false
+        },
+        "state": {
+          "enum": [
+            "prepared",
+            "offered",
+            "accepted",
+            "running",
+            "blocked",
+            "submitted",
+            "closed",
+            "rejected",
+            "cancelled",
+            "expired",
+            "failed"
+          ]
+        },
+        "disposition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "assignmentId",
+        "projectId",
+        "revision",
+        "projectSequence",
+        "createdAt",
+        "updatedAt",
+        "idempotencyKey",
+        "taskId",
+        "taskRevision",
+        "workflowId",
+        "workflowRevision",
+        "roleId",
+        "objective",
+        "allowedScope",
+        "forbiddenScope",
+        "acceptanceRefs",
+        "verificationPolicyRef",
+        "requiredCapabilities",
+        "expectedArtifacts",
+        "callbackContract",
+        "state",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "AgentSession": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "AgentSession"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "agentId": {
+          "$ref": "#/$defs/Id"
+        },
+        "providerLocator": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "adapter": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "version": {
+              "$ref": "#/$defs/Semver"
+            }
+          },
+          "required": [
+            "id",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "protocolVersion": {
+          "type": "string",
+          "pattern": "^pkr\\.dev/v[0-9]+\\.[0-9]+$"
+        },
+        "capabilityStatementId": {
+          "$ref": "#/$defs/Id"
+        },
+        "assignmentIds": {
+          "$ref": "#/$defs/IdList"
+        },
+        "state": {
+          "enum": [
+            "opening",
+            "active",
+            "suspended",
+            "closing",
+            "closed",
+            "failed",
+            "expired"
+          ]
+        },
+        "lastHeartbeat": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "sessionId",
+        "projectId",
+        "revision",
+        "projectSequence",
+        "createdAt",
+        "updatedAt",
+        "agentId",
+        "providerLocator",
+        "adapter",
+        "protocolVersion",
+        "capabilityStatementId",
+        "assignmentIds",
+        "state",
+        "lastHeartbeat",
+        "expiresAt",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Lease": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "Lease"
+        },
+        "leaseId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "assignmentId": {
+          "$ref": "#/$defs/Id"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/Id"
+        },
+        "agentId": {
+          "$ref": "#/$defs/Id"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "mode": {
+          "enum": [
+            "exclusive",
+            "shared"
+          ]
+        },
+        "state": {
+          "enum": [
+            "active",
+            "renewed",
+            "released",
+            "revoked",
+            "expired"
+          ]
+        },
+        "acquiredAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "heartbeatIntervalSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "leaseId",
+        "projectId",
+        "revision",
+        "projectSequence",
+        "createdAt",
+        "updatedAt",
+        "assignmentId",
+        "sessionId",
+        "agentId",
+        "scope",
+        "mode",
+        "state",
+        "acquiredAt",
+        "expiresAt",
+        "heartbeatIntervalSeconds",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "AgentMessage": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "AgentMessage"
+        },
+        "messageId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "type": {
+          "enum": [
+            "pkr.assignment.offer",
+            "pkr.assignment.accept",
+            "pkr.assignment.reject",
+            "pkr.execution.started",
+            "pkr.execution.progress",
+            "pkr.execution.heartbeat",
+            "pkr.execution.blocked",
+            "pkr.execution.resumed",
+            "pkr.execution.callback",
+            "pkr.handoff.request",
+            "pkr.handoff.accept",
+            "pkr.handoff.complete",
+            "pkr.assignment.cancel",
+            "pkr.session.close",
+            "pkr.lease.renew",
+            "pkr.lease.release",
+            "pkr.lease.revoke",
+            "pkr.protocol.error"
+          ]
+        },
+        "sender": {
+          "type": "object",
+          "properties": {
+            "principalId": {
+              "$ref": "#/$defs/Id"
+            },
+            "sessionId": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "principalId",
+            "sessionId"
+          ],
+          "additionalProperties": false
+        },
+        "recipient": {
+          "type": "object",
+          "properties": {
+            "component": {
+              "enum": [
+                "runtime",
+                "steward",
+                "orchestrator",
+                "agent"
+              ]
+            },
+            "principalId": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "component"
+          ],
+          "additionalProperties": false
+        },
+        "assignmentId": {
+          "$ref": "#/$defs/Id"
+        },
+        "leaseId": {
+          "$ref": "#/$defs/Id"
+        },
+        "correlationId": {
+          "$ref": "#/$defs/Id"
+        },
+        "causationId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "messageId",
+        "projectId",
+        "type",
+        "sender",
+        "recipient",
+        "assignmentId",
+        "correlationId",
+        "projectSequence",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "WorkspaceRequest": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "WorkspaceRequest"
+        },
+        "requestId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "principal": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "profile": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "maxBytes": {
+          "type": "integer",
+          "minimum": 1024
+        },
+        "selector": {
+          "type": "object",
+          "properties": {
+            "projectSequence": {
+              "$ref": "#/$defs/Sequence"
+            }
+          },
+          "required": [
+            "projectSequence"
+          ],
+          "additionalProperties": false
+        },
+        "requestedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "requestId",
+        "projectId",
+        "principal",
+        "roleId",
+        "scope",
+        "profile",
+        "maxBytes",
+        "selector",
+        "requestedAt",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Workspace": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "Workspace"
+        },
+        "workspaceId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "principalId": {
+          "$ref": "#/$defs/Id"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "mission": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "goal": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "task": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "workflow": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "assignment": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "constraints": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/SourceRef"
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            },
+            "decisions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/SourceRef"
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            },
+            "artifacts": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/SourceRef"
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "mission",
+            "goal",
+            "task",
+            "workflow",
+            "assignment",
+            "constraints",
+            "decisions",
+            "artifacts"
+          ],
+          "additionalProperties": false
+        },
+        "permittedActions": {
+          "$ref": "#/$defs/StringList"
+        },
+        "forbiddenActions": {
+          "$ref": "#/$defs/StringList"
+        },
+        "memoryEntryIds": {
+          "$ref": "#/$defs/IdList"
+        },
+        "notices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "enum": [
+                  "truncated",
+                  "omitted",
+                  "redacted",
+                  "stale"
+                ]
+              },
+              "message": {
+                "$ref": "#/$defs/NonEmptyString"
+              }
+            },
+            "required": [
+              "type",
+              "message"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "workspaceId",
+        "projectId",
+        "principalId",
+        "roleId",
+        "projectSequence",
+        "createdAt",
+        "expiresAt",
+        "context",
+        "permittedActions",
+        "forbiddenActions",
+        "memoryEntryIds",
+        "notices",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "MemoryEntry": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "MemoryEntry"
+        },
+        "memoryId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "class": {
+          "enum": [
+            "episodic",
+            "semantic",
+            "procedural",
+            "working"
+          ]
+        },
+        "summary": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "derived": {
+          "const": true
+        },
+        "sourceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "eventRanges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EventRange"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "derivation": {
+          "type": "object",
+          "properties": {
+            "method": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "version": {
+              "$ref": "#/$defs/Semver"
+            }
+          },
+          "required": [
+            "method",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "retentionClass": {
+          "enum": [
+            "session",
+            "task",
+            "project",
+            "legalHold"
+          ]
+        },
+        "visibility": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "validUntil": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "invalidatedAt": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "invalidationReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "memoryId",
+        "projectId",
+        "class",
+        "summary",
+        "derived",
+        "sourceRefs",
+        "eventRanges",
+        "derivation",
+        "confidence",
+        "retentionClass",
+        "visibility",
+        "projectSequence",
+        "createdAt",
+        "validUntil",
+        "invalidatedAt",
+        "invalidationReason",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "MemoryProjection": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "MemoryProjection"
+        },
+        "projectionId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "principalId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "entryIds": {
+          "$ref": "#/$defs/IdList"
+        },
+        "visibilityProfile": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "status": {
+          "enum": [
+            "current",
+            "partial",
+            "stale"
+          ]
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "projectionId",
+        "projectId",
+        "principalId",
+        "projectSequence",
+        "entryIds",
+        "visibilityProfile",
+        "status",
+        "createdAt",
+        "expiresAt",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "PackageManifest": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "PackageManifest"
+        },
+        "manifestId": {
+          "$ref": "#/$defs/Id"
+        },
+        "packageId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+$"
+        },
+        "version": {
+          "$ref": "#/$defs/Semver"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "publisher": {
+          "type": "object",
+          "properties": {
+            "principalId": {
+              "$ref": "#/$defs/Id"
+            },
+            "name": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "principalId",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "compatibility": {
+          "type": "object",
+          "properties": {
+            "pkrApi": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "schema": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "pkrApi",
+            "schema"
+          ],
+          "additionalProperties": false
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "packageId": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+$"
+              },
+              "versionRange": {
+                "$ref": "#/$defs/NonEmptyString"
+              },
+              "optional": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "packageId",
+              "versionRange",
+              "optional"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NonEmptyString"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "contributions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "$ref": "#/$defs/NonEmptyString"
+              },
+              "id": {
+                "$ref": "#/$defs/NonEmptyString"
+              },
+              "schemaId": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "schemaId"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "requestedCapabilities": {
+          "$ref": "#/$defs/StringList"
+        },
+        "lifecycle": {
+          "type": "object",
+          "properties": {
+            "install": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "migrate": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "uninstall": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "rollback": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "install",
+            "migrate",
+            "uninstall",
+            "rollback"
+          ],
+          "additionalProperties": false
+        },
+        "license": {
+          "$ref": "#/$defs/NonEmptyString"
+        },
+        "distribution": {
+          "type": "string",
+          "format": "uri"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "manifestId",
+        "packageId",
+        "version",
+        "digest",
+        "publisher",
+        "compatibility",
+        "dependencies",
+        "conflicts",
+        "contributions",
+        "requestedCapabilities",
+        "lifecycle",
+        "license",
+        "distribution",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "PackageInstallation": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "PackageInstallation"
+        },
+        "installationId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "projectSequence": {
+          "$ref": "#/$defs/Sequence"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "packageId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+$"
+        },
+        "version": {
+          "$ref": "#/$defs/Semver"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "resolvedDependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "packageId": {
+                "$ref": "#/$defs/NonEmptyString"
+              },
+              "version": {
+                "$ref": "#/$defs/Semver"
+              },
+              "digest": {
+                "$ref": "#/$defs/Digest"
+              }
+            },
+            "required": [
+              "packageId",
+              "version",
+              "digest"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "approvedCapabilities": {
+          "$ref": "#/$defs/StringList"
+        },
+        "contributionIds": {
+          "$ref": "#/$defs/StringList"
+        },
+        "state": {
+          "enum": [
+            "proposed",
+            "resolving",
+            "staged",
+            "active",
+            "suspended",
+            "uninstalled",
+            "failed",
+            "superseded"
+          ]
+        },
+        "installedBy": {
+          "$ref": "#/$defs/Id"
+        },
+        "decisionId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflowId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflowRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "migrationStatus": {
+          "enum": [
+            "notRequired",
+            "pending",
+            "passed",
+            "failed"
+          ]
+        },
+        "healthStatus": {
+          "enum": [
+            "unknown",
+            "healthy",
+            "degraded",
+            "failed"
+          ]
+        },
+        "rollbackTarget": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "installationId",
+        "projectId",
+        "revision",
+        "projectSequence",
+        "createdAt",
+        "updatedAt",
+        "packageId",
+        "version",
+        "digest",
+        "resolvedDependencies",
+        "approvedCapabilities",
+        "contributionIds",
+        "state",
+        "installedBy",
+        "decisionId",
+        "workflowId",
+        "workflowRevision",
+        "migrationStatus",
+        "healthStatus",
+        "rollbackTarget",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_startWorkflowRun": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "startWorkflowRun"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "WorkflowRun"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "const": 0
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "workflowId": {
+              "$ref": "#/$defs/Id"
+            },
+            "workflowRevision": {
+              "$ref": "#/$defs/Revision"
+            },
+            "scope": {
+              "$ref": "#/$defs/Scope"
+            }
+          },
+          "required": [
+            "workflowId",
+            "workflowRevision",
+            "scope"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_transitionWorkflowRun": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "transitionWorkflowRun"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "WorkflowRun"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "toState": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "toState",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_recordVerificationAttempt": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "recordVerificationAttempt"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "WorkflowRun"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "gate": {
+              "enum": [
+                "build",
+                "test",
+                "security",
+                "performance",
+                "business",
+                "acceptance"
+              ]
+            },
+            "result": {
+              "enum": [
+                "passed",
+                "failed",
+                "waived",
+                "cancelled"
+              ]
+            },
+            "evidenceRefs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Id"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "gate",
+            "result",
+            "evidenceRefs"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_offerAssignment": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "offerAssignment"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "Assignment"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "const": 0
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "taskId": {
+              "$ref": "#/$defs/Id"
+            },
+            "taskRevision": {
+              "$ref": "#/$defs/Revision"
+            },
+            "workflowId": {
+              "$ref": "#/$defs/Id"
+            },
+            "workflowRevision": {
+              "$ref": "#/$defs/Revision"
+            },
+            "objective": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "taskId",
+            "taskRevision",
+            "workflowId",
+            "workflowRevision",
+            "objective"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_respondAssignment": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "respondAssignment"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "Assignment"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "response": {
+              "enum": [
+                "accepted",
+                "rejected"
+              ]
+            }
+          },
+          "required": [
+            "response"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_openAgentSession": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "openAgentSession"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "AgentSession"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "const": 0
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "agentId": {
+              "$ref": "#/$defs/Id"
+            },
+            "capabilityStatementId": {
+              "$ref": "#/$defs/Id"
+            },
+            "providerLocator": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "agentId",
+            "capabilityStatementId",
+            "providerLocator"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_closeAgentSession": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "closeAgentSession"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "AgentSession"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_acquireLease": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "acquireLease"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "Lease"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "const": 0
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "assignmentId": {
+              "$ref": "#/$defs/Id"
+            },
+            "sessionId": {
+              "$ref": "#/$defs/Id"
+            },
+            "agentId": {
+              "$ref": "#/$defs/Id"
+            },
+            "mode": {
+              "enum": [
+                "exclusive",
+                "shared"
+              ]
+            },
+            "expiresAt": {
+              "$ref": "#/$defs/Timestamp"
+            }
+          },
+          "required": [
+            "assignmentId",
+            "sessionId",
+            "agentId",
+            "mode",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_renewLease": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "renewLease"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "Lease"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "expiresAt": {
+              "$ref": "#/$defs/Timestamp"
+            }
+          },
+          "required": [
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_releaseLease": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "releaseLease"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "Lease"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_revokeLease": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "revokeLease"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "Lease"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_submitAgentMessage": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "submitAgentMessage"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "AgentMessage"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "const": 0
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "messageId": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "messageId"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_proposePackageInstall": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "proposePackageInstall"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "PackageInstallation"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "const": 0
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "packageId": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "version": {
+              "$ref": "#/$defs/Semver"
+            },
+            "digest": {
+              "$ref": "#/$defs/Digest"
+            }
+          },
+          "required": [
+            "packageId",
+            "version",
+            "digest"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_resolvePackageInstall": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "resolvePackageInstall"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "PackageInstallation"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "dependencies": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/NonEmptyString"
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "dependencies"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_stagePackageInstall": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "stagePackageInstall"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "PackageInstallation"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "migration": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "rollback": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "migration",
+            "rollback"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_activatePackageInstall": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "activatePackageInstall"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "PackageInstallation"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "verificationRefs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Id"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "verificationRefs"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_suspendPackageInstall": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "suspendPackageInstall"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "PackageInstallation"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_uninstallPackage": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "uninstallPackage"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "PackageInstallation"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "$ref": "#/$defs/NonEmptyString"
+            }
+          },
+          "required": [
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "Command_rollbackPackage": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationCommand"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "action": {
+          "const": "rollbackPackage"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "PackageInstallation"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "issuedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "targetVersion": {
+              "$ref": "#/$defs/Semver"
+            },
+            "targetDigest": {
+              "$ref": "#/$defs/Digest"
+            }
+          },
+          "required": [
+            "targetVersion",
+            "targetDigest"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "commandId",
+        "projectId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "action",
+        "target",
+        "expectedRevision",
+        "decisionBasis",
+        "issuedAt",
+        "payload",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "CoordinationCommand": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Command_startWorkflowRun"
+        },
+        {
+          "$ref": "#/$defs/Command_transitionWorkflowRun"
+        },
+        {
+          "$ref": "#/$defs/Command_recordVerificationAttempt"
+        },
+        {
+          "$ref": "#/$defs/Command_offerAssignment"
+        },
+        {
+          "$ref": "#/$defs/Command_respondAssignment"
+        },
+        {
+          "$ref": "#/$defs/Command_openAgentSession"
+        },
+        {
+          "$ref": "#/$defs/Command_closeAgentSession"
+        },
+        {
+          "$ref": "#/$defs/Command_acquireLease"
+        },
+        {
+          "$ref": "#/$defs/Command_renewLease"
+        },
+        {
+          "$ref": "#/$defs/Command_releaseLease"
+        },
+        {
+          "$ref": "#/$defs/Command_revokeLease"
+        },
+        {
+          "$ref": "#/$defs/Command_submitAgentMessage"
+        },
+        {
+          "$ref": "#/$defs/Command_proposePackageInstall"
+        },
+        {
+          "$ref": "#/$defs/Command_resolvePackageInstall"
+        },
+        {
+          "$ref": "#/$defs/Command_stagePackageInstall"
+        },
+        {
+          "$ref": "#/$defs/Command_activatePackageInstall"
+        },
+        {
+          "$ref": "#/$defs/Command_suspendPackageInstall"
+        },
+        {
+          "$ref": "#/$defs/Command_uninstallPackage"
+        },
+        {
+          "$ref": "#/$defs/Command_rollbackPackage"
+        }
+      ]
+    },
+    "CoordinationEvent": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "$ref": "#/$defs/ApiVersion"
+        },
+        "kind": {
+          "const": "CoordinationEvent"
+        },
+        "eventId": {
+          "$ref": "#/$defs/Id"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Id"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^pkr\\.[a-zA-Z0-9.-]+$"
+        },
+        "subject": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "$ref": "#/$defs/NonEmptyString"
+            },
+            "id": {
+              "$ref": "#/$defs/Id"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "subjectRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "commandId": {
+          "$ref": "#/$defs/Id"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "roleId": {
+          "$ref": "#/$defs/Id"
+        },
+        "workflow": {
+          "$ref": "#/$defs/WorkflowRef"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "decisionBasis": {
+          "$ref": "#/$defs/DecisionBasis"
+        },
+        "occurredAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "data": {
+          "type": "object"
+        },
+        "extensions": {
+          "$ref": "#/$defs/Extensions"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "kind",
+        "eventId",
+        "projectId",
+        "sequence",
+        "type",
+        "subject",
+        "subjectRevision",
+        "commandId",
+        "actor",
+        "roleId",
+        "workflow",
+        "scope",
+        "decisionBasis",
+        "occurredAt",
+        "data",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "CoordinationResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "apiVersion": {
+              "$ref": "#/$defs/ApiVersion"
+            },
+            "kind": {
+              "const": "CoordinationResult"
+            },
+            "commandId": {
+              "$ref": "#/$defs/Id"
+            },
+            "projectId": {
+              "$ref": "#/$defs/Id"
+            },
+            "status": {
+              "const": "committed"
+            },
+            "target": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "$ref": "#/$defs/NonEmptyString"
+                },
+                "id": {
+                  "$ref": "#/$defs/Id"
+                }
+              },
+              "required": [
+                "kind",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "targetRevision": {
+              "$ref": "#/$defs/Revision"
+            },
+            "eventRange": {
+              "$ref": "#/$defs/EventRange"
+            },
+            "errors": {
+              "const": []
+            },
+            "completedAt": {
+              "$ref": "#/$defs/Timestamp"
+            },
+            "extensions": {
+              "$ref": "#/$defs/Extensions"
+            }
+          },
+          "required": [
+            "apiVersion",
+            "kind",
+            "commandId",
+            "projectId",
+            "status",
+            "target",
+            "targetRevision",
+            "eventRange",
+            "errors",
+            "completedAt",
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "apiVersion": {
+              "$ref": "#/$defs/ApiVersion"
+            },
+            "kind": {
+              "const": "CoordinationResult"
+            },
+            "commandId": {
+              "$ref": "#/$defs/Id"
+            },
+            "projectId": {
+              "$ref": "#/$defs/Id"
+            },
+            "status": {
+              "enum": [
+                "rejected",
+                "conflict"
+              ]
+            },
+            "target": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "$ref": "#/$defs/NonEmptyString"
+                },
+                "id": {
+                  "$ref": "#/$defs/Id"
+                }
+              },
+              "required": [
+                "kind",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "pattern": "^PKR-COORD-[0-9]{3}$"
+                  },
+                  "message": {
+                    "$ref": "#/$defs/NonEmptyString"
+                  },
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "completedAt": {
+              "$ref": "#/$defs/Timestamp"
+            },
+            "extensions": {
+              "$ref": "#/$defs/Extensions"
+            }
+          },
+          "required": [
+            "apiVersion",
+            "kind",
+            "commandId",
+            "projectId",
+            "status",
+            "target",
+            "errors",
+            "completedAt",
+            "extensions"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "WorkflowFamily": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/WorkflowRun"
+        }
+      ]
+    },
+    "AgentFamily": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CapabilityStatement"
+        },
+        {
+          "$ref": "#/$defs/Assignment"
+        },
+        {
+          "$ref": "#/$defs/AgentSession"
+        },
+        {
+          "$ref": "#/$defs/Lease"
+        },
+        {
+          "$ref": "#/$defs/AgentMessage"
+        }
+      ]
+    },
+    "ContextFamily": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/WorkspaceRequest"
+        },
+        {
+          "$ref": "#/$defs/Workspace"
+        },
+        {
+          "$ref": "#/$defs/MemoryEntry"
+        },
+        {
+          "$ref": "#/$defs/MemoryProjection"
+        }
+      ]
+    },
+    "PackageFamily": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PackageManifest"
+        },
+        {
+          "$ref": "#/$defs/PackageInstallation"
+        }
+      ]
+    },
+    "ProtocolFamily": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CoordinationCommand"
+        },
+        {
+          "$ref": "#/$defs/CoordinationEvent"
+        },
+        {
+          "$ref": "#/$defs/CoordinationResult"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,2379 @@
+{
+  "schema": "../../schemas/v0.4/pkr-coordination.schema.json",
+  "resources": [
+    "../../schemas/v0.4/pkr-workflow.schema.json",
+    "../../schemas/v0.4/pkr-agent.schema.json",
+    "../../schemas/v0.4/pkr-context.schema.json",
+    "../../schemas/v0.4/pkr-package.schema.json",
+    "../../schemas/v0.4/pkr-coordination-runtime.schema.json"
+  ],
+  "description": "PKR v0.4 coordination structural conformance cases.",
+  "validCases": [
+    {
+      "name": "valid-WorkflowRun",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "WorkflowRun",
+        "runId": "run_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "workflowId": "workflow_001",
+        "workflowRevision": 2,
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "state": "implementing",
+        "activeSteps": [
+          "implement"
+        ],
+        "completedSteps": [
+          "plan"
+        ],
+        "pendingGates": [
+          "test"
+        ],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-CapabilityStatement",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CapabilityStatement",
+        "capabilityStatementId": "capability_001",
+        "projectId": "project_001",
+        "agentId": "agent_001",
+        "adapter": {
+          "id": "pkr.adapter.local-process",
+          "version": "0.4.0"
+        },
+        "protocolVersions": [
+          "pkr.dev/v0.4"
+        ],
+        "capabilities": [
+          "filesystem.read",
+          "terminal"
+        ],
+        "limits": {
+          "maxConcurrency": 1,
+          "maxDurationSeconds": 3600
+        },
+        "isolation": {
+          "filesystem": "scoped",
+          "network": "none",
+          "credentials": "references-only"
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-Assignment",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "Assignment",
+        "assignmentId": "assignment_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "idempotencyKey": "dispatch_001",
+        "taskId": "task_001",
+        "taskRevision": 3,
+        "workflowId": "workflow_001",
+        "workflowRevision": 2,
+        "roleId": "role_001",
+        "objective": "Implement the bounded reference lane.",
+        "allowedScope": [
+          "src/**"
+        ],
+        "forbiddenScope": [
+          "infra/**"
+        ],
+        "acceptanceRefs": [
+          "task_001#acceptance-1"
+        ],
+        "verificationPolicyRef": "policy_default@1",
+        "requiredCapabilities": [
+          "filesystem.read"
+        ],
+        "expectedArtifacts": [
+          "source-change"
+        ],
+        "callbackContract": {
+          "outcomes": [
+            "verified",
+            "partial",
+            "blocked",
+            "externalSignoffBlocked"
+          ],
+          "evidenceRequired": true
+        },
+        "state": "offered",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-AgentSession",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "AgentSession",
+        "sessionId": "session_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "agentId": "agent_001",
+        "providerLocator": "local://session/001",
+        "adapter": {
+          "id": "pkr.adapter.local-process",
+          "version": "0.4.0"
+        },
+        "protocolVersion": "pkr.dev/v0.4",
+        "capabilityStatementId": "capability_001",
+        "assignmentIds": [
+          "assignment_001"
+        ],
+        "state": "active",
+        "lastHeartbeat": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-Lease",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "Lease",
+        "leaseId": "lease_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "assignmentId": "assignment_001",
+        "sessionId": "session_001",
+        "agentId": "agent_001",
+        "scope": [
+          "src/**"
+        ],
+        "mode": "exclusive",
+        "state": "active",
+        "acquiredAt": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "heartbeatIntervalSeconds": 30,
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-AgentMessage",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "AgentMessage",
+        "messageId": "message_001",
+        "projectId": "project_001",
+        "type": "pkr.execution.callback",
+        "sender": {
+          "principalId": "agent_001",
+          "sessionId": "session_001"
+        },
+        "recipient": {
+          "component": "orchestrator"
+        },
+        "assignmentId": "assignment_001",
+        "leaseId": "lease_001",
+        "correlationId": "dispatch_001",
+        "causationId": "message_000",
+        "projectSequence": 20,
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "outcome": "verified"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-WorkspaceRequest",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "WorkspaceRequest",
+        "requestId": "request_001",
+        "projectId": "project_001",
+        "principal": {
+          "principalType": "agent",
+          "principalId": "agent_001"
+        },
+        "roleId": "role_001",
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "profile": "execution",
+        "maxBytes": 65536,
+        "selector": {
+          "projectSequence": 20
+        },
+        "requestedAt": "2026-07-17T14:00:00Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-Workspace",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "Workspace",
+        "workspaceId": "workspace_001",
+        "projectId": "project_001",
+        "principalId": "agent_001",
+        "roleId": "role_001",
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "context": {
+          "mission": {
+            "kind": "Mission",
+            "id": "mission_001",
+            "revision": 1
+          },
+          "goal": {
+            "kind": "Goal",
+            "id": "goal_001",
+            "revision": 1
+          },
+          "task": {
+            "kind": "Task",
+            "id": "task_001",
+            "revision": 3
+          },
+          "workflow": {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "revision": 2
+          },
+          "assignment": {
+            "kind": "Assignment",
+            "id": "assignment_001",
+            "revision": 1
+          },
+          "constraints": [],
+          "decisions": [],
+          "artifacts": []
+        },
+        "permittedActions": [
+          "submitAgentMessage"
+        ],
+        "forbiddenActions": [
+          "updateManifest"
+        ],
+        "memoryEntryIds": [
+          "memory_001"
+        ],
+        "notices": [],
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-MemoryEntry",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "MemoryEntry",
+        "memoryId": "memory_001",
+        "projectId": "project_001",
+        "class": "procedural",
+        "summary": "Run targeted tests before the full suite.",
+        "derived": true,
+        "sourceRefs": [
+          {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "revision": 2
+          }
+        ],
+        "eventRanges": [
+          {
+            "firstSequence": 10,
+            "lastSequence": 20
+          }
+        ],
+        "derivation": {
+          "method": "pkr.memory.summarize",
+          "version": "0.4.0"
+        },
+        "confidence": 0.9,
+        "retentionClass": "project",
+        "visibility": "role:developer",
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "validUntil": null,
+        "invalidatedAt": null,
+        "invalidationReason": null,
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-MemoryProjection",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "MemoryProjection",
+        "projectionId": "projection_001",
+        "projectId": "project_001",
+        "principalId": "agent_001",
+        "projectSequence": 20,
+        "entryIds": [
+          "memory_001"
+        ],
+        "visibilityProfile": "role:developer",
+        "status": "current",
+        "createdAt": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-PackageManifest",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "PackageManifest",
+        "manifestId": "manifest_001",
+        "packageId": "dev.pkr.web",
+        "version": "0.4.0",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "publisher": {
+          "principalId": "human_001",
+          "name": "PKR"
+        },
+        "compatibility": {
+          "pkrApi": ">=0.4 <1.0",
+          "schema": "pkr.dev/v0.4"
+        },
+        "dependencies": [],
+        "conflicts": [],
+        "contributions": [
+          {
+            "type": "workflow",
+            "id": "dev.pkr.web/default",
+            "schemaId": "https://pkr.dev/packages/web/workflow.schema.json"
+          }
+        ],
+        "requestedCapabilities": [
+          "filesystem.read"
+        ],
+        "lifecycle": {
+          "install": "validate",
+          "migrate": "none",
+          "uninstall": "preserve-history",
+          "rollback": "previous"
+        },
+        "license": "Apache-2.0",
+        "distribution": "https://pkr.dev/packages/web/0.4.0",
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-PackageInstallation",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "PackageInstallation",
+        "installationId": "installation_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "packageId": "dev.pkr.web",
+        "version": "0.4.0",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "resolvedDependencies": [],
+        "approvedCapabilities": [
+          "filesystem.read"
+        ],
+        "contributionIds": [
+          "dev.pkr.web/default"
+        ],
+        "state": "staged",
+        "installedBy": "human_001",
+        "decisionId": "decision_001",
+        "workflowId": "workflow_001",
+        "workflowRevision": 2,
+        "migrationStatus": "notRequired",
+        "healthStatus": "unknown",
+        "rollbackTarget": null,
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-startWorkflowRun",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_startWorkflowRun",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "startWorkflowRun",
+        "target": {
+          "kind": "WorkflowRun",
+          "id": "workflowrun_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "workflowId": "workflow_001",
+          "workflowRevision": 2,
+          "scope": {
+            "type": "task",
+            "taskId": "task_001"
+          }
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-transitionWorkflowRun",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_transitionWorkflowRun",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "transitionWorkflowRun",
+        "target": {
+          "kind": "WorkflowRun",
+          "id": "workflowrun_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "toState": "verifying",
+          "reason": "ImplementationComplete"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-recordVerificationAttempt",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_recordVerificationAttempt",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "recordVerificationAttempt",
+        "target": {
+          "kind": "WorkflowRun",
+          "id": "workflowrun_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "gate": "test",
+          "result": "passed",
+          "evidenceRefs": [
+            "artifact_001"
+          ]
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-offerAssignment",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_offerAssignment",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "offerAssignment",
+        "target": {
+          "kind": "Assignment",
+          "id": "assignment_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "taskId": "task_001",
+          "taskRevision": 3,
+          "workflowId": "workflow_001",
+          "workflowRevision": 2,
+          "objective": "Execute the bounded lane."
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-respondAssignment",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_respondAssignment",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "respondAssignment",
+        "target": {
+          "kind": "Assignment",
+          "id": "assignment_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "response": "accepted"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-openAgentSession",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_openAgentSession",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "openAgentSession",
+        "target": {
+          "kind": "AgentSession",
+          "id": "agentsession_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "agentId": "agent_001",
+          "capabilityStatementId": "capability_001",
+          "providerLocator": "local://session/001"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-closeAgentSession",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_closeAgentSession",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "closeAgentSession",
+        "target": {
+          "kind": "AgentSession",
+          "id": "agentsession_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "reason": "AssignmentClosed"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-acquireLease",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_acquireLease",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "acquireLease",
+        "target": {
+          "kind": "Lease",
+          "id": "lease_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "assignmentId": "assignment_001",
+          "sessionId": "session_001",
+          "agentId": "agent_001",
+          "mode": "exclusive",
+          "expiresAt": "2026-07-17T15:00:00Z"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-renewLease",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_renewLease",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "renewLease",
+        "target": {
+          "kind": "Lease",
+          "id": "lease_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "expiresAt": "2026-07-17T15:00:00Z"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-releaseLease",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_releaseLease",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "releaseLease",
+        "target": {
+          "kind": "Lease",
+          "id": "lease_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "reason": "CallbackSubmitted"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-revokeLease",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_revokeLease",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "revokeLease",
+        "target": {
+          "kind": "Lease",
+          "id": "lease_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "reason": "CancelledByOwner"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-submitAgentMessage",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_submitAgentMessage",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "submitAgentMessage",
+        "target": {
+          "kind": "AgentMessage",
+          "id": "agentmessage_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "messageId": "message_001"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-proposePackageInstall",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_proposePackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "proposePackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "packageId": "dev.pkr.web",
+          "version": "0.4.0",
+          "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-resolvePackageInstall",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_resolvePackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "resolvePackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "dependencies": []
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-stagePackageInstall",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_stagePackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "stagePackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "migration": "notRequired",
+          "rollback": "previous"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-activatePackageInstall",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_activatePackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "activatePackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "verificationRefs": [
+            "verification_001"
+          ]
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-suspendPackageInstall",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_suspendPackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "suspendPackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "reason": "HealthCheckFailed"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-uninstallPackage",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_uninstallPackage",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "uninstallPackage",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "reason": "OwnerRequested"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-action-rollbackPackage",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_rollbackPackage",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "rollbackPackage",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "targetVersion": "0.3.0",
+          "targetDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-CoordinationEvent",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationEvent",
+        "eventId": "event_021",
+        "projectId": "project_001",
+        "sequence": 21,
+        "type": "pkr.assignment.offered",
+        "subject": {
+          "kind": "Assignment",
+          "id": "assignment_001"
+        },
+        "subjectRevision": 1,
+        "commandId": "command_offerAssignment",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Dispatch the accepted bounded lane."
+        },
+        "occurredAt": "2026-07-17T14:00:00Z",
+        "data": {
+          "state": "offered"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "valid-CoordinationResult",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationResult",
+        "commandId": "command_offerAssignment",
+        "projectId": "project_001",
+        "status": "committed",
+        "target": {
+          "kind": "Assignment",
+          "id": "assignment_001"
+        },
+        "targetRevision": 1,
+        "eventRange": {
+          "firstSequence": 21,
+          "lastSequence": 21
+        },
+        "errors": [],
+        "completedAt": "2026-07-17T14:00:00Z",
+        "extensions": {}
+      }
+    }
+  ],
+  "invalidCases": [
+    {
+      "name": "invalid-WorkflowRun-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "WorkflowRun",
+        "runId": "run_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "workflowId": "workflow_001",
+        "workflowRevision": 2,
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "state": "implementing",
+        "activeSteps": [
+          "implement"
+        ],
+        "completedSteps": [
+          "plan"
+        ],
+        "pendingGates": [
+          "test"
+        ],
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-CapabilityStatement-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CapabilityStatement",
+        "capabilityStatementId": "capability_001",
+        "projectId": "project_001",
+        "agentId": "agent_001",
+        "adapter": {
+          "id": "pkr.adapter.local-process",
+          "version": "0.4.0"
+        },
+        "protocolVersions": [
+          "pkr.dev/v0.4"
+        ],
+        "capabilities": [
+          "filesystem.read",
+          "terminal"
+        ],
+        "limits": {
+          "maxConcurrency": 1,
+          "maxDurationSeconds": 3600
+        },
+        "isolation": {
+          "filesystem": "scoped",
+          "network": "none",
+          "credentials": "references-only"
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-Assignment-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "Assignment",
+        "assignmentId": "assignment_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "idempotencyKey": "dispatch_001",
+        "taskId": "task_001",
+        "taskRevision": 3,
+        "workflowId": "workflow_001",
+        "workflowRevision": 2,
+        "roleId": "role_001",
+        "objective": "Implement the bounded reference lane.",
+        "allowedScope": [
+          "src/**"
+        ],
+        "forbiddenScope": [
+          "infra/**"
+        ],
+        "acceptanceRefs": [
+          "task_001#acceptance-1"
+        ],
+        "verificationPolicyRef": "policy_default@1",
+        "requiredCapabilities": [
+          "filesystem.read"
+        ],
+        "expectedArtifacts": [
+          "source-change"
+        ],
+        "callbackContract": {
+          "outcomes": [
+            "verified",
+            "partial",
+            "blocked",
+            "externalSignoffBlocked"
+          ],
+          "evidenceRequired": true
+        },
+        "state": "offered",
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-AgentSession-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "AgentSession",
+        "sessionId": "session_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "agentId": "agent_001",
+        "providerLocator": "local://session/001",
+        "adapter": {
+          "id": "pkr.adapter.local-process",
+          "version": "0.4.0"
+        },
+        "protocolVersion": "pkr.dev/v0.4",
+        "capabilityStatementId": "capability_001",
+        "assignmentIds": [
+          "assignment_001"
+        ],
+        "state": "active",
+        "lastHeartbeat": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-Lease-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "Lease",
+        "leaseId": "lease_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "assignmentId": "assignment_001",
+        "sessionId": "session_001",
+        "agentId": "agent_001",
+        "scope": [
+          "src/**"
+        ],
+        "mode": "exclusive",
+        "state": "active",
+        "acquiredAt": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "heartbeatIntervalSeconds": 30,
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-AgentMessage-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "AgentMessage",
+        "messageId": "message_001",
+        "projectId": "project_001",
+        "type": "pkr.execution.callback",
+        "sender": {
+          "principalId": "agent_001",
+          "sessionId": "session_001"
+        },
+        "recipient": {
+          "component": "orchestrator"
+        },
+        "assignmentId": "assignment_001",
+        "leaseId": "lease_001",
+        "correlationId": "dispatch_001",
+        "causationId": "message_000",
+        "projectSequence": 20,
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "outcome": "verified"
+        },
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-WorkspaceRequest-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "WorkspaceRequest",
+        "requestId": "request_001",
+        "projectId": "project_001",
+        "principal": {
+          "principalType": "agent",
+          "principalId": "agent_001"
+        },
+        "roleId": "role_001",
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "profile": "execution",
+        "maxBytes": 65536,
+        "selector": {
+          "projectSequence": 20
+        },
+        "requestedAt": "2026-07-17T14:00:00Z",
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-Workspace-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "Workspace",
+        "workspaceId": "workspace_001",
+        "projectId": "project_001",
+        "principalId": "agent_001",
+        "roleId": "role_001",
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "context": {
+          "mission": {
+            "kind": "Mission",
+            "id": "mission_001",
+            "revision": 1
+          },
+          "goal": {
+            "kind": "Goal",
+            "id": "goal_001",
+            "revision": 1
+          },
+          "task": {
+            "kind": "Task",
+            "id": "task_001",
+            "revision": 3
+          },
+          "workflow": {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "revision": 2
+          },
+          "assignment": {
+            "kind": "Assignment",
+            "id": "assignment_001",
+            "revision": 1
+          },
+          "constraints": [],
+          "decisions": [],
+          "artifacts": []
+        },
+        "permittedActions": [
+          "submitAgentMessage"
+        ],
+        "forbiddenActions": [
+          "updateManifest"
+        ],
+        "memoryEntryIds": [
+          "memory_001"
+        ],
+        "notices": [],
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-MemoryEntry-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "MemoryEntry",
+        "memoryId": "memory_001",
+        "projectId": "project_001",
+        "class": "procedural",
+        "summary": "Run targeted tests before the full suite.",
+        "derived": true,
+        "sourceRefs": [
+          {
+            "kind": "Workflow",
+            "id": "workflow_001",
+            "revision": 2
+          }
+        ],
+        "eventRanges": [
+          {
+            "firstSequence": 10,
+            "lastSequence": 20
+          }
+        ],
+        "derivation": {
+          "method": "pkr.memory.summarize",
+          "version": "0.4.0"
+        },
+        "confidence": 0.9,
+        "retentionClass": "project",
+        "visibility": "role:developer",
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "validUntil": null,
+        "invalidatedAt": null,
+        "invalidationReason": null,
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-MemoryProjection-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "MemoryProjection",
+        "projectionId": "projection_001",
+        "projectId": "project_001",
+        "principalId": "agent_001",
+        "projectSequence": 20,
+        "entryIds": [
+          "memory_001"
+        ],
+        "visibilityProfile": "role:developer",
+        "status": "current",
+        "createdAt": "2026-07-17T14:00:00Z",
+        "expiresAt": "2026-07-17T15:00:00Z",
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-PackageManifest-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "PackageManifest",
+        "manifestId": "manifest_001",
+        "packageId": "dev.pkr.web",
+        "version": "0.4.0",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "publisher": {
+          "principalId": "human_001",
+          "name": "PKR"
+        },
+        "compatibility": {
+          "pkrApi": ">=0.4 <1.0",
+          "schema": "pkr.dev/v0.4"
+        },
+        "dependencies": [],
+        "conflicts": [],
+        "contributions": [
+          {
+            "type": "workflow",
+            "id": "dev.pkr.web/default",
+            "schemaId": "https://pkr.dev/packages/web/workflow.schema.json"
+          }
+        ],
+        "requestedCapabilities": [
+          "filesystem.read"
+        ],
+        "lifecycle": {
+          "install": "validate",
+          "migrate": "none",
+          "uninstall": "preserve-history",
+          "rollback": "previous"
+        },
+        "license": "Apache-2.0",
+        "distribution": "https://pkr.dev/packages/web/0.4.0",
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-PackageInstallation-unknown-field",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "PackageInstallation",
+        "installationId": "installation_001",
+        "projectId": "project_001",
+        "revision": 1,
+        "projectSequence": 20,
+        "createdAt": "2026-07-17T14:00:00Z",
+        "updatedAt": "2026-07-17T14:00:00Z",
+        "packageId": "dev.pkr.web",
+        "version": "0.4.0",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "resolvedDependencies": [],
+        "approvedCapabilities": [
+          "filesystem.read"
+        ],
+        "contributionIds": [
+          "dev.pkr.web/default"
+        ],
+        "state": "staged",
+        "installedBy": "human_001",
+        "decisionId": "decision_001",
+        "workflowId": "workflow_001",
+        "workflowRevision": 2,
+        "migrationStatus": "notRequired",
+        "healthStatus": "unknown",
+        "rollbackTarget": null,
+        "extensions": {},
+        "unexpected": true
+      }
+    },
+    {
+      "name": "invalid-action-startWorkflowRun-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_startWorkflowRun",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "startWorkflowRun",
+        "target": {
+          "kind": "WorkflowRun",
+          "id": "workflowrun_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "workflowRevision": 2,
+          "scope": {
+            "type": "task",
+            "taskId": "task_001"
+          }
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-transitionWorkflowRun-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_transitionWorkflowRun",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "transitionWorkflowRun",
+        "target": {
+          "kind": "WorkflowRun",
+          "id": "workflowrun_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "reason": "ImplementationComplete"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-recordVerificationAttempt-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_recordVerificationAttempt",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "recordVerificationAttempt",
+        "target": {
+          "kind": "WorkflowRun",
+          "id": "workflowrun_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "result": "passed",
+          "evidenceRefs": [
+            "artifact_001"
+          ]
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-offerAssignment-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_offerAssignment",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "offerAssignment",
+        "target": {
+          "kind": "Assignment",
+          "id": "assignment_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "taskRevision": 3,
+          "workflowId": "workflow_001",
+          "workflowRevision": 2,
+          "objective": "Execute the bounded lane."
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-respondAssignment-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_respondAssignment",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "respondAssignment",
+        "target": {
+          "kind": "Assignment",
+          "id": "assignment_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-openAgentSession-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_openAgentSession",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "openAgentSession",
+        "target": {
+          "kind": "AgentSession",
+          "id": "agentsession_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "capabilityStatementId": "capability_001",
+          "providerLocator": "local://session/001"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-closeAgentSession-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_closeAgentSession",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "closeAgentSession",
+        "target": {
+          "kind": "AgentSession",
+          "id": "agentsession_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-acquireLease-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_acquireLease",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "acquireLease",
+        "target": {
+          "kind": "Lease",
+          "id": "lease_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "sessionId": "session_001",
+          "agentId": "agent_001",
+          "mode": "exclusive",
+          "expiresAt": "2026-07-17T15:00:00Z"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-renewLease-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_renewLease",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "renewLease",
+        "target": {
+          "kind": "Lease",
+          "id": "lease_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-releaseLease-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_releaseLease",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "releaseLease",
+        "target": {
+          "kind": "Lease",
+          "id": "lease_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-revokeLease-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_revokeLease",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "revokeLease",
+        "target": {
+          "kind": "Lease",
+          "id": "lease_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-submitAgentMessage-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_submitAgentMessage",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "submitAgentMessage",
+        "target": {
+          "kind": "AgentMessage",
+          "id": "agentmessage_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-proposePackageInstall-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_proposePackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "proposePackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 0,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "version": "0.4.0",
+          "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-resolvePackageInstall-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_resolvePackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "resolvePackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-stagePackageInstall-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_stagePackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "stagePackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "rollback": "previous"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-activatePackageInstall-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_activatePackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "activatePackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-suspendPackageInstall-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_suspendPackageInstall",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "suspendPackageInstall",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-uninstallPackage-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_uninstallPackage",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "uninstallPackage",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-action-rollbackPackage-payload",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationCommand",
+        "commandId": "command_rollbackPackage",
+        "projectId": "project_001",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "action": "rollbackPackage",
+        "target": {
+          "kind": "PackageInstallation",
+          "id": "packageinstallation_001"
+        },
+        "expectedRevision": 1,
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Execute the accepted bounded coordination step."
+        },
+        "issuedAt": "2026-07-17T14:00:00Z",
+        "payload": {
+          "targetDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-event-type",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationEvent",
+        "eventId": "event_021",
+        "projectId": "project_001",
+        "sequence": 21,
+        "type": "assignment.offered",
+        "subject": {
+          "kind": "Assignment",
+          "id": "assignment_001"
+        },
+        "subjectRevision": 1,
+        "commandId": "command_offerAssignment",
+        "actor": {
+          "principalType": "agent",
+          "principalId": "agent_steward"
+        },
+        "roleId": "role_001",
+        "workflow": {
+          "id": "workflow_001",
+          "revision": 2
+        },
+        "scope": {
+          "type": "task",
+          "taskId": "task_001"
+        },
+        "decisionBasis": {
+          "type": "operational",
+          "reason": "Dispatch the accepted bounded lane."
+        },
+        "occurredAt": "2026-07-17T14:00:00Z",
+        "data": {
+          "state": "offered"
+        },
+        "extensions": {}
+      }
+    },
+    {
+      "name": "invalid-result-committed-with-error",
+      "instance": {
+        "apiVersion": "pkr.dev/v0.4",
+        "kind": "CoordinationResult",
+        "commandId": "command_offerAssignment",
+        "projectId": "project_001",
+        "status": "committed",
+        "target": {
+          "kind": "Assignment",
+          "id": "assignment_001"
+        },
+        "targetRevision": 1,
+        "eventRange": {
+          "firstSequence": 21,
+          "lastSequence": 21
+        },
+        "errors": [
+          {
+            "code": "PKR-COORD-011",
+            "message": "Commit failed."
+          }
+        ],
+        "completedAt": "2026-07-17T14:00:00Z",
+        "extensions": {}
+      }
+    }
+  ]
+}
