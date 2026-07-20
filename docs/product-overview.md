@@ -16,7 +16,7 @@ in-progress or blocked run into an undocumented guess.
 
 ## The three boundaries
 
-- **Provider work report:** Codex describes the work it attempted and the
+- **Provider work report:** the Provider describes the work it attempted and the
   repository changes it declares. This is useful evidence, but it is not
   acceptance and a `verified` callback cannot close a Task.
 - **Repository Verification:** the Verifier runs the declared host command and
@@ -32,10 +32,10 @@ the authority that decides whether the repository is done.
 ## What this alpha is
 
 - A source-installed, local reference Runtime for an existing Git repository.
-- A Provider-neutral Runtime contract with one current Codex CLI adapter.
+- A Provider-neutral Runtime contract with one current local adapter.
 - A small CLI path: `pkr init`, `pkr run`, and `pkr status`.
-- A public alpha with deterministic fake-Codex CI tests and an optional local
-  real-Codex audit.
+- A public alpha with deterministic fake-Provider CI tests and an optional
+  local real-Provider audit.
 
 ## What this alpha is not
 
@@ -54,10 +54,10 @@ the authority that decides whether the repository is done.
   supported checks on Windows and Linux.
 - The [v0.7.0-alpha.1 release notes](releases/v0.7.0-alpha.1.md) state the tag's
   prerequisites and non-goals.
-- The [sanitized real-Codex audit](../soak/audits/2026-07-19-public-alpha1-real-codex.json)
+- The [sanitized real-Provider audit](../soak/audits/2026-07-19-public-alpha1-real-codex.json)
   records one optional local success observation without a machine path,
   credential, full prompt, or source content.
-- The [release regression tests](../src/release.test.ts) use a fake Codex
+- The [release regression tests](../src/release.test.ts) use a fake Provider
   executable to prove both completed and blocked recovery paths deterministically.
 
 The detailed RFCs under `specs/` explain the design contracts; they should not

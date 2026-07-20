@@ -11,9 +11,9 @@ provider dashboards, and CI. PKR makes that operating state explicit. It does
 not own code generation; it owns the rules by which the project keeps running.
 
 PKR v0.7.0-alpha.1 is a public, pre-stable local reference implementation. It
-currently ships one Provider adapter for the Codex CLI. Hosted deployment,
-additional cloud Provider adapters, automatic model selection, and v0.8/v0.9
-evolution features are outside this release.
+currently ships one local Provider adapter. Hosted deployment, additional cloud
+Provider adapters, automatic model selection, and v0.8/v0.9 evolution features
+are outside this release.
 
 See [Why PKR and the current boundary](docs/product-overview.md) for the short
 product explanation, and [the alpha release notes](docs/releases/v0.7.0-alpha.1.md)
@@ -35,7 +35,7 @@ pkr status --project /path/to/project
 | Command | What the real result means |
 | --- | --- |
 | `pkr init` | Creates `.pkr/runtime.sqlite` and rebuildable projections in the target repository. |
-| `pkr run ... --verify ...` | Records one Assignment, asks local Codex to work, then runs the declared Repository Verifier. |
+| `pkr run ... --verify ...` | Records one Assignment, asks the configured Agent/Provider adapter to work, then runs the declared Repository Verifier. |
 | `pkr status` | Opens persisted state in a fresh process and reports task, callback, and evidence state. |
 
 Install from source first:
@@ -49,7 +49,7 @@ npm link
 ```
 
 This requires Node.js 24 or newer, Git, and Python 3.11 or newer. `pkr run`
-also requires an installed and authenticated `codex` CLI. The
+requires a configured Agent/Provider adapter. The
 `pkr-runtime@0.7.0-alpha.1` package is **not published to npm**; use the source
 install until a separately authenticated npm release is completed.
 
@@ -61,7 +61,7 @@ flowchart LR
     steward --> runtime["PKR Runtime<br/>authoritative project state"]
     runtime --> sqlite[".pkr/runtime.sqlite"]
     runtime --> lps["Orchestration adapter<br/>LPS reference"]
-    lps --> agent["Agent adapter<br/>Codex CLI in v0.7"]
+    lps --> agent["Agent / Provider adapter"]
     agent --> report["Provider work report<br/>non-authoritative"]
     agent --> repo["Project artifacts<br/>Git repository"]
     repo --> verifier["Repository Verifier<br/>trusted host process"]
@@ -119,8 +119,8 @@ sequenceDiagram
 ## Reproducible proof
 
 The checked-in [three-command demo](examples/three-command-demo/README.md)
-creates a temporary Git repository, asks a real authenticated Codex CLI to make
-one small change, verifies it, and reopens status in a fresh process:
+creates a temporary Git repository, asks a local Provider adapter to make one
+small change, verifies it, and reopens status in a fresh process:
 
 ```shell
 npm run build
@@ -134,10 +134,10 @@ reopening status:
 node scripts/run-three-command-demo.mjs --case blocked
 ```
 
-Both cases use a real authenticated Codex CLI. CI uses a fake Codex executable
+Both cases use a real local Provider adapter. CI uses a fake Provider executable
 for deterministic orchestration tests; those tests do not claim model quality
-or a real user environment. The real Codex demo is optional and is not run in
-CI.
+or a real user environment. The real Provider demo is optional and is not run
+in CI.
 
 ## Validate the public tree
 
@@ -182,7 +182,7 @@ the [LPS adapter mapping](docs/integrations/lps.md).
 PKR is not a cloud platform, hosted Agent service, OS sandbox, general-purpose
 Agent marketplace, npm package release, or production-stability guarantee. It
 does not provide cloud Provider adapters or automatic model selection. The
-current alpha is a local reference Runtime with one Codex CLI adapter; future
+current alpha is a local reference Runtime with one Provider adapter; future
 RFCs are design material, not shipped capabilities.
 
 ## Deep design
