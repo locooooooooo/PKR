@@ -53,6 +53,27 @@ also requires an installed and authenticated `codex` CLI. The
 `pkr-runtime@0.7.0-alpha.1` package is **not published to npm**; use the source
 install until a separately authenticated npm release is completed.
 
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+    human["Developer"] --> cli["pkr init / pkr run / pkr status"]
+    cli --> runtime["PKR Runtime<br/>authoritative state"]
+    runtime --> sqlite[".pkr/runtime.sqlite"]
+    runtime --> codex["Codex CLI<br/>trusted host process"]
+    codex --> report["Provider work report<br/>non-authoritative"]
+    codex --> repo["Target Git repository"]
+    repo --> verifier["Repository Verifier<br/>trusted host process"]
+    verifier --> evidence["Git + process evidence"]
+    report --> runtime
+    evidence --> runtime
+    runtime --> outcome{"Verification passes?"}
+    outcome -->|yes| done["Acceptance<br/>Task = done"]
+    outcome -->|no| blocked["Failed evidence<br/>Task = blocked"]
+    sqlite --> status["Fresh pkr status<br/>restart recovery"]
+    status --> runtime
+```
+
 ## What counts as done
 
 The authority boundary is deliberate:
@@ -70,6 +91,29 @@ The authority boundary is deliberate:
 Provider and verification commands run as trusted host processes with the
 current user's filesystem, network, and credential access. PKR enforces its
 authority and evidence boundary, but v0.7 does **not** provide an OS sandbox.
+
+## One run, two outcomes
+
+```mermaid
+sequenceDiagram
+    participant C as Codex CLI
+    participant R as PKR Runtime
+    participant V as Repository Verifier
+    participant G as Git repository
+    C->>R: Work report + changed paths
+    C->>G: Edit bounded files
+    R->>V: Declared verification command
+    V->>G: Collect HEAD, status, diff
+    V-->>R: Process result + evidence
+    alt Exit 0 and evidence matches
+        R->>R: Create acceptance Verification
+        R-->>C: Task done
+    else Non-zero, tampered, or out of scope
+        R->>R: Persist failed evidence
+        R-->>C: Task blocked
+    end
+    Note over R: Fresh pkr status reopens the same SQLite state
+```
 
 ## Reproducible proof
 
