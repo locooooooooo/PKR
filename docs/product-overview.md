@@ -5,10 +5,11 @@ still leaves four questions unanswered: what state is authoritative, did the
 declared repository check run, can a failure be resumed, and what evidence can
 someone inspect later?
 
-PKR is the project Runtime around that gap, not a wrapper around one model or
-CLI. It gives humans, Agents, tools, and workflows one authoritative project
-state and a governed operating contract. The current reference implementation
-stores that state and audit trail in `.pkr/runtime.sqlite`, asks a separate
+PKR is the project framework and Runtime around that gap, not a wrapper around
+one model or CLI. It gives humans, Agents, tools, and workflows one
+authoritative project state and a governed operating contract. The current
+reference implementation stores that state and audit trail in `.pkr/runtime.sqlite`,
+asks a separate
 Repository Verifier to run the declared check, and records enough Git/process
 evidence to recompute acceptance after the Provider has finished. A fresh
 `pkr status` process reads the same state, so a restart does not turn an

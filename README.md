@@ -1,9 +1,9 @@
 # PKR
 
-**PKR (Project Kernel Runtime) is an open project Runtime for AI-native software
-development.** It gives humans, Agents, tools, and workflows one authoritative
-project state and one governed way to plan, execute, verify, recover, and evolve
-work.
+**PKR (Project Kernel Runtime) is an open framework and project Runtime for
+AI-native software development.** It gives humans, Agents, tools, and workflows
+one authoritative project state and one governed way to plan, execute, verify,
+recover, and evolve work.
 
 Software projects otherwise scatter intent, decisions, tasks, memory,
 permissions, workflow state, and proof across repository files, conversations,
@@ -177,13 +177,26 @@ The Runtime stores authority in `.pkr/runtime.sqlite`; files under
 input. See [Decision 0001](docs/decisions/0001-reference-runtime-layout.md) and
 the [LPS adapter mapping](docs/integrations/lps.md).
 
+## Framework layers
+
+PKR is not a single Agent loop. Its framework defines the project responsibilities
+that every human, Agent, tool, and workflow reads through the same Runtime:
+
+| Layer | Responsibility |
+| --- | --- |
+| Mission / Goal / Task | Keep purpose, outcomes, and bounded work explicit. |
+| Knowledge / Decision / Constraint | Keep project facts, choices, and non-negotiable rules authoritative. |
+| Workflow / Verification | Control permitted transitions and define what evidence makes work done. |
+| Agent / Role / Workspace | Bind capabilities and permissions to the bounded context an Agent may act on. |
+| Memory / Artifact / Event | Preserve provenance, outputs, and an auditable history across sessions. |
+
 ## Current limits
 
 PKR is not a cloud platform, hosted Agent service, OS sandbox, general-purpose
 Agent marketplace, npm package release, or production-stability guarantee. It
 does not provide cloud Provider adapters or automatic model selection. The
-current alpha is a local reference Runtime with one Provider adapter; future
-RFCs are design material, not shipped capabilities.
+current alpha is a local reference implementation of this framework with one
+Provider adapter; future RFCs are design material, not shipped capabilities.
 
 ## Deep design
 
