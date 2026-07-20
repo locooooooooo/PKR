@@ -19,6 +19,9 @@ See [Why PKR and the current boundary](docs/product-overview.md) for the short
 product explanation, and [the alpha release notes](docs/releases/v0.7.0-alpha.1.md)
 for the evidence-backed release boundary.
 
+[Verify CI](https://github.com/locooooooooo/PKR/actions/workflows/verify.yml) |
+[v0.7.0-alpha.1 release](https://github.com/locooooooooo/PKR/releases/tag/v0.7.0-alpha.1)
+
 ## 30-second path
 
 Run these three commands against an existing Git repository:
@@ -47,8 +50,8 @@ npm link
 
 This requires Node.js 24 or newer, Git, and Python 3.11 or newer. `pkr run`
 also requires an installed and authenticated `codex` CLI. The
-`pkr-runtime@0.7.0-alpha.1` package is **not published to npm**; do not use an
-`npm install pkr-runtime` command yet.
+`pkr-runtime@0.7.0-alpha.1` package is **not published to npm**; use the source
+install until a separately authenticated npm release is completed.
 
 ## What counts as done
 
