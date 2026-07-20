@@ -36,6 +36,19 @@ Acceptance requires all of the following:
 5. A fresh `pkr status` process reports `summary.state = completed` and the
    Task phase `done`.
 
+To exercise the negative path, run the same demo with a deliberately failing
+Repository Verifier:
+
+```powershell
+node scripts/run-three-command-demo.mjs --case blocked
+```
+
+This command is expected to finish with a blocked Task and a non-zero exit
+from `pkr run`; the wrapper still reopens `pkr status` and exits successfully
+only when it observes `summary.state = attentionRequired`, a blocked Task, and
+no acceptance Verification. It is a demonstration of recovery evidence, not
+a claim that every real Agent run succeeds.
+
 The demo uses `gpt-5.4-mini` with low reasoning to keep this one-line proof
 within the target time. Normal project runs may omit both options and use the
 Codex CLI defaults.

@@ -1,20 +1,41 @@
 # PKR
 
-PKR is a local, authoritative Runtime and AI Agent harness for governed
-software development. It keeps project state in the target Git repository,
-separates Agent work reports from acceptance, runs repository verification,
-and recovers the audit trail after process restart.
+**PKR is a local, recoverable, verifiable AI Agent development Runtime for the
+Codex CLI.** It keeps the authoritative task state in a target Git repository,
+checks the repository independently after an Agent change, and reopens the
+audit trail after a process restart.
 
-The current candidate is `pkr-runtime@0.7.0-alpha.1` (npm dist-tag `alpha` is
-reserved for a future authenticated publish). PKR v0.7 is a public alpha. The API is pre-stable, execution is local, and the
-current Provider integration is the Codex CLI. Hosted deployment, cloud
+The pain it addresses is simple: a Provider can report that it changed code,
+but that report is not proof that the repository is correct. PKR separates the
+work report, repository verification, and Runtime acceptance so `done` means a
+declared check passed.
+
+PKR v0.7.0-alpha.1 is a public, pre-stable alpha. Execution is local and the
+supported Provider integration is the Codex CLI. Hosted deployment, cloud
 Provider adapters, automatic model selection, and v0.8/v0.9 evolution features
-are not part of this release.
+are outside this release.
 
-## Install from source
+See [Why PKR and the current boundary](docs/product-overview.md) for the short
+product explanation, and [the alpha release notes](docs/releases/v0.7.0-alpha.1.md)
+for the evidence-backed release boundary.
 
-The `pkr-runtime@0.7.0-alpha.1` package is **not currently published to npm**. Until an npm
-release is completed, install the public Apache-2.0 source directly:
+## 30-second path
+
+Run these three commands against an existing Git repository:
+
+```shell
+pkr init --project /path/to/project --name my-project
+pkr run "Add one bounded feature" --project /path/to/project --verify "npm test"
+pkr status --project /path/to/project
+```
+
+| Command | What the real result means |
+| --- | --- |
+| `pkr init` | Creates `.pkr/runtime.sqlite` and rebuildable projections in the target repository. |
+| `pkr run ... --verify ...` | Records one Assignment, asks local Codex to work, then runs the declared Repository Verifier. |
+| `pkr status` | Opens persisted state in a fresh process and reports task, callback, and evidence state. |
+
+Install from source first:
 
 ```shell
 git clone https://github.com/locooooooooo/PKR.git
@@ -25,31 +46,19 @@ npm link
 ```
 
 This requires Node.js 24 or newer, Git, and Python 3.11 or newer. `pkr run`
-also requires an installed and authenticated `codex` CLI.
+also requires an installed and authenticated `codex` CLI. The
+`pkr-runtime@0.7.0-alpha.1` package is **not published to npm**; do not use an
+`npm install pkr-runtime` command yet.
 
-## Three-command path
-
-Run these commands against the root of an existing Git repository:
-
-```shell
-pkr init --project /path/to/project --name my-project
-pkr run "Add one bounded feature" --project /path/to/project --verify "npm test"
-pkr status --project /path/to/project
-```
-
-`pkr init` creates `.pkr/runtime.sqlite` and rebuildable JSON projections inside
-the target repository. `pkr run` records one governed Assignment, invokes the
-local Codex CLI for the implementation step, then invokes the repository
-Verifier for the declared command. `pkr status` opens the persisted state in a
-fresh process and reports Tasks, Assignments, callbacks, and evidence.
+## What counts as done
 
 The authority boundary is deliberate:
 
-1. The Provider submits a non-authoritative work report and repository-change
+1. **Provider work report:** the Provider submits a non-authoritative work report and repository-change
    declaration. Even a callback that says `verified` cannot complete a Task.
-2. The repository Verifier records structured process results and Git HEAD,
+2. **Repository Verification:** the Repository Verifier records structured process results and Git HEAD,
    status, diff, staged diff, and changed paths in digest-bound evidence.
-3. The Runtime re-collects current Git evidence, recomputes the plan, scope,
+3. **Runtime acceptance:** the Runtime re-collects current Git evidence, recomputes the plan, scope,
    command, and final verdict, and only then creates test and acceptance
    Verification records.
 4. A non-zero verification exit persists failed evidence and leaves the Task
@@ -70,9 +79,17 @@ npm run build
 node scripts/run-three-command-demo.mjs
 ```
 
-Automated tests use an explicitly fake Codex executable for deterministic CI;
-they prove orchestration and trust-boundary behavior, not real model quality.
-The real Codex demo is an optional local audit and is not run in CI.
+The failure path is equally explicit and leaves a durable blocked Task before
+reopening status:
+
+```shell
+node scripts/run-three-command-demo.mjs --case blocked
+```
+
+Both cases use a real authenticated Codex CLI. CI uses a fake Codex executable
+for deterministic orchestration tests; those tests do not claim model quality
+or a real user environment. The real Codex demo is optional and is not run in
+CI.
 
 ## Validate the public tree
 
@@ -112,7 +129,18 @@ The Runtime stores authority in `.pkr/runtime.sqlite`; files under
 input. See [Decision 0001](docs/decisions/0001-reference-runtime-layout.md) and
 the [LPS adapter mapping](docs/integrations/lps.md).
 
-## Specification set
+## Current limits
+
+PKR is not a cloud platform, hosted Agent service, OS sandbox, general-purpose
+Agent marketplace, npm package release, or production-stability guarantee. It
+does not provide cloud Provider adapters or automatic model selection. The
+current alpha is a local Codex CLI Runtime and evidence boundary; future RFCs
+are design material, not shipped capabilities.
+
+## Deep design
+
+Most users do not need these contracts for the three-command path. They define
+the deeper object, protocol, and conformance design behind the v0.7 Runtime.
 
 - [PKR v0.1 definition](specs/0000-pkr-v0.1.md)
 - [PKR Object Model v0.2 draft](specs/0001-pkr-object-model-v0.2.md)
@@ -131,3 +159,13 @@ the [LPS adapter mapping](docs/integrations/lps.md).
 
 This repository is the Apache-2.0 source and release tree for the v0.7 Runtime
 and its specifications. It is not the obsolete spec-only staging repository.
+
+## More detail
+
+- [Why PKR and current limits](docs/product-overview.md)
+- [Three-command demo](examples/three-command-demo/README.md)
+- [Alpha release notes](docs/releases/v0.7.0-alpha.1.md)
+- [Changelog](CHANGELOG.md)
+- [Soak and audit format](soak/README.md)
+- [Source and release boundary](docs/repository-model.md)
+- [Contributing](CONTRIBUTING.md) - [Security](SECURITY.md) - [License](LICENSE)

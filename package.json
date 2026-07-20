@@ -1,7 +1,7 @@
 {
   "name": "pkr-runtime",
   "version": "0.7.0-alpha.1",
-  "description": "Local authoritative runtime for governed AI-native software projects.",
+  "description": "Local, recoverable, verifiable AI Agent development Runtime for the Codex CLI.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -15,6 +15,7 @@
     "ai-agent",
     "agent-harness",
     "codex",
+    "codex-cli",
     "governance",
     "local-first",
     "runtime",

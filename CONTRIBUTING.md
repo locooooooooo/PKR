@@ -11,6 +11,8 @@ Before opening a pull request:
 npm ci
 npm run verify
 npm run check:package
+node scripts/check-public-tree.mjs
+git diff --check
 ```
 
 Do not commit `.pkr/` runtime databases, provider logs containing private

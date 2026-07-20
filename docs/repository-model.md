@@ -1,57 +1,40 @@
-# Development and Public Release Repositories
+# Source and Release Boundary
 
-PKR uses two independent Git repositories with different trust boundaries.
+This public repository is the source and release tree for PKR v0.7. Public
+claims must be supported by its `main` branch, a public tag or GitHub Release,
+and the associated GitHub Actions results. Unreleased private development work
+is not part of the public product boundary.
 
-## Development repository
+## Public authority
 
-- Local path: `<private-development-checkout>`
-- Remote: `https://github.com/locooooooooo/PKRProject.git`
-- Visibility: private
-- Purpose: active RFC work, alternative versions, temporary notes, validation
-  tools, release preparation, and local iteration history.
-
-`iterations/` is explicitly non-authoritative. Material there may be incomplete,
-contradictory, or abandoned. Normative candidates live in `specs/` and become
-publishable only after their schemas and conformance checks pass.
-
-## Public runtime repository
-
-- Local publication target: a sanitized orphan branch from the v0.7 release
-  worktree
-- Remote: `https://github.com/locooooooooo/PKR.git`
-- Visibility: public
-- Purpose: v0.7 Runtime source, CLI, normative schemas, conformance material,
-  examples, audit protocol, and release metadata.
-
-The public branch is an orphan history. It is not a generated directory
-committed into `PKRProject` and is not a mirror of private development notes.
+- `main` contains the current public source, documentation, examples, and audit
+  records.
+- `v0.7.0-alpha.1` identifies the published GitHub prerelease candidate.
+- `.github/workflows/verify.yml` is the cross-platform repository quality gate.
+- GitHub publication and npm publication are separate gates. A successful or
+  skipped publish workflow does not prove that an npm package exists.
 
 ## Promotion allowlist
 
-Only these paths are promoted by default:
+Public release changes are limited to reviewed product documentation, Runtime
+source and tests, public examples, normative or explicitly draft specifications,
+schemas, conformance fixtures, release checks, and sanitized audit records.
 
-- public release `README.md`, `VERSION`, `LICENSE`, and package metadata;
-- Runtime source, tests, public examples, and release checks;
-- `specs/` normative or explicitly labeled Draft RFCs;
-- `schemas/` machine-readable normative contracts;
-- `conformance/requirements.txt`, shared validation support, validators, and
-  versioned fixtures.
-
-Development notes, local Agent state, Git metadata, credentials, editor files,
-unreviewed experiments, and the development repository README are excluded.
+The public tree excludes credentials, machine-local paths, `.pkr/` databases,
+full private prompts, Provider logs, source diffs from private projects,
+temporary design notes, and unreviewed experiments.
 
 ## Promotion gates
 
-A release commit requires:
+A public change requires:
 
-1. every promoted JSON file parses;
-2. every promoted Markdown link and code fence validates;
-3. all Core, Bootstrap, and Runtime Protocol conformance suites pass;
-4. no Python cache or local runtime output is present;
-5. a sensitive-data scan finds no credentials or machine-local secrets;
-6. the release channel accurately says `draft`, `candidate`, or `stable`;
-7. a stable release has an explicitly selected license.
+1. `npm run verify` passes.
+2. `npm run check:package` passes.
+3. `node scripts/check-public-tree.mjs` passes.
+4. `git diff --check` passes.
+5. Local Markdown links resolve and public URLs are reviewed.
+6. Version, release, install, and npm claims match live GitHub and registry
+   evidence.
 
-The v0.7 release uses Apache-2.0. Public visibility and npm publication are
-separate gates: both the GitHub tree and the npm tarball are scanned before
-publication.
+The current release uses Apache-2.0. npm remains unpublished until a separate
+authenticated publication and install/CLI smoke check succeed.
