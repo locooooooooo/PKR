@@ -5,12 +5,14 @@ still leaves four questions unanswered: what state is authoritative, did the
 declared repository check run, can a failure be resumed, and what evidence can
 someone inspect later?
 
-PKR is the local Runtime around that gap for the Codex CLI. It owns the task
-state and audit trail in `.pkr/runtime.sqlite`, asks a separate Repository
-Verifier to run the declared check, and records enough Git/process evidence to
-recompute acceptance after the Provider has finished. A fresh `pkr status`
-process reads the same state, so a restart does not turn an in-progress or
-blocked run into an undocumented guess.
+PKR is the project Runtime around that gap, not a wrapper around one model or
+CLI. It gives humans, Agents, tools, and workflows one authoritative project
+state and a governed operating contract. The current reference implementation
+stores that state and audit trail in `.pkr/runtime.sqlite`, asks a separate
+Repository Verifier to run the declared check, and records enough Git/process
+evidence to recompute acceptance after the Provider has finished. A fresh
+`pkr status` process reads the same state, so a restart does not turn an
+in-progress or blocked run into an undocumented guess.
 
 ## The three boundaries
 
@@ -29,8 +31,8 @@ the authority that decides whether the repository is done.
 
 ## What this alpha is
 
-- A source-installed, local Runtime for an existing Git repository.
-- A Codex CLI integration with persisted state and restart recovery.
+- A source-installed, local reference Runtime for an existing Git repository.
+- A Provider-neutral Runtime contract with one current Codex CLI adapter.
 - A small CLI path: `pkr init`, `pkr run`, and `pkr status`.
 - A public alpha with deterministic fake-Codex CI tests and an optional local
   real-Codex audit.

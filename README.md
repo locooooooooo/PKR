@@ -1,19 +1,19 @@
 # PKR
 
-**PKR is a local, recoverable, verifiable AI Agent development Runtime for the
-Codex CLI.** It keeps the authoritative task state in a target Git repository,
-checks the repository independently after an Agent change, and reopens the
-audit trail after a process restart.
+**PKR (Project Kernel Runtime) is an open project Runtime for AI-native software
+development.** It gives humans, Agents, tools, and workflows one authoritative
+project state and one governed way to plan, execute, verify, recover, and evolve
+work.
 
-The pain it addresses is simple: a Provider can report that it changed code,
-but that report is not proof that the repository is correct. PKR separates the
-work report, repository verification, and Runtime acceptance so `done` means a
-declared check passed.
+Software projects otherwise scatter intent, decisions, tasks, memory,
+permissions, workflow state, and proof across repository files, conversations,
+provider dashboards, and CI. PKR makes that operating state explicit. It does
+not own code generation; it owns the rules by which the project keeps running.
 
-PKR v0.7.0-alpha.1 is a public, pre-stable alpha. Execution is local and the
-supported Provider integration is the Codex CLI. Hosted deployment, cloud
-Provider adapters, automatic model selection, and v0.8/v0.9 evolution features
-are outside this release.
+PKR v0.7.0-alpha.1 is a public, pre-stable local reference implementation. It
+currently ships one Provider adapter for the Codex CLI. Hosted deployment,
+additional cloud Provider adapters, automatic model selection, and v0.8/v0.9
+evolution features are outside this release.
 
 See [Why PKR and the current boundary](docs/product-overview.md) for the short
 product explanation, and [the alpha release notes](docs/releases/v0.7.0-alpha.1.md)
@@ -57,12 +57,13 @@ install until a separately authenticated npm release is completed.
 
 ```mermaid
 flowchart LR
-    human["Developer"] --> cli["pkr init / pkr run / pkr status"]
-    cli --> runtime["PKR Runtime<br/>authoritative state"]
+    human["Human"] --> steward["Project Steward<br/>intent and proposals"]
+    steward --> runtime["PKR Runtime<br/>authoritative project state"]
     runtime --> sqlite[".pkr/runtime.sqlite"]
-    runtime --> codex["Codex CLI<br/>trusted host process"]
-    codex --> report["Provider work report<br/>non-authoritative"]
-    codex --> repo["Target Git repository"]
+    runtime --> lps["Orchestration adapter<br/>LPS reference"]
+    lps --> agent["Agent adapter<br/>Codex CLI in v0.7"]
+    agent --> report["Provider work report<br/>non-authoritative"]
+    agent --> repo["Project artifacts<br/>Git repository"]
     repo --> verifier["Repository Verifier<br/>trusted host process"]
     verifier --> evidence["Git + process evidence"]
     report --> runtime
@@ -96,21 +97,21 @@ authority and evidence boundary, but v0.7 does **not** provide an OS sandbox.
 
 ```mermaid
 sequenceDiagram
-    participant C as Codex CLI
+    participant A as Agent / Provider adapter
     participant R as PKR Runtime
     participant V as Repository Verifier
     participant G as Git repository
-    C->>R: Work report + changed paths
-    C->>G: Edit bounded files
+    A->>R: Work report + changed paths
+    A->>G: Edit bounded files
     R->>V: Declared verification command
     V->>G: Collect HEAD, status, diff
     V-->>R: Process result + evidence
     alt Exit 0 and evidence matches
         R->>R: Create acceptance Verification
-        R-->>C: Task done
+        R-->>A: Task done
     else Non-zero, tampered, or out of scope
         R->>R: Persist failed evidence
-        R-->>C: Task blocked
+        R-->>A: Task blocked
     end
     Note over R: Fresh pkr status reopens the same SQLite state
 ```
@@ -181,8 +182,8 @@ the [LPS adapter mapping](docs/integrations/lps.md).
 PKR is not a cloud platform, hosted Agent service, OS sandbox, general-purpose
 Agent marketplace, npm package release, or production-stability guarantee. It
 does not provide cloud Provider adapters or automatic model selection. The
-current alpha is a local Codex CLI Runtime and evidence boundary; future RFCs
-are design material, not shipped capabilities.
+current alpha is a local reference Runtime with one Codex CLI adapter; future
+RFCs are design material, not shipped capabilities.
 
 ## Deep design
 
