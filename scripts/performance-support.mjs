@@ -91,7 +91,7 @@ export async function emitReport(report, outputPath) {
 
 export async function replaceStateFromSnapshot(root, snapshot) {
   const state = join(root, ".pkr");
-  await rm(state, { recursive: true, force: true });
+  await rm(state, { recursive: true, force: true, maxRetries: 50, retryDelay: 100 });
   await cp(snapshot, state, { recursive: true, force: false, errorOnExist: true });
 }
 

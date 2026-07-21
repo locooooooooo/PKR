@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
@@ -285,7 +285,7 @@ function validateRepositoryVerificationEvidence(
   const scopePassed = expectedOutsideAllowed.length === 0 && expectedForbidden.length === 0 &&
     (scope.requireChanges !== true || changedFiles.length > 0);
   if (
-    resolve(repository.repositoryRoot as string).toLowerCase() !== resolve(repositoryRoot).toLowerCase() ||
+    canonicalRepositoryPath(repository.repositoryRoot as string) !== canonicalRepositoryPath(repositoryRoot) ||
     repository.contentDigest !== expectedRepositoryDigest ||
     repository.clean !== (changedFiles.length === 0) ||
     !sameOrderedStrings(outsideAllowed, expectedOutsideAllowed) ||
@@ -311,6 +311,14 @@ function validateRepositoryVerificationEvidence(
     throw new PkrError("PKR-VERIFY-001", "verification verdict conflicts with its command or scope evidence");
   }
   return { passed, evidenceDigest };
+}
+
+function canonicalRepositoryPath(path: string): string {
+  try {
+    return realpathSync.native(path).toLowerCase();
+  } catch {
+    return resolve(path).toLowerCase();
+  }
 }
 
 function versionSatisfies(version: string, range: string): boolean {
