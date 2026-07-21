@@ -1,41 +1,72 @@
-import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+import { assert, publicTree, readJson, root, runNpm, sensitiveFindings } from "./release-utils.mjs";
 
-assert.equal(packageJson.name, "pkr-runtime");
-assert.equal(packageJson.version, "0.7.0-alpha.1");
-assert.equal(packageJson.private, undefined);
-assert.equal(packageJson.license, "Apache-2.0");
-assert.equal(packageJson.bin.pkr, "./dist/cli.js");
-assert.equal(packageJson.publishConfig.access, "public");
+const packageJson = readJson("package.json");
+const dryRun = runNpm(["pack", "--dry-run", "--json", "--ignore-scripts"]);
+const reports = JSON.parse(dryRun.stdout);
+assert(Array.isArray(reports) && reports.length === 1, "npm pack returned an unexpected report");
+const report = reports[0];
+const paths = report.files.map((file) => file.path.replaceAll("\\", "/"));
 
-const command = process.platform === "win32" ? (process.env.ComSpec ?? "cmd.exe") : "npm";
-const args = process.platform === "win32"
-  ? ["/d", "/s", "/c", "npm pack --dry-run --json --ignore-scripts"]
-  : ["pack", "--dry-run", "--json", "--ignore-scripts"];
-const packResult = spawnSync(command, args, { cwd: root, encoding: "utf8", windowsHide: true });
-assert.equal(packResult.status, 0, packResult.stderr || packResult.stdout);
-const output = packResult.stdout;
-const manifest = JSON.parse(output)[0];
-const files = manifest.files.map((entry) => entry.path);
 const required = [
+  "CHANGELOG.md",
+  "CONTRIBUTING.md",
   "LICENSE",
+  "NOTICE",
   "README.md",
+  "SECURITY.md",
+  "THIRD_PARTY_NOTICES.md",
   "VERSION",
+  "docs/architecture.md",
+  "docs/quickstart.md",
+  "docs/release/v1-contract-manifest.json",
+  "docs/release/v1-stable-contract.md",
   "dist/cli.js",
+  "dist/index.d.ts",
   "dist/index.js",
-  "schemas/v0.2/pkr-object.schema.json",
-  "schemas/v0.4/pkr-coordination.schema.json",
+  "package.json",
 ];
 for (const path of required) {
-  assert.ok(files.includes(path), `package is missing ${path}`);
+  assert(paths.includes(path), `packed artifact is missing ${path}`);
 }
-for (const path of files) {
-  assert.doesNotMatch(path, /(^|\/)(\.pkr|iterations|release|node_modules)(\/|$)/);
+
+const forbidden = ["src/", "iterations/", ".pkr/", "release/", "node_modules/", ".env"];
+const publicPaths = new Set(publicTree().publicFiles);
+for (const path of paths) {
+  assert(!forbidden.some((prefix) => path === prefix || path.startsWith(prefix)), `packed artifact contains ${path}`);
+  assert(
+    path.startsWith("dist/") || publicPaths.has(path),
+    `packed artifact path is outside the public projection: ${path}`,
+  );
 }
-console.log(`PASS: npm package ${manifest.name}@${manifest.version} contains ${files.length} public files.`);
+
+assert(report.id === `${packageJson.name}@${packageJson.version}`, "npm pack identity disagrees with package.json");
+assert(readFileSync(resolve(root, "LICENSE"), "utf8").includes("Apache License"), "LICENSE is not Apache-2.0 text");
+assert(readFileSync(resolve(root, "NOTICE"), "utf8").includes("PKR"), "NOTICE does not identify PKR");
+
+const packageFindings = sensitiveFindings(paths);
+assert(packageFindings.length === 0, `packed-artifact sensitive-data scan failed:\n${packageFindings.join("\n")}`);
+
+const notices = readFileSync(resolve(root, "THIRD_PARTY_NOTICES.md"), "utf8");
+const lock = readJson("package-lock.json");
+let dependenciesAudited = 0;
+for (const path of Object.keys(lock.packages).filter((path) => path.startsWith("node_modules/"))) {
+  const dependency = JSON.parse(readFileSync(resolve(root, path, "package.json"), "utf8"));
+  const row = `| \`${dependency.name}\` | ${dependency.version} | ${dependency.license}`;
+  assert(notices.includes(row), `THIRD_PARTY_NOTICES.md is missing ${dependency.name}@${dependency.version}`);
+  dependenciesAudited += 1;
+}
+
+process.stdout.write(`${JSON.stringify({
+  ok: true,
+  id: report.id,
+  filename: report.filename,
+  fileCount: report.entryCount,
+  unpackedSize: report.unpackedSize,
+  private: packageJson.private,
+  sensitiveFindings: packageFindings.length,
+  dependenciesAudited,
+  publishAttempted: false,
+}, null, 2)}\n`);

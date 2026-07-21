@@ -1,40 +1,75 @@
-# Source and Release Boundary
+# Development and Release Repositories
 
-This public repository is the source and release tree for PKR v0.7. Public
-claims must be supported by its `main` branch, a public tag or GitHub Release,
-and the associated GitHub Actions results. Unreleased private development work
-is not part of the public product boundary.
+PKR uses two independent Git repositories with different trust boundaries.
 
-## Public authority
+## Development repository
 
-- `main` contains the current public source, documentation, examples, and audit
-  records.
-- `v0.7.0-alpha.1` identifies the published GitHub prerelease candidate.
-- `.github/workflows/verify.yml` is the cross-platform repository quality gate.
-- GitHub publication and npm publication are separate gates. A successful or
-  skipped publish workflow does not prove that an npm package exists.
+- Visibility: private
+- Purpose: active RFC work, alternative versions, temporary notes, validation
+  tools, release preparation, and local iteration history.
+
+The development repository location and remote are private operational data;
+they are not part of the public product contract or public-tree inventory.
+
+`iterations/` is explicitly non-authoritative. Material there may be incomplete,
+contradictory, or abandoned. Normative candidates live in `specs/` and become
+publishable only after their schemas and conformance checks pass.
+
+## Public release repository
+
+- Remote: `https://github.com/locooooooooo/PKR.git`
+- Visibility: public
+- Purpose: reviewed Runtime source, tests, product documentation, examples,
+  specifications, schemas, conformance material, and release metadata.
+
+The public remote `main` branch is the public product boundary. Promotion work
+must use a fresh independent clone or worktree after checking the remote SHA.
+The ignored local `release/` directory is historical staging state and must not
+be treated as current public truth or as a destination for new promotion work.
+
+After cloning the public repository and confirming its full `main` SHA, project
+the reviewed allowlist without pushing:
+
+```text
+npm run prepare:public-candidate -- <fresh-public-clone> <full-public-main-sha>
+```
+
+The command refuses a dirty target, a mismatched SHA, a non-public `origin`, or
+the development checkout itself. It reports the copied, excluded, removed, and
+changed-file counts and records `pushAttempted: false`.
 
 ## Promotion allowlist
 
-Public release changes are limited to reviewed product documentation, Runtime
-source and tests, public examples, normative or explicitly draft specifications,
-schemas, conformance fixtures, release checks, and sanitized audit records.
+Only reviewed public product paths are promoted:
 
-The public tree excludes credentials, machine-local paths, `.pkr/` databases,
-full private prompts, Provider logs, source diffs from private projects,
-temporary design notes, and unreviewed experiments.
+- release metadata such as `README.md`, `VERSION`, `CHANGELOG.md`, `LICENSE`,
+  `NOTICE`, `SECURITY.md`, and `CONTRIBUTING.md`;
+- Runtime source, public tests, package metadata, and release-check scripts;
+- public product and architecture documentation plus reproducible examples;
+- normative or explicitly labeled Draft RFCs, schemas, validators, and
+  conformance fixtures;
+- sanitized audit records and CI workflows that support public claims.
+
+Development notes under `iterations/`, local Agent state, Git metadata,
+credentials, editor files, unreviewed experiments, and private remote details
+are excluded.
 
 ## Promotion gates
 
-A public change requires:
+A release commit requires:
 
-1. `npm run verify` passes.
-2. `npm run check:package` passes.
-3. `node scripts/check-public-tree.mjs` passes.
-4. `git diff --check` passes.
-5. Local Markdown links resolve and public URLs are reviewed.
-6. Version, release, install, and npm claims match live GitHub and registry
-   evidence.
+1. every promoted JSON file parses;
+2. every promoted Markdown link and code fence validates;
+3. `npm run check:package` passes;
+4. `node scripts/check-public-tree.mjs` passes;
+5. all Core, Bootstrap, Runtime Protocol, coordination, and Runtime suites pass;
+6. no cache, local Runtime output, private prompt, or machine path is present;
+7. a sensitive-data scan finds no credentials or private repository content;
+8. the release channel accurately says `draft`, `candidate`, or `stable`;
+9. package metadata, NOTICE, and the selected license agree;
+10. GitHub publication and npm publication are recorded as separate gates.
 
-The current release uses Apache-2.0. npm remains unpublished until a separate
-authenticated publication and install/CLI smoke check succeed.
+Candidate source, package metadata, `LICENSE`, `NOTICE`, and third-party notices
+use Apache-2.0 consistently. The package remains `private: true`, versioned
+`0.7.0`, and unpublished to npm. License alignment does not itself accept G7 or
+authorize publication; those remain separate owner and release decisions.

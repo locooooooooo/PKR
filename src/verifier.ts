@@ -1,7 +1,9 @@
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { PkrError } from "./errors.js";
 import { runBoundedProcess, type BoundedProcessResult } from "./process.js";
+import { sanitizeProcessResult } from "./security.js";
 import type { JsonObject } from "./types.js";
 import { digest } from "./util.js";
 import { collectRepositoryEvidence, type RepositoryEvidence } from "./workspace.js";
@@ -15,6 +17,7 @@ export interface VerificationCommand {
 
 export interface VerificationPlan {
   version: "pkr.verify/v1";
+  mode?: "configured" | "unconfigured";
   commands: VerificationCommand[];
   allowedPaths: string[];
   forbiddenPaths: string[];
@@ -49,6 +52,7 @@ export function validateVerificationPlan(plan: VerificationPlan): void {
   if (
     !plan ||
     plan.version !== "pkr.verify/v1" ||
+    (plan.mode !== undefined && plan.mode !== "configured" && plan.mode !== "unconfigured") ||
     !Array.isArray(plan.commands) ||
     plan.commands.length === 0 ||
     new Set(commandIds).size !== commandIds.length ||
@@ -57,7 +61,10 @@ export function validateVerificationPlan(plan: VerificationPlan): void {
       !/^[a-z][a-z0-9._-]{0,63}$/.test(command.id) ||
       !command.executable?.trim() ||
       !Array.isArray(command.args) ||
-      command.args.some((argument) => typeof argument !== "string") ||
+      command.args.length > 128 ||
+      command.args.some((argument) =>
+        typeof argument !== "string" || Buffer.byteLength(argument, "utf8") > 64 * 1024
+      ) ||
       !Number.isInteger(command.timeoutMs) ||
       command.timeoutMs < 100 ||
       command.timeoutMs > 600_000
@@ -76,36 +83,23 @@ export function validateVerificationPlan(plan: VerificationPlan): void {
   }
 }
 
-export function shellVerificationPlan(
-  command: string,
-  timeoutMs = 10 * 60 * 1000,
-): VerificationPlan {
-  const trimmed = command.trim();
-  if (!trimmed) {
-    throw new PkrError("PKR-VERIFY-001", "verification command must not be empty");
+export async function loadVerificationPlan(path: string): Promise<VerificationPlan> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(resolve(path), "utf8"));
+  } catch (error) {
+    throw new PkrError(
+      "PKR-VERIFY-001",
+      `cannot load verification plan ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
-  const plan: VerificationPlan = {
-    version: "pkr.verify/v1",
-    commands: [{
-      id: "repository-check",
-      executable: process.platform === "win32"
-        ? process.env.ComSpec ?? "cmd.exe"
-        : "/bin/sh",
-      args: process.platform === "win32"
-        ? ["/d", "/s", "/c", trimmed]
-        : ["-lc", trimmed],
-      timeoutMs,
-    }],
-    allowedPaths: ["**"],
-    forbiddenPaths: [".pkr/**"],
-    requireChanges: true,
-  };
+  const plan = parsed as VerificationPlan;
   validateVerificationPlan(plan);
   return plan;
 }
 
 function processEvidence(result: BoundedProcessResult): JsonObject {
-  return result as unknown as JsonObject;
+  return sanitizeProcessResult(result) as unknown as JsonObject;
 }
 
 export async function runLocalVerification(
@@ -115,17 +109,6 @@ export async function runLocalVerification(
   plan: VerificationPlan,
 ): Promise<JsonObject> {
   validateVerificationPlan(plan);
-  const commandResults: JsonObject[] = [];
-  for (const command of plan.commands) {
-    const result = await runBoundedProcess({
-      executable: command.executable,
-      args: command.args,
-      cwd: resolve(projectRoot),
-      timeoutMs: command.timeoutMs,
-      maxOutputBytes: 256 * 1024,
-    });
-    commandResults.push({ id: command.id, ...processEvidence(result) });
-  }
   const repository = await collectRepositoryEvidence(projectRoot);
   const outsideAllowed = repository.changedFiles.filter((path) =>
     !plan.allowedPaths.some((pattern) => matches(path, pattern)),
@@ -133,6 +116,17 @@ export async function runLocalVerification(
   const forbidden = repository.changedFiles.filter((path) =>
     plan.forbiddenPaths.some((pattern) => matches(path, pattern)),
   );
+  const commandResults: JsonObject[] = [];
+  for (const command of plan.commands) {
+    const result = await runBoundedProcess({
+      executable: command.executable,
+      args: command.args,
+      cwd: projectRoot,
+      timeoutMs: command.timeoutMs,
+      maxOutputBytes: 256 * 1024,
+    });
+    commandResults.push({ id: command.id, ...processEvidence(result) });
+  }
   const scopePassed = outsideAllowed.length === 0 && forbidden.length === 0 &&
     (!plan.requireChanges || repository.changedFiles.length > 0);
   const commandsPassed = commandResults.every((result) =>
@@ -146,7 +140,6 @@ export async function runLocalVerification(
     adapter: "pkr.local-verifier/v1",
     taskId,
     assignmentId,
-    plan: plan as unknown as JsonObject,
     planDigest: digest(plan),
     repository: repository as unknown as JsonObject,
     scope: {

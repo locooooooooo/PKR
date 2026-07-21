@@ -176,7 +176,7 @@ const assignment = controlRecord("Assignment", "assignmentId", {
 
 const agentSession = controlRecord("AgentSession", "sessionId", {
   agentId: ref("Id"),
-  providerLocator: ref("NonEmptyString"),
+  sessionLocator: ref("NonEmptyString"),
   adapter: strict({ id: ref("NonEmptyString"), version: ref("Semver") }),
   protocolVersion: { type: "string", pattern: "^pkr\\.dev/v[0-9]+\\.[0-9]+$" },
   capabilityStatementId: ref("Id"),
@@ -355,7 +355,7 @@ const actionSpecs = {
   recordVerificationAttempt: ["WorkflowRun", false, { gate: { enum: ["build", "test", "security", "performance", "business", "acceptance"] }, result: { enum: ["passed", "failed", "waived", "cancelled"] }, evidenceRefs: arrayOf(ref("Id"), 1) }],
   offerAssignment: ["Assignment", true, { taskId: ref("Id"), taskRevision: ref("Revision"), workflowId: ref("Id"), workflowRevision: ref("Revision"), objective: ref("NonEmptyString") }],
   respondAssignment: ["Assignment", false, { response: { enum: ["accepted", "rejected"] } }],
-  openAgentSession: ["AgentSession", true, { agentId: ref("Id"), capabilityStatementId: ref("Id"), providerLocator: ref("NonEmptyString") }],
+  openAgentSession: ["AgentSession", true, { agentId: ref("Id"), capabilityStatementId: ref("Id"), sessionLocator: ref("NonEmptyString") }],
   closeAgentSession: ["AgentSession", false, { reason: ref("NonEmptyString") }],
   acquireLease: ["Lease", true, { assignmentId: ref("Id"), sessionId: ref("Id"), agentId: ref("Id"), mode: { enum: ["exclusive", "shared"] }, expiresAt: ref("Timestamp") }],
   renewLease: ["Lease", false, { expiresAt: ref("Timestamp") }],
@@ -513,7 +513,7 @@ const records = [
     state: "offered",
   }),
   controlBase("AgentSession", "sessionId", "session_001", {
-    agentId: "agent_001", providerLocator: "local://session/001",
+    agentId: "agent_001", sessionLocator: "agent-native://session/001",
     adapter: { id: "pkr.adapter.local-process", version: "0.4.0" }, protocolVersion: API_VERSION,
     capabilityStatementId: "capability_001", assignmentIds: ["assignment_001"], state: "active",
     lastHeartbeat: at, expiresAt: later,
@@ -594,7 +594,7 @@ const payloadExamples = {
   recordVerificationAttempt: { gate: "test", result: "passed", evidenceRefs: ["artifact_001"] },
   offerAssignment: { taskId: "task_001", taskRevision: 3, workflowId: "workflow_001", workflowRevision: 2, objective: "Execute the bounded lane." },
   respondAssignment: { response: "accepted" },
-  openAgentSession: { agentId: "agent_001", capabilityStatementId: "capability_001", providerLocator: "local://session/001" },
+  openAgentSession: { agentId: "agent_001", capabilityStatementId: "capability_001", sessionLocator: "agent-native://session/001" },
   closeAgentSession: { reason: "AssignmentClosed" },
   acquireLease: { assignmentId: "assignment_001", sessionId: "session_001", agentId: "agent_001", mode: "exclusive", expiresAt: later },
   renewLease: { expiresAt: later },

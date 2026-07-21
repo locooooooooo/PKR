@@ -1,93 +1,117 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, dirname, resolve } from "node:path";
+import { COPYFILE_EXCL } from "node:constants";
+import { copyFile, lstat, readFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { isPkrError } from "./errors.js";
-import type { StarterProfileName } from "./profiles.js";
-import type { PkrRuntime } from "./runtime.js";
-import type { InitOptions, JsonObject } from "./types.js";
-import { derivedId } from "./util.js";
-import { runLocalVerification, shellVerificationPlan } from "./verifier.js";
+import { parseCliInvocation } from "./cli-contract.js";
+import { isPkrError, PkrError } from "./errors.js";
+import type {
+  EvolutionCandidateSpec,
+  EvolutionObservationSpec,
+  GovernancePolicyContent,
+  ManagedAdapterContent,
+} from "./evolution-model.js";
+import type { AgentNativeSubmission } from "./lps.js";
+import { STARTER_PROFILES, type StarterProfileName } from "./profiles.js";
+import { loadLocalProviderConfig } from "./provider.js";
+import type {
+  InitOptions,
+  JsonObject,
+  JsonValue,
+  MetricThreshold,
+  MetricThresholdOperator,
+} from "./types.js";
+import { loadVerificationPlan, runLocalVerification } from "./verifier.js";
+import { collectRepositoryEvidence } from "./workspace.js";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-const COMMAND_OPTIONS: Record<string, Set<string>> = {
-  init: new Set(["--name", "--title", "--outcome", "--description", "--authority", "--command-id", "--project", "--help"]),
-  run: new Set(["--verify", "--model", "--reasoning", "--approve", "--request", "--project", "--help"]),
-  status: new Set(["--project", "--help"]),
-  goal: new Set(["--outcome", "--actor", "--command-id", "--project", "--help"]),
-  decision: new Set(["--question", "--choice", "--reason", "--affected", "--actor", "--command-id", "--project", "--help"]),
-  task: new Set(["--goal", "--objective", "--actor", "--command-id", "--project", "--help"]),
-  agent: new Set(["--name", "--provider", "--actor", "--command-id", "--project", "--help"]),
-  dispatch: new Set(["--task", "--agent", "--command-id", "--project", "--help"]),
-  callback: new Set(["--assignment", "--outcome", "--evidence", "--command-id", "--project", "--help"]),
-  verify: new Set(["--task", "--assignment", "--actor", "--command-id", "--evidence-file", "--project", "--help"]),
-  events: new Set(["--after", "--project", "--help"]),
-  workspace: new Set(["--task", "--assignment", "--principal", "--project", "--help"]),
-  memory: new Set(["--summary", "--source-kind", "--source-id", "--source-revision", "--visibility", "--principal", "--roles", "--memory", "--title", "--actor", "--command-id", "--project", "--help"]),
-  profile: new Set(["--name", "--decision", "--capabilities", "--actor", "--command-id", "--project", "--help"]),
-  workflow: new Set(["--workflow", "--task", "--run", "--to", "--context", "--command-id", "--project", "--help"]),
-  package: new Set(["--package", "--target", "--actor", "--command-id", "--project", "--help"]),
-  steward: new Set(["--request", "--approve-by", "--project", "--help"]),
-  lps: new Set(["--task", "--agent", "--project", "--help"]),
-  assignment: new Set(["--assignment", "--reason", "--project", "--help"]),
-  lease: new Set(["--assignment", "--project", "--help"]),
-  digest: new Set(["--project", "--help"]),
-  projection: new Set(["--project", "--help"]),
-};
+const QUICKSTART_FILES = ["verification.json", "verify.mjs"] as const;
 
-const OPTIONS_WITH_VALUES = new Set([
-  "--name", "--title", "--outcome", "--description", "--authority", "--command-id",
-  "--verify", "--model", "--reasoning", "--request", "--question", "--choice", "--reason",
-  "--affected", "--actor", "--goal", "--objective", "--provider", "--task", "--agent",
-  "--assignment", "--evidence", "--evidence-file", "--after", "--principal", "--source-kind",
-  "--source-id", "--source-revision", "--visibility", "--roles", "--memory", "--decision",
-  "--capabilities", "--workflow", "--run", "--to", "--context", "--package", "--target",
-  "--approve-by", "--description", "--project",
-]);
+interface QuickstartSetupResult {
+  created: string[];
+  skipped: string[];
+  overwritten: string[];
+  targetPath: string;
+  nextCommand: string;
+}
 
-const HELP_TEXT: Record<string, string> = {
-  root: `PKR local authoritative Runtime\n\nUsage:\n  pkr init [options]\n  pkr run "<task>" [--verify "<command>"] [options]\n  pkr status [--project <path>]\n\nCommands:\n  init       initialize .pkr state in a Git repository\n  run        execute one Provider step, independent verification, and status\n  status     reopen and report persisted project state\n\nAdvanced commands: goal, decision, task, agent, dispatch, callback, verify, events, workspace, memory, profile, workflow, package, steward, lps, assignment, lease, digest, projection`,
-  init: "Usage: pkr init [--project <path>] [--name <name>] [--title <title>] [--outcome <outcome>]",
-  run: "Usage: pkr run \"<task>\" [--project <path>] [--verify \"<command>\"] [--model <model>] [--reasoning <level>] [--approve]",
-  status: "Usage: pkr status [--project <path>]",
-  verify: "Usage: pkr verify --task <task-id> --assignment <assignment-id> --evidence-file <path> [--actor <id>]",
-};
-
-function preflight(args: string[]): { command?: string; help?: string } {
-  const command = args[0];
-  if (!command || command === "--help" || command === "help") {
-    if (command && command !== "--help" && command !== "help") {
-      throw new Error(`unknown command ${command}`);
+async function existingPath(path: string) {
+  try {
+    return await lstat(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return undefined;
     }
-    return { help: HELP_TEXT.root! };
+    throw error;
   }
-  const allowed = COMMAND_OPTIONS[command];
-  if (!allowed) {
-    throw new Error(`unknown command ${command}`);
+}
+
+async function setupQuickstart(projectRoot: string, force: boolean): Promise<QuickstartSetupResult> {
+  const statePath = join(projectRoot, ".pkr");
+  const stateStat = await existingPath(statePath);
+  const databaseStat = await existingPath(join(statePath, "runtime.sqlite"));
+  const configStat = await existingPath(join(statePath, "config.json"));
+  if (
+    !stateStat ||
+    stateStat.isSymbolicLink() ||
+    !stateStat.isDirectory() ||
+    !databaseStat ||
+    databaseStat.isSymbolicLink() ||
+    !databaseStat.isFile() ||
+    !configStat ||
+    configStat.isSymbolicLink() ||
+    !configStat.isFile()
+  ) {
+    throw new PkrError(
+      "PKR-RUNTIME-007",
+      "no PKR project found in this directory; run pkr init first",
+    );
   }
-  for (let index = 1; index < args.length; index += 1) {
-    const token = args[index]!;
-    if (!token.startsWith("--")) {
+
+  const fixtureRoot = join(repositoryRoot, "examples", "quickstart");
+  const created: string[] = [];
+  const skipped: string[] = [];
+  const overwritten: string[] = [];
+  for (const file of QUICKSTART_FILES) {
+    const source = join(fixtureRoot, file);
+    const target = join(statePath, file);
+    const targetStat = await existingPath(target);
+    if (targetStat) {
+      if (targetStat.isSymbolicLink() || !targetStat.isFile()) {
+        throw new PkrError(
+          "PKR-SETUP-001",
+          `refusing to write non-regular quickstart target ${target}`,
+        );
+      }
+      if (!force) {
+        skipped.push(file);
+        continue;
+      }
+      await copyFile(source, target);
+      overwritten.push(file);
       continue;
     }
-    if (!allowed.has(token)) {
-      throw new Error(`unknown option ${token} for command ${command}`);
-    }
-    if (OPTIONS_WITH_VALUES.has(token) && (!args[index + 1] || args[index + 1]!.startsWith("--"))) {
-      throw new Error(`option ${token} requires a value`);
-    }
-    if (OPTIONS_WITH_VALUES.has(token)) {
-      index += 1;
+    try {
+      await copyFile(source, target, COPYFILE_EXCL);
+      created.push(file);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+        throw error;
+      }
+      skipped.push(file);
     }
   }
-  if (args.includes("--help")) {
-    const help = HELP_TEXT[command] ?? `Usage: pkr ${command} [options]`;
-    return { command, help };
-  }
-  return { command };
+
+  return {
+    created,
+    skipped,
+    overwritten,
+    targetPath: statePath,
+    nextCommand: `pkr doctor --project "${projectRoot}"`,
+  };
 }
 
 function option(args: string[], name: string, fallback?: string): string | undefined {
@@ -107,95 +131,147 @@ function print(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 }
 
-function positionalRequest(args: string[]): string | undefined {
-  const value = args[1];
-  return value && !value.startsWith("--") ? value : option(args, "--request");
+function parseJsonText(value: string): unknown {
+  return JSON.parse(value.replace(/^\uFEFF/, ""));
 }
 
-function operationalStatus(runtime: PkrRuntime): JsonObject {
-  const status = runtime.status();
-  const tasks = runtime.listRecords("Task").map((record) => ({
-    id: record.id,
-    objective: (record.data.spec as JsonObject).objective as string,
-    phase: (record.data.status as JsonObject).phase as string,
-    reason: (record.data.status as JsonObject).reason as string,
-    revision: record.revision,
-    updatedAt: record.updatedAt,
-  }));
-  const assignments = runtime.listRecords("Assignment").map((record) => ({
-    id: record.id,
-    taskId: record.data.taskId as string,
-    state: record.data.state as string,
-    outcome: (record.data.disposition as string | null) ?? null,
-    revision: record.revision,
-    updatedAt: record.updatedAt,
-  }));
-  const callbacks = runtime.listRecords("AgentMessage").map((record) => ({
-    id: record.id,
-    assignmentId: record.data.assignmentId as string,
-    issuedAt: record.data.issuedAt as string,
-    ...(record.data.payload as JsonObject),
-  }));
-  const completed = tasks.filter((task) => task.phase === "done").length;
-  const blocked = tasks.filter((task) => task.phase === "blocked").length;
-  return {
-    ...status,
-    summary: {
-      state: blocked > 0 ? "attentionRequired" : completed > 0 ? "completed" : "ready",
-      totalTasks: tasks.length,
-      completedTasks: completed,
-      blockedTasks: blocked,
-      persisted: true,
-    },
-    tasks,
-    assignments,
-    callbacks,
-    recentEvents: runtime.listEvents().slice(-10).map((event) => ({
-      projectId: event.projectId,
-      sequence: event.sequence,
-      eventId: event.eventId,
-      type: event.type,
-      subjectKind: event.subjectKind,
-      subjectId: event.subjectId,
-      subjectRevision: event.subjectRevision,
-      commandId: event.commandId,
-      occurredAt: event.occurredAt,
-      data: event.data,
-    })),
-  };
+async function questionResponse(
+  args: string[],
+): Promise<import("./question-sheet.js").QuestionSheetResponse | undefined> {
+  const answersFile = option(args, "--answers-file");
+  const acceptRecommended = args.includes("--accept-recommended");
+  const skipQuestions = args.includes("--skip-questions");
+  if ([Boolean(answersFile), acceptRecommended, skipQuestions].filter(Boolean).length > 1) {
+    throw new Error("provide at most one of --answers-file, --accept-recommended, or --skip-questions");
+  }
+  if (answersFile) {
+    const parsed = parseJsonText(await readFile(resolve(answersFile), "utf8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("--answers-file must contain a JSON object");
+    }
+    const object = parsed as JsonObject;
+    return Object.hasOwn(object, "action")
+      ? object as import("./question-sheet.js").QuestionSheetResponse
+      : { action: "submit", answers: object };
+  }
+  if (acceptRecommended) return { action: "accept_recommended", answers: {} };
+  if (skipQuestions) return { action: "skip", answers: {} };
+  return undefined;
+}
+
+async function jsonInput(
+  args: string[],
+  inlineOption: string,
+  fileOption: string,
+): Promise<unknown> {
+  const inline = option(args, inlineOption);
+  const file = option(args, fileOption);
+  if ((!inline && !file) || (inline && file)) {
+    throw new Error(`provide exactly one of ${inlineOption} or ${fileOption}`);
+  }
+  return parseJsonText(file
+    ? await readFile(resolve(file), "utf8")
+    : inline!);
+}
+
+async function optionalJsonInput(
+  args: string[],
+  inlineOption: string,
+  fileOption: string,
+): Promise<unknown | undefined> {
+  const inline = option(args, inlineOption);
+  const file = option(args, fileOption);
+  if (inline && file) {
+    throw new Error(`provide at most one of ${inlineOption} or ${fileOption}`);
+  }
+  if (!inline && !file) {
+    return undefined;
+  }
+  return parseJsonText(file
+    ? await readFile(resolve(file), "utf8")
+    : inline!);
+}
+
+async function textInput(
+  args: string[],
+  inlineOption: string,
+  fileOption: string,
+): Promise<string> {
+  const inline = option(args, inlineOption);
+  const file = option(args, fileOption);
+  if ((!inline && !file) || (inline && file)) {
+    throw new Error(`provide exactly one of ${inlineOption} or ${fileOption}`);
+  }
+  return file ? readFile(resolve(file), "utf8") : inline!;
+}
+
+function scalarJson(args: string[], name: string): string | number | boolean {
+  const value = JSON.parse(required(args, name)) as JsonValue;
+  if (value === null || Array.isArray(value) || typeof value === "object") {
+    throw new Error(`${name} must be a JSON string, number, or boolean`);
+  }
+  return value;
 }
 
 async function main(): Promise<number> {
   const args = process.argv.slice(2);
-  const preflightResult = preflight(args);
-  if (preflightResult.help) {
-    process.stdout.write(`${preflightResult.help}\n`);
+  const invocation = parseCliInvocation(args);
+  if (invocation.help) {
+    process.stdout.write(`${invocation.helpText}\n`);
     return 0;
   }
-  const projectRoot = resolve(option(args, "--project", process.cwd())!);
-  const command = preflightResult.command;
   const [
-    { CodexCliAdapter },
+    { ClarificationService },
+    { createDiagnosticExport },
+    { EvolutionService },
     { LpsOrchestrator },
     { MemoryService },
     { PackageService },
-    { STARTER_PROFILES },
-    { LocalProcessAdapter },
+    projectManager,
+    questionRenderer,
+    { runRepositoryPreflight },
     { PkrRuntime },
     { StewardService },
   ] = await Promise.all([
-    import("./codex.js"),
+    import("./clarification.js"),
+    import("./security.js"),
+    import("./evolution.js"),
     import("./lps.js"),
     import("./memory.js"),
     import("./packages.js"),
-    import("./profiles.js"),
-    import("./provider.js"),
+    import("./project-manager.js"),
+    import("./question-sheet-renderer.js"),
+    import("./preflight.js"),
     import("./runtime.js"),
     import("./steward.js"),
   ]);
+  const projectRoot = resolve(option(args, "--project", process.cwd())!);
+  const command = args[0];
+
+  if (command === "setup") {
+    if (!args.includes("--quickstart")) {
+      throw new Error("setup requires --quickstart");
+    }
+    print(await setupQuickstart(projectRoot, args.includes("--force")));
+    return 0;
+  }
+
+  if (command === "doctor") {
+    const report = await runRepositoryPreflight(projectRoot, repositoryRoot, {
+      providerFile: option(args, "--provider-file", join(projectRoot, ".pkr", "provider.json"))!,
+      verificationFile: option(
+        args,
+        "--verification-file",
+        join(projectRoot, ".pkr", "verification.json"),
+      )!,
+      adapter: args.includes("--adapter") || option(args, "--provider-file") !== undefined,
+    });
+    print(report);
+    return report.ready ? 0 : 2;
+  }
 
   if (command === "init") {
-    const name = option(args, "--name", basename(projectRoot))!;
+    const name = option(args, "--name", "pkr-project")!;
     const description = option(args, "--description");
     const authorityId = option(args, "--authority");
     const requestId = option(args, "--command-id");
@@ -216,108 +292,154 @@ async function main(): Promise<number> {
     return 0;
   }
 
+  if (command === "project" && args[1] === "intake") {
+    const requestInline = option(args, "--request");
+    const requestFile = option(args, "--request-file");
+    if (requestInline && requestFile) {
+      throw new Error("provide at most one of --request and --request-file");
+    }
+    const request = requestFile
+      ? await readFile(resolve(requestFile), "utf8")
+      : requestInline;
+    const verificationFile = option(args, "--verification-file");
+    const verificationPlan = verificationFile
+      ? await loadVerificationPlan(verificationFile)
+      : undefined;
+    const intake: import("./project-manager.js").ProjectIntakeInput = {};
+    const name = option(args, "--name");
+    const title = option(args, "--title");
+    const outcome = option(args, "--outcome");
+    const audience = option(args, "--audience");
+    const targetRoot = option(args, "--target");
+    const months = option(args, "--months");
+    const days = option(args, "--days");
+    if (request !== undefined) intake.request = request;
+    if (name) intake.projectName = name;
+    if (title) intake.title = title;
+    if (outcome) intake.outcome = outcome;
+    if (audience) intake.audience = audience;
+    if (targetRoot) intake.targetRoot = targetRoot;
+    if (months) intake.horizonMonths = Number(months);
+    if (days) intake.dailyPlanDays = Number(days);
+    if (verificationPlan) intake.verificationPlan = verificationPlan;
+    const questionFormat = option(args, "--question-format");
+    if (questionFormat && questionFormat !== "chat" && questionFormat !== "cli") {
+      throw new Error("--question-format must be chat or cli");
+    }
+    const response = await questionResponse(args);
+    const intakeResult = response
+      ? projectManager.resolveProjectIntake(intake, response)
+      : projectManager.prepareProjectIntake(intake);
+    if (questionFormat && intakeResult.state === "clarification_required") {
+      const profile = questionFormat === "chat"
+        ? questionRenderer.CHAT_MARKDOWN_PROFILE
+        : questionRenderer.CLI_COMPACT_PROFILE;
+      process.stdout.write(questionRenderer.renderQuestionSheet(intakeResult.questionSheet, profile).text);
+    } else {
+      print(intakeResult);
+    }
+    return 0;
+  }
+
+  if (command === "project" && args[1] === "bootstrap") {
+    const proposal = await jsonInput(args, "--proposal", "--proposal-file");
+    print(await projectManager.bootstrapProject(proposal, option(args, "--approve-by"), repositoryRoot));
+    return 0;
+  }
+
   const runtime = await PkrRuntime.open(projectRoot, repositoryRoot);
   try {
-    const provider = new LocalProcessAdapter(
-      process.execPath,
-      resolve(repositoryRoot, "dist", "provider-worker.js"),
-    );
-    const lps = new LpsOrchestrator(runtime, provider);
+    const lps = new LpsOrchestrator(runtime);
+    const evolution = new EvolutionService(runtime);
     const memory = new MemoryService(runtime);
     const packages = new PackageService(runtime);
     if (command === "status") {
-      print(operationalStatus(runtime));
+      print(runtime.status());
+      return 0;
+    }
+    if (command === "diagnostics" && args[1] === "export") {
+      print(createDiagnosticExport(runtime));
+      return 0;
+    }
+    const clarification = new ClarificationService(runtime);
+    if (command === "clarification" && args[1] === "assess") {
+      const trigger = option(args, "--trigger", "execution-checkpoint")!;
+      if (!["steward-request", "goal-review", "decision-fork", "execution-checkpoint"].includes(trigger)) {
+        throw new Error("--trigger must be steward-request, goal-review, decision-fork, or execution-checkpoint");
+      }
+      const subjectRevision = Number(option(args, "--subject-revision", "1"));
+      if (!Number.isInteger(subjectRevision) || subjectRevision < 1) {
+        throw new Error("--subject-revision must be a positive integer");
+      }
+      const context = await optionalJsonInput(args, "--context", "--context-file");
+      if (context !== undefined && (!context || typeof context !== "object" || Array.isArray(context))) {
+        throw new Error("clarification context must be a JSON object");
+      }
+      const signals = await optionalJsonInput(args, "--signals", "--signals-file");
+      if (signals !== undefined && !Array.isArray(signals)) {
+        throw new Error("clarification signals must be a JSON array");
+      }
+      print(await clarification.assess({
+        trigger: trigger as import("./clarification.js").ClarificationAssessmentInput["trigger"],
+        subject: {
+          kind: required(args, "--subject-kind"),
+          id: required(args, "--subject-id"),
+          revision: subjectRevision,
+        },
+        intent: required(args, "--intent"),
+        ...(context ? { context: context as JsonObject } : {}),
+        ...(signals ? { signals: signals as import("./clarification.js").AmbiguitySignal[] } : {}),
+      }));
+      return 0;
+    }
+    if (command === "clarification" && args[1] === "status") {
+      const session = clarification.get(required(args, "--run"));
+      const questionFormat = option(args, "--question-format");
+      if (questionFormat && questionFormat !== "chat" && questionFormat !== "cli") {
+        throw new Error("--question-format must be chat or cli");
+      }
+      if (questionFormat && session.questionSheet) {
+        const profile = questionFormat === "chat"
+          ? questionRenderer.CHAT_MARKDOWN_PROFILE
+          : questionRenderer.CLI_COMPACT_PROFILE;
+        process.stdout.write(questionRenderer.renderQuestionSheet(session.questionSheet, profile).text);
+      } else {
+        print(session);
+      }
+      return 0;
+    }
+    if (command === "clarification" && args[1] === "list") {
+      print(clarification.list());
+      return 0;
+    }
+    if (command === "clarification" && args[1] === "respond") {
+      const response = await questionResponse(args);
+      if (!response) {
+        throw new Error("clarification respond requires --answers-file, --accept-recommended, or --skip-questions");
+      }
+      print(await clarification.respond(required(args, "--run"), response));
       return 0;
     }
     if (command === "run") {
-      const request = positionalRequest(args);
-      if (!request) {
-        throw new Error('usage: pkr run "<task>" [--verify "<command>"] [--approve]');
-      }
       const steward = new StewardService(runtime);
-      const proposal = steward.prepare(request);
-      const approvedBy = args.includes("--approve") ? runtime.ownerId() : undefined;
-      const intake = await steward.apply(proposal, approvedBy);
-      const agent = await runtime.registerAgent(
-        "codex-cli",
-        "codex-cli",
-        runtime.ownerId(),
-        derivedId("command", `${runtime.projectId}:codex-cli-agent`),
-      );
-      const agentId = ((agent.value as JsonObject).metadata as JsonObject).id as string;
-      const verificationCommand = option(args, "--verify", "npm test")!;
-      const adapter = new CodexCliAdapter({
-        projectRoot,
-        request,
-        ...(option(args, "--model") ? { model: option(args, "--model")! } : {}),
-        ...(option(args, "--reasoning")
-          ? {
-              reasoningEffort: option(args, "--reasoning") as
-                | "low"
-                | "medium"
-                | "high"
-                | "xhigh",
-            }
-          : {}),
-        ...(process.env.PKR_CODEX_COMMAND
-          ? { executable: process.env.PKR_CODEX_COMMAND }
-          : {}),
-        ...(process.env.PKR_CODEX_ARGS
-          ? { executableArgs: JSON.parse(process.env.PKR_CODEX_ARGS) as string[] }
-          : {}),
-      });
-      const result = await new LpsOrchestrator(runtime, adapter).executeLane(
-        intake.taskId as string,
-        agentId,
-      );
-      let verification: JsonObject | null = null;
-      const task = runtime.getRecord("Task", intake.taskId as string);
-      if ((task.data.status as JsonObject).phase === "verifying") {
-        const evidence = await runLocalVerification(
-          projectRoot,
-          intake.taskId as string,
-          result.assignmentId,
-          shellVerificationPlan(verificationCommand),
-        );
-        const runDirectory = resolve(projectRoot, ".pkr", "runs", result.assignmentId);
-        await mkdir(runDirectory, { recursive: true });
-        await writeFile(
-          resolve(runDirectory, "verification.json"),
-          `${JSON.stringify(evidence, null, 2)}\n`,
-          "utf8",
-        );
-        const commandEvidence = (evidence.commands as JsonObject[])[0]!;
-        await writeFile(
-          resolve(runDirectory, "verification.log"),
-          [
-            `$ ${verificationCommand}`,
-            commandEvidence.stdout as string,
-            commandEvidence.stderr as string,
-            `exit=${commandEvidence.exitCode as number | null} timedOut=${commandEvidence.timedOut as boolean}`,
-          ].join("\n"),
-          "utf8",
-        );
-        const accepted = await runtime.verify(
-          intake.taskId as string,
-          result.assignmentId,
-          "agent_repository_verifier",
-          derivedId("command", `pkr-run:${result.assignmentId}:repository-verify`),
-          evidence,
-        );
-        verification = accepted.value as JsonObject;
-      }
+      const proposal = steward.prepare(required(args, "--request"));
+      const applied = await steward.apply(proposal, option(args, "--approve-by"));
+      print(steward.taskCard(proposal, applied));
+      return 0;
+    }
+    if (command === "project" && args[1] === "plan") {
+      print(await projectManager.writeProjectPlanProjection(runtime));
+      return 0;
+    }
+    if (command === "project" && args[1] === "status") {
+      const plan = await projectManager.writeProjectPlanProjection(runtime);
       print({
-        command: "run",
-        provider: { id: adapter.id, version: adapter.version },
-        intake,
-        execution: result,
-        verification,
-        status: operationalStatus(runtime),
+        ...runtime.status(),
+        state: plan.readiness.state,
+        readiness: plan.readiness,
+        plan,
       });
-      return verification?.passed === true ||
-          (runtime.getRecord("Task", intake.taskId as string).data.status as JsonObject).phase === "done"
-        ? 0
-        : 2;
+      return 0;
     }
     if (command === "goal" && args[1] === "create") {
       print(
@@ -357,7 +479,7 @@ async function main(): Promise<number> {
       print(
         await runtime.registerAgent(
           required(args, "--name"),
-          option(args, "--provider", "local")!,
+          option(args, "--host", "agent-native")!,
           option(args, "--actor", "human_001"),
           option(args, "--command-id"),
         ),
@@ -375,31 +497,52 @@ async function main(): Promise<number> {
       return 0;
     }
     if (command === "callback") {
-      const rawOutcome = option(args, "--outcome", "partial")!;
+      const workReport = await optionalJsonInput(
+        args,
+        "--callback",
+        "--callback-file",
+      ) as JsonObject | undefined;
+      const rawOutcome = (workReport?.outcome as string | undefined) ??
+        option(args, "--outcome", "verified")!;
       if (!["verified", "partial", "blocked", "externalSignoffBlocked"].includes(rawOutcome)) {
         throw new Error(`invalid callback outcome ${rawOutcome}`);
+      }
+      const evidenceIds = workReport
+        ? workReport.evidenceIds
+        : (option(args, "--evidence", "") ?? "").split(",").filter(Boolean);
+      if (!Array.isArray(evidenceIds) || evidenceIds.some((value) => typeof value !== "string")) {
+        throw new Error("callback evidenceIds must be an array of strings");
       }
       print(
         await runtime.callback(
           required(args, "--assignment"),
           rawOutcome as "verified" | "partial" | "blocked" | "externalSignoffBlocked",
-          (option(args, "--evidence", "") ?? "").split(",").filter(Boolean),
+          evidenceIds as string[],
           option(args, "--command-id"),
+          workReport,
         ),
       );
       return 0;
     }
     if (command === "verify") {
-      const evidence = JSON.parse(
-        await readFile(required(args, "--evidence-file"), "utf8"),
-      ) as JsonObject;
+      const taskId = required(args, "--task");
+      const assignmentId = required(args, "--assignment");
+      const verificationPlan = await loadVerificationPlan(
+        option(args, "--verification-file", join(projectRoot, ".pkr", "verification.json"))!,
+      );
+      const verificationEvidence = await runLocalVerification(
+        projectRoot,
+        taskId,
+        assignmentId,
+        verificationPlan,
+      );
       print(
         await runtime.verify(
-          required(args, "--task"),
-          required(args, "--assignment"),
+          taskId,
+          assignmentId,
           option(args, "--actor", "agent_verifier"),
           option(args, "--command-id"),
-          evidence,
+          verificationEvidence,
         ),
       );
       return 0;
@@ -409,11 +552,13 @@ async function main(): Promise<number> {
       return 0;
     }
     if (command === "workspace") {
+      const repositoryEvidence = await collectRepositoryEvidence(projectRoot);
       print(
         runtime.workspace(
           required(args, "--task"),
           required(args, "--assignment"),
           required(args, "--principal"),
+          repositoryEvidence as unknown as JsonObject,
         ),
       );
       return 0;
@@ -522,19 +667,240 @@ async function main(): Promise<number> {
       );
       return 0;
     }
+    if (command === "prompt" && args[1] === "register") {
+      print(
+        await runtime.registerPrompt(
+          required(args, "--title"),
+          await textInput(args, "--template", "--template-file"),
+          option(args, "--version", "1.0.0")!,
+          option(args, "--actor", runtime.ownerId())!,
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "prompt" && args[1] === "status") {
+      print(runtime.promptStatus(required(args, "--id")));
+      return 0;
+    }
+    if (command === "prompt" && args[1] === "rollback") {
+      print(
+        await runtime.rollbackPrompt(
+          required(args, "--current"),
+          required(args, "--target"),
+          option(args, "--actor", runtime.ownerId())!,
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "policy" && args[1] === "register") {
+      print(
+        await runtime.registerPolicy(
+          await jsonInput(args, "--policy", "--policy-file") as GovernancePolicyContent,
+          option(args, "--actor", runtime.ownerId())!,
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "policy" && args[1] === "status") {
+      print(runtime.policyStatus(required(args, "--id")));
+      return 0;
+    }
+    if (command === "policy" && args[1] === "rollback") {
+      print(
+        await runtime.rollbackPolicy(
+          required(args, "--current"),
+          required(args, "--target"),
+          option(args, "--actor", runtime.ownerId())!,
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "adapter" && args[1] === "register") {
+      print(
+        await runtime.registerAdapter(
+          await jsonInput(args, "--adapter", "--adapter-file") as ManagedAdapterContent,
+          option(args, "--actor", runtime.ownerId())!,
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "adapter" && args[1] === "status") {
+      print(runtime.adapterStatus(required(args, "--id")));
+      return 0;
+    }
+    if (command === "adapter" && args[1] === "rollback") {
+      print(
+        await runtime.rollbackAdapter(
+          required(args, "--current"),
+          required(args, "--target"),
+          option(args, "--actor", runtime.ownerId())!,
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "metric" && args[1] === "record") {
+      const threshold: MetricThreshold = {
+        operator: required(args, "--operator") as MetricThresholdOperator,
+        value: scalarJson(args, "--threshold"),
+        severity: option(args, "--severity", "warning") as MetricThreshold["severity"],
+      };
+      print(
+        await runtime.recordMetric(
+          required(args, "--measure"),
+          required(args, "--source"),
+          required(args, "--window"),
+          threshold,
+          scalarJson(args, "--value"),
+          option(args, "--actor", runtime.ownerId())!,
+          option(args, "--command-id"),
+          JSON.parse(option(args, "--source-configuration", "{}")!) as JsonObject,
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "propose") {
+      print(
+        await evolution.observeRepeatedFailures(
+          await jsonInput(args, "--candidate", "--candidate-file") as EvolutionCandidateSpec,
+          required(args, "--proposer"),
+          Number(option(args, "--threshold", "2")),
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "observe") {
+      print(
+        await evolution.observe(
+          await jsonInput(args, "--candidate", "--candidate-file") as EvolutionCandidateSpec,
+          await jsonInput(args, "--observation", "--observation-file") as EvolutionObservationSpec,
+          required(args, "--proposer"),
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "revise") {
+      print(
+        await evolution.revise(
+          required(args, "--id"),
+          await jsonInput(args, "--candidate", "--candidate-file") as EvolutionCandidateSpec,
+          required(args, "--proposer"),
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "approve") {
+      print(
+        await evolution.approve(
+          required(args, "--id"),
+          option(args, "--approver", runtime.ownerId())!,
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "evaluate") {
+      print(
+        await evolution.evaluate(
+          required(args, "--id"),
+          required(args, "--verifier"),
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "external-evaluate") {
+      print(
+        await evolution.evaluateExternally(
+          required(args, "--id"),
+          required(args, "--supervisor"),
+          await jsonInput(args, "--result", "--result-file") as JsonObject,
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "promote") {
+      print(
+        await evolution.promote(
+          required(args, "--id"),
+          option(args, "--promoter", runtime.ownerId())!,
+          option(args, "--supervisor"),
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "monitor") {
+      print(
+        await evolution.monitor(
+          required(args, "--id"),
+          required(args, "--observer"),
+          scalarJson(args, "--value"),
+          option(args, "--command-id"),
+        ),
+      );
+      return 0;
+    }
+    if (command === "evolution" && args[1] === "status") {
+      print(evolution.status(required(args, "--id")));
+      return 0;
+    }
     if (command === "steward" && args[1] === "propose") {
-      print(new StewardService(runtime).prepare(required(args, "--request")));
+      const proposal = await new StewardService(runtime).prepareWithClarification(required(args, "--request"));
+      const questionFormat = option(args, "--question-format");
+      if (questionFormat && questionFormat !== "chat" && questionFormat !== "cli") {
+        throw new Error("--question-format must be chat or cli");
+      }
+      if (questionFormat && proposal.questionSheet) {
+        const profile = questionFormat === "chat"
+          ? questionRenderer.CHAT_MARKDOWN_PROFILE
+          : questionRenderer.CLI_COMPACT_PROFILE;
+        process.stdout.write(questionRenderer.renderQuestionSheet(proposal.questionSheet, profile).text);
+      } else {
+        print(proposal);
+      }
       return 0;
     }
     if (command === "steward" && args[1] === "apply") {
       const steward = new StewardService(runtime);
       const proposal = steward.prepare(required(args, "--request"));
-      print(await steward.apply(proposal, option(args, "--approve-by")));
+      print(await steward.apply(proposal, option(args, "--approve-by"), await questionResponse(args)));
       return 0;
     }
-    if (command === "lps" && args[1] === "run") {
+    if (command === "lps" && args[1] === "claim") {
+      print(await lps.claim(
+        required(args, "--task"),
+        required(args, "--agent"),
+        option(args, "--session-locator"),
+      ));
+      return 0;
+    }
+    if (command === "lps" && args[1] === "submit") {
+      const supplied = await optionalJsonInput(args, "--result", "--result-file") as
+        Partial<AgentNativeSubmission> | undefined;
+      const outcome = option(args, "--outcome") as AgentNativeSubmission["outcome"] | undefined;
+      print(await lps.submit(
+        required(args, "--assignment"),
+        required(args, "--agent"),
+        outcome ? { ...supplied, outcome } : supplied,
+      ));
+      return 0;
+    }
+    if (command === "lps" && args[1] === "adapter-run") {
+      const configuredProvider = await loadLocalProviderConfig(
+        option(args, "--provider-file", join(projectRoot, ".pkr", "provider.json"))!,
+      );
       print(
-        await lps.executeLane(
+        await new LpsOrchestrator(runtime, configuredProvider).executeLane(
           required(args, "--task"),
           required(args, "--agent"),
         ),
@@ -572,7 +938,7 @@ async function main(): Promise<number> {
       return 0;
     }
     throw new Error(
-      "usage: pkr init|run|status (advanced: goal|decision|task|agent|dispatch|callback|verify|events|workspace|memory|profile|workflow|package|steward|lps|assignment|lease|digest|projection)",
+      "usage: pkr doctor|init|setup|run|status|diagnostics export|project intake|project bootstrap|project plan|project status|goal create|decision create|task create|agent register|dispatch|callback|verify|events|workspace|memory derive|memory list|memory promote|profile install|profile list|workflow start|workflow transition|package uninstall|package rollback|prompt register|prompt status|prompt rollback|policy register|policy status|policy rollback|adapter register|adapter status|adapter rollback|metric record|evolution propose|evolution observe|evolution revise|evolution approve|evolution evaluate|evolution external-evaluate|evolution promote|evolution monitor|evolution status|steward propose|steward apply|lps claim|lps submit|lps adapter-run|lps board|assignment cancel|lease heartbeat|lease expire|digest|projection rebuild",
     );
   } finally {
     runtime.close();

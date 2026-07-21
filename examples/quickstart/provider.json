@@ -1,0 +1,13 @@
+{
+  "version": "pkr.provider/v1",
+  "adapter": {
+    "id": "pkr.adapter.local-process",
+    "version": "0.6.0",
+    "capabilities": ["filesystem.read", "filesystem.write", "terminal"]
+  },
+  "command": {
+    "executable": "node",
+    "args": [".pkr/provider.mjs"],
+    "timeoutMs": 30000
+  }
+}

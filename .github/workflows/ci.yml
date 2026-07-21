@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: conformance/requirements.txt
+
+      - name: Install Python dependencies
+        run: python -m pip install --disable-pip-version-check --requirement conformance/requirements.txt
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify
+
+      - name: Check public candidate metadata and tree
+        run: npm run check:candidate
+
+      - name: Check fresh source and packed-artifact installs
+        run: npm run check:fresh-install

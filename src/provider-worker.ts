@@ -1,4 +1,7 @@
 import { createHash } from "node:crypto";
+import { writeFileSync } from "node:fs";
+
+import { resolveSafeRepositoryPath } from "./path-safety.js";
 
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -25,14 +28,22 @@ process.stdin.on("end", () => {
         .update(`${request.assignmentId}:${request.workspace.projectSequence ?? 0}`)
         .digest("hex")
         .slice(0, 32);
+      const writePath = process.env.PKR_PROVIDER_WRITE_FILE;
+      if (writePath) {
+        const target = resolveSafeRepositoryPath(process.cwd(), writePath);
+        writeFileSync(target, `provider result ${hash}\n`, "utf8");
+      }
       process.stdout.write(
         JSON.stringify({
           outcome: "partial",
-          completed: ["provider-work-reported"],
-          incomplete: ["independent-verification"],
+          completed: ["provider-result-produced"],
+          incomplete: ["repository-verification", "acceptance"],
           blockers: [],
-          evidenceIds: [`artifact_provider_${hash}`],
-          nextAction: "verify",
+          evidenceIds: [],
+          outputs: writePath
+            ? [{ kind: "patch", locator: writePath }]
+            : [{ kind: "result", locator: `pkr://provider-results/${hash}` }],
+          nextAction: "collect repository evidence and run the independent Verifier",
         }),
       );
     } catch (error) {
