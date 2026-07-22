@@ -34,27 +34,31 @@ documented record/event semantics and supported migration path.
 The manifest explicitly marks the following families experimental:
 
 - `metric`, `prompt`, `policy`, `adapter`, and `evolution` CLI routes;
-- `lps adapter-run` and the `pkr.provider/v1` local-process Provider contract;
+- `lps adapter-run` and the legacy-named `pkr.provider/v1` local-process Adapter
+  contract;
 - evolution, canary, managed Adapter, raw process, and direct store exports;
 - `Metric` persistence and the listed adapter/evolution/metric/policy/prompt
   events.
 
 Experimental surfaces are shipped for evaluation but are outside the v1
-compatibility promise until G1 and G2 close. Their work reports remain
-non-authoritative. They may never weaken Repository Verification or Runtime
-acceptance semantics.
+compatibility promise. Their work reports remain non-authoritative. They may
+never weaken Repository Verification or Runtime acceptance semantics, and any
+later promotion requires its own compatibility decision and evidence.
 
 ## Adapter contract boundary
 
-The experimental `pkr.provider/v1` file declares Adapter identity, version,
-capabilities, executable, structured arguments, timeout, and output bounds. A
-Provider receives a scoped Workspace request on stdin and returns one bounded
-callback on stdout. Provider-specific data must stay namespaced and cannot
-alter Task, Verification, or acceptance semantics.
+The current source retains `pkr.provider/v1` and related `Provider` identifiers
+as compatibility names for an experimental local-process Adapter. That file
+declares Adapter identity, version, capabilities, executable, structured
+arguments, timeout, and output bounds. The configured process receives a
+scoped Workspace request on stdin and returns one bounded callback on stdout.
+Integration-specific data must stay namespaced and cannot alter Task,
+Verification, or acceptance semantics.
 
-The current conformance evidence uses a checked-in fake Provider fixture. G2
-still requires two heterogeneous Provider adapters and equivalent records and
-acceptance behavior before this contract can become stable.
+This optional Adapter is not part of the v1 stable compatibility promise. The
+default Agent-native claim/submit path does not load it. Fixture conformance
+proves only the experimental process boundary; PKR v1 does not require live AI
+service compatibility evidence unless a separate integration makes that claim.
 
 ## Semantic-versioning policy
 
@@ -62,7 +66,7 @@ Before the target contract is accepted, `0.x` may break only with an explicit
 compatibility note and migration rule. After `1.0.0`:
 
 - patch releases may fix behavior without changing accepted CLI, TypeScript,
-  schema, record, event, or adapter meaning;
+  schema, record, or event meaning;
 - minor releases may add optional commands, fields, exports, schemas, records,
   or events while preserving existing valid inputs and persisted state;
 - removing, renaming, retyping, or changing accepted semantics requires a new

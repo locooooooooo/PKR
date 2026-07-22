@@ -1,8 +1,9 @@
 # PKR Project Framework
 
 PKR is a framework for operating AI-native software projects, not a rulebook
-for using one Agent or Provider. Its purpose is to keep project intent, facts,
-decisions, permissions, work, evidence, and recovery in one governed Runtime.
+or wrapper for one model, Agent host, or CLI. Its purpose is to keep project
+intent, facts, decisions, permissions, work, evidence, and recovery in one
+governed Runtime.
 
 ## Framework responsibilities
 
@@ -17,13 +18,14 @@ decisions, permissions, work, evidence, and recovery in one governed Runtime.
   auditable history across sessions.
 
 The Project Steward is the human-facing governed entry point. LPS is a
-reference orchestration adapter. Provider and tool adapters are replaceable
-execution boundaries; none of them owns project truth or acceptance.
+reference orchestration component. Agents and tools participate through
+bounded Workspaces and work reports; optional execution Adapters are an
+integration detail. None of them owns project truth or acceptance.
 
 ## Authority rule
 
 PKR owns authoritative state, policy, evidence, events, projections, and
-recovery. Derived boards, Memory indexes, provider locators, and repository
+recovery. Derived boards, Memory indexes, session locators, and repository
 views cannot become a second source of truth. A successful Agent report is
 still only a report until the Runtime accepts independent Verification evidence.
 
@@ -32,9 +34,10 @@ explanation of how those contracts fit together.
 
 ## Evidence boundary
 
-Automated tests may use a fake Provider fixture to exercise the Adapter
-protocol. That proves parsing, process bounds, and callback handling only. A
-real Agent audit is a separately labeled observation of an external Agent host,
-and neither kind of work report is Repository Verification or Runtime
-acceptance. See [the architecture](architecture.md) and
+Automated tests may use a fake process fixture to exercise the optional Adapter
+protocol. That proves parsing, process bounds, and callback handling only; it
+is not a product dependency or model-host compatibility claim. A real Agent
+audit is a separately labeled integration observation, and neither kind of work
+report is Repository Verification or Runtime acceptance. See
+[the architecture](architecture.md) and
 [evidence classification](audits/evidence-classification.md).

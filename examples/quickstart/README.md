@@ -18,8 +18,9 @@ The Verification plan and script in this directory are demonstration fixtures,
 not production acceptance standards. Replace them with project-specific checks
 before using Verification for a real release.
 
-`provider.json` and `provider.mjs` are an optional fake Provider fixture for
-`lps adapter-run` and `doctor --adapter`. They test the local process protocol;
-they are not a real-Agent audit or evidence of a second heterogeneous Provider.
-The fixture is still a trusted local host command, and PKR does not provide an
-OS-level filesystem or network sandbox.
+`provider.json` and `provider.mjs` retain the current experimental source names
+for an optional fake local-process Adapter fixture used by `lps adapter-run`
+and `doctor --adapter`. They test only the process protocol; they are not a PKR
+product dependency or an Agent-host compatibility claim. The fixture is still
+a trusted local host command, and PKR does not provide an OS-level filesystem
+or network sandbox.

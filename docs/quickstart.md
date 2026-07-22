@@ -54,4 +54,4 @@ It creates disposable Git repositories and records three bounded outcomes:
   work or silent Verification.
 
 The report is `automated_repository_fixture` evidence. It does not claim a real
-Provider, real Agent, production workload, or independent newcomer trial.
+external Agent host, production workload, or independent newcomer trial.

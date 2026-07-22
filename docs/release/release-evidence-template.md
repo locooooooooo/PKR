@@ -54,7 +54,7 @@ source were redacted. Never relabel fixture output as a real-Agent audit.
 
 ## Verification and acceptance separation
 
-- Provider/Agent work report IDs:
+- Participant work report IDs:
 - Repository Verification ID, actor, live Git SHA, result, event range:
 - Runtime acceptance ID, actor, result, event range:
 - Evidence that worker and Verifier differ:
@@ -65,8 +65,8 @@ source were redacted. Never relabel fixture output as a real-Agent audit.
 - Windows CI URL/result:
 - Ubuntu CI URL/result:
 - Newcomer trial participant class and redacted notes:
-- Real-Agent audit, if any:
-- Heterogeneous real Provider count:
+- Optional external-Agent integration audit, if any:
+- Any explicit model/host compatibility claim and its evidence:
 - Failed or incomplete newcomer trials:
 
 ## Blockers and decision

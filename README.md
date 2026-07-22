@@ -8,8 +8,8 @@ workflows one shared set of project rules and one authoritative project state.
 The repository is one source of artifacts in that runtime, not the runtime
 itself.
 
-PKR is Provider-neutral. No particular model vendor, Agent host, or CLI is part
-of the core architecture. Optional host-specific notes belong under
+PKR is built around project contracts, not a particular model vendor, Agent
+host, CLI, or execution service. Optional host-specific notes belong under
 `docs/integrations/`. The source is licensed under
 [Apache-2.0](LICENSE); the package remains private and is not published to npm.
 
@@ -24,13 +24,56 @@ damage the local machine. See the [threat model](docs/security/threat-model.md),
 [privacy and diagnostics policy](docs/security/privacy-and-diagnostics.md), and
 [operational limits](docs/operations/limits.md).
 
+## How PKR works
+
+```mermaid
+flowchart LR
+    I["Human intent"] --> R["PKR Runtime"]
+    R <--> DB["SQLite authority"]
+    R --> T["Governed Goal and Task"]
+    T --> W["Scoped Workspace"]
+    W --> A["Agent or tool"]
+    A --> WR["Non-authoritative work report"]
+    WR --> R
+    W --> V["Independent Repository Verification"]
+    V --> R
+    R --> O["Accept, block, or recover"]
+    R --> M["Memory and audit history"]
+```
+
+PKR governs the project around the AI work. It does not choose a model or write
+the code itself. SQLite records project truth; participants receive bounded
+work, report what they attempted, and cannot mark their own result accepted.
+
+## Three-command entry
+
+The npm package is not published, so the current entry uses a built source
+checkout:
+
+```powershell
+node dist/cli.js init --project C:\path\to\repo `
+  --name demo --outcome "Deliver one independently verified change"
+node dist/cli.js run --project C:\path\to\repo `
+  --request "Prepare one bounded repository change"
+node dist/cli.js status --project C:\path\to\repo
+```
+
+- `init` creates the local SQLite authority for an existing Git repository.
+- `run` records governed Goal/Task state and returns claim-ready work; it does
+  not invoke a model or claim completion.
+- `status` reopens the Runtime and reports the persisted authoritative state.
+
+Continue with the full claim, submit, independent Verification, and recovery
+path below. See [the architecture](docs/architecture.md) for the authority and
+evidence boundaries.
+
 ## 5-minute alpha path
 
 This is the smallest real repository flow after an Agent host has loaded PKR.
 The loaded Agent claims work from PKR, edits the repository
 directly, submits real Git evidence, and waits for independent Verification.
-No Provider process is required. Run it from the PKR checkout with Node 24+ and
-Git installed:
+No external execution adapter is required. Run it from the PKR checkout with
+Node 24+ and Git installed:
 
 ```powershell
 $PkrRoot = (Get-Location).Path
@@ -66,7 +109,7 @@ The session locator is correlation metadata, not Agent identity or authority.
 
 `setup --quickstart` is a controlled file initializer for repositories that have
 already run `pkr init`. It copies only the example Verification plan and script
-into `.pkr/`; it never copies `provider.json` or enables a local Adapter. These
+into `.pkr/`; it never enables or copies an optional execution Adapter. These
 quickstart Verification files are demonstration fixtures for this walkthrough,
 not production acceptance standards. Replace them with project-specific checks
 before relying on Verification for a real release.
@@ -161,19 +204,19 @@ and bootstrap reports `initialized_claim_ready`: the loaded Agent may plan and
 claim, while acceptance remains blocked. `pkr doctor` remains not ready until the
 owner installs a product-specific Verification Plan. Monthly and rolling-day Tasks carry digest-bound proposal and
 approval provenance; the rebuildable plan reads those markers from SQLite rather
-than interpreting Task titles. This slice does not yet choose Agents, configure a
-remote Workers, automatically assign Agents, authenticate the supplied human identity, or adapt
-plans from execution history. Provider callbacks still cannot create acceptance.
+than interpreting Task titles. This slice does not yet choose Agents, configure
+remote Workers, automatically assign Agents, authenticate the supplied human
+identity, or adapt plans from execution history. External work reports still
+cannot create acceptance.
 
 ## Status
 
 PKR includes a **v0.7 local reference Runtime and persistent intelligence
 loop** proving the v0.2 object model, v0.4 coordination contracts, governed
-Steward intake, LPS-compatible dispatch, a local-process Adapter protocol tested
-with a fake fixture Provider, provenance-aware Memory, portable Workflows,
-atomic Packages, and two starter project Profiles. The API remains pre-stable.
-Two heterogeneous real Provider adapters, hosted deployment, and cloud Provider
-support are not yet claimed.
+Steward intake, LPS-compatible dispatch, provenance-aware Memory, portable
+Workflows, atomic Packages, and two starter project Profiles. The API remains
+pre-stable. Hosted deployment, a package registry, and production Agent-host
+integrations are not yet claimed.
 
 The current specification set is:
 
@@ -230,8 +273,8 @@ implementation surface.
   prepares proposals and requests approval; it is not a root bypass.
 - **LPS** is the reference orchestrator. It plans, dispatches, monitors, and
   absorbs callbacks from PKR state without creating a second source of truth.
-- **Agent and tool adapters** translate provider capabilities and external
-  effects while PKR remains provider- and transport-neutral.
+- **Agents and tools** participate through bounded Workspaces and work reports;
+  optional integrations never own project truth or acceptance.
 
 See the [core architecture](docs/architecture.md) for the generic authority and
 evidence flow. Brand-specific host examples are optional integrations, never a
@@ -329,7 +372,7 @@ callback, and board state are derived from PKR without becoming a second truth.
 
 ### Repository-native verification
 
-An Agent or Provider callback is a non-authoritative work report, even when its
+An Agent, tool, or Adapter callback is a non-authoritative work report, even when its
 protocol outcome is `verified`. A successful submission moves the Task only to
 `verifying`; it never creates acceptance.
 
@@ -341,8 +384,11 @@ The default LPS path is pull-based and Agent-native:
 4. `lps submit` collects current Git evidence and records the work report;
 5. an independent `verify` command alone may create acceptance.
 
-The optional local-process Adapter is available through `lps adapter-run`. It
-requires an explicit `.pkr/provider.json` configuration:
+The optional local-process Adapter is available through `lps adapter-run`. The
+current source retains `.pkr/provider.json`, `pkr.provider/v1`, and related
+`Provider` identifiers as experimental compatibility names for this process
+protocol. They are not the PKR product model, a required AI service, or a v1
+portability claim. The Adapter requires an explicit configuration:
 
 ```json
 {
@@ -364,12 +410,12 @@ Run this optional path with `pkr lps adapter-run --task <id> --agent <id>` and
 use `pkr doctor --adapter` for its additional readiness checks.
 
 In Adapter mode PKR sends one JSON request containing the Assignment, Session,
-and scoped Workspace on stdin. The Provider must return exactly one callback
+and scoped Workspace on stdin. The configured process must return one callback
 JSON object on stdout and may declare only proposal, result, patch, log, or
 Artifact outputs. Missing or malformed configuration fails with `PKR-PROVIDER-001`;
 an Adapter identity/version/capability binding that is not active fails before
 an Assignment is created. `--provider-file` may select another explicit config,
-but there is no Provider discovery or automatic selection.
+but there is no service discovery or automatic model selection.
 
 The configured executable is trusted host input. PKR bounds and records the
 process, but does not yet provide an OS-level filesystem or network sandbox.
@@ -378,8 +424,8 @@ Do not point this configuration at an untrusted executable.
 By default `pkr doctor` runs the read-only `pkr.preflight/v1` checks for Node
 24+, the exact Git root and HEAD, readable PKR Runtime state, Agent-native pull
 conditions, Verification configuration, and Verification executable resolution.
-Provider configuration is neither loaded nor required. Use `--adapter` to add
-Provider executable and active Adapter-binding checks:
+Optional Adapter configuration is neither loaded nor required. Use `--adapter`
+to add executable and active Adapter-binding checks:
 
 ```powershell
 node dist/cli.js doctor --project C:\path\to\project
@@ -389,7 +435,7 @@ node dist/cli.js doctor --adapter --project C:\path\to\project
 Exit code `0` means every required check passed; exit code `2` means the JSON
 report has `ready: false` with stable `fail` or `blocked` codes. A dirty Git
 working tree is reported but is not itself a readiness failure. Doctor does not
-create Tasks or Assignments, execute Agent, Provider, or Verification commands,
+create Tasks or Assignments, execute Agent, Adapter, or Verification commands,
 or mutate authoritative Runtime state. Executable resolution proves
 only that a file can be resolved, not that it is trusted or will succeed.
 
@@ -455,7 +501,7 @@ active Adapter identity, version, capabilities, CapabilityStatement,
 AgentSession, and live callback contract. Candidate, observation, Policy,
 Adapter, and external-result JSON may be supplied inline or from files. Runtime
 candidates use the fail-closed external-evaluation boundary. Adapter activation
-does not hot-swap a Provider binary; the host must supply the exact active
+does not hot-swap an integration binary; the host must supply the exact active
 version. These commands do not expand the verified `0.7.0` package boundary
 while v0.8 is still in development. The next exit priority is to stabilize the
 repository-native harness golden path before adding another evolution target
