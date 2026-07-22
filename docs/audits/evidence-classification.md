@@ -8,6 +8,7 @@ stronger-sounding label must never be inferred from a lower layer.
 | `automated_fake_provider` | A checked-in fixture exercised an Adapter protocol path | A real Provider, real Agent, production model, or user succeeded |
 | `automated_repository_fixture` | Tests created a disposable Git repository and checked real file/diff behavior | Newcomer usability or external host behavior |
 | `real_agent_audit` | A named external Agent host completed the recorded path with redacted evidence | Repository acceptance unless independent Verification also passed |
+| `newcomer_trial` | A non-author task follows the public documentation from a fresh source checkout | Human adoption, production readiness, or support for untested environments |
 | `repository_verification` | A distinct Verifier recomputed live Git, scope, artifact, and command evidence | Runtime acceptance unless the guarded transition is recorded |
 | `runtime_acceptance` | SQLite authority contains the accepted transition and event range | Public release, production reliability, or user adoption |
 | `packaging_check` | Public tree or tarball contents passed declared local checks | Public CI, tag, GitHub Release, npm publication, or fresh-user success |
