@@ -41,12 +41,12 @@ board reported zero blockers.
 `npm run audit:repository` separately reproduced successful completion,
 verification failure followed by durable `blocked` state, and restart recovery
 without duplicate live work or silent acceptance. Its report remained labeled
-`automated_repository_fixture`, not real Provider or newcomer evidence.
+`automated_repository_fixture`, not live-integration or newcomer evidence.
 
 ## Boundaries
 
 This trial proves one documented source-install path on one declared Windows
 environment. It does not prove npm publication, human adoption, production
 stability, an operating-system sandbox, cloud operation, or support for every
-Agent or Provider. Node.js emitted its documented experimental SQLite warning;
+Agent or host. Node.js emitted its documented experimental SQLite warning;
 the warning did not fail a command or alter the final clean state.

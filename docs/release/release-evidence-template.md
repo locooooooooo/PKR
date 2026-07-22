@@ -16,7 +16,7 @@
 
 Select only labels supported by attached evidence:
 
-- [ ] `automated_fake_provider`
+- [ ] `automated_process_fixture`
 - [ ] `automated_repository_fixture`
 - [ ] `real_agent_audit`
 - [ ] `repository_verification`

@@ -66,6 +66,7 @@ node dist/cli.js status --project C:\path\to\repo
 Continue with the full claim, submit, independent Verification, and recovery
 path below. See [the architecture](docs/architecture.md) for the authority and
 evidence boundaries.
+For the product rationale, see [Why PKR](docs/product-overview.md).
 
 ## 5-minute alpha path
 
@@ -255,7 +256,7 @@ The current specification set is:
 ## Current boundary
 
 The verified baseline is **v0.7**. It includes the local reference Runtime,
-Steward and LPS flow, one local-process Agent adapter, persistent Memory,
+Steward and LPS flow, an optional local-process integration, persistent Memory,
 declarative Workflows, project Profiles, and atomic Package lifecycle.
 
 **v0.8 is in development** and targets governed observation-to-promotion
@@ -384,42 +385,10 @@ The default LPS path is pull-based and Agent-native:
 4. `lps submit` collects current Git evidence and records the work report;
 5. an independent `verify` command alone may create acceptance.
 
-The optional local-process Adapter is available through `lps adapter-run`. The
-current source retains `.pkr/provider.json`, `pkr.provider/v1`, and related
-`Provider` identifiers as experimental compatibility names for this process
-protocol. They are not the PKR product model, a required AI service, or a v1
-portability claim. The Adapter requires an explicit configuration:
-
-```json
-{
-  "version": "pkr.provider/v1",
-  "adapter": {
-    "id": "pkr.adapter.local-process",
-    "version": "0.6.0",
-    "capabilities": ["filesystem.read", "filesystem.write", "terminal"]
-  },
-  "command": {
-    "executable": "node",
-    "args": ["provider.mjs"],
-    "timeoutMs": 30000
-  }
-}
-```
-
-Run this optional path with `pkr lps adapter-run --task <id> --agent <id>` and
-use `pkr doctor --adapter` for its additional readiness checks.
-
-In Adapter mode PKR sends one JSON request containing the Assignment, Session,
-and scoped Workspace on stdin. The configured process must return one callback
-JSON object on stdout and may declare only proposal, result, patch, log, or
-Artifact outputs. Missing or malformed configuration fails with `PKR-PROVIDER-001`;
-an Adapter identity/version/capability binding that is not active fails before
-an Assignment is created. `--provider-file` may select another explicit config,
-but there is no service discovery or automatic model selection.
-
-The configured executable is trusted host input. PKR bounds and records the
-process, but does not yet provide an OS-level filesystem or network sandbox.
-Do not point this configuration at an untrusted executable.
+The optional local-process integration remains experimental and is not required
+for the Agent-native path. Its process protocol, compatibility identifiers, and
+additional trust boundaries live only in the
+[LPS integration document](docs/integrations/lps.md).
 
 By default `pkr doctor` runs the read-only `pkr.preflight/v1` checks for Node
 24+, the exact Git root and HEAD, readable PKR Runtime state, Agent-native pull
@@ -570,6 +539,8 @@ release or an npm publication decision.
 The exact proposed contract, blockers, and local candidate commands are in the
 [v1 stable-contract inventory](docs/release/v1-stable-contract.md),
 [blocker register](docs/release/v1.0-blockers.md), and
-[candidate checklist](docs/release/v1.0-candidate-checklist.md). Stable tagging,
-GitHub Release creation, and any npm publication remain blocked until their
-independent decisions and evidence gates close.
+[candidate checklist](docs/release/v1.0-candidate-checklist.md). The five
+remaining human decisions are collected in the
+[v1 owner review](docs/release/v1-owner-review.md). Completing that review does
+not itself authorize a version bump, merge, tag, GitHub Release, or npm
+publication.

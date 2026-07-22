@@ -16,14 +16,14 @@ It intentionally omits:
 - record IDs and record bodies;
 - event IDs, command IDs, subject IDs, and event data;
 - prompts, source content, diffs, callback bodies, and artifacts;
-- Provider and Verification stdout/stderr.
+- integration-process and Verification stdout/stderr.
 
 The encoded report has a 64 KiB hard ceiling. Generic diagnostic values use
 depth, list, key, and string bounds and redact recognized credential forms,
 private-key blocks, bearer values, and user-home paths. Successful structured
-Provider stdout is omitted before persistence. Failed Provider and Verification
-process evidence keeps bounded redacted output, a basename-only executable,
-redacted arguments, and a `[PROJECT-ROOT]` cwd marker.
+integration output is omitted before persistence. Failed integration and
+Verification process evidence keeps bounded redacted output, a basename-only
+executable, redacted arguments, and a `[PROJECT-ROOT]` cwd marker.
 
 Pattern redaction cannot determine whether arbitrary prose or source code is
 private. Configured commands must not print credentials, prompts, full source,

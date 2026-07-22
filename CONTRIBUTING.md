@@ -64,11 +64,11 @@ package, or create release metadata without the corresponding owner decision.
 Do not reset, hide, overwrite, or include unrelated changes from a dirty working
 tree. Record the baseline status, keep the contribution within its declared
 paths, and review both staged and unstaged diffs before submission. Never commit
-`.pkr/` databases, credentials, private prompts, provider logs, or machine-local
+`.pkr/` databases, credentials, private prompts, integration logs, or machine-local
 paths.
 
 The SQLite database at `.pkr/runtime.sqlite` is authoritative PKR state. JSON
-projections, LPS boards, task cards, Memory views, Agent output, Provider
+projections, LPS boards, task cards, Memory views, Agent output, integration
 callbacks, and `lps submit` reports are derived or non-authoritative evidence.
 Only an independent successful `pkr verify` may create acceptance, and it must
 evaluate the live Git revision, dirty state, path scope, and configured commands.
@@ -79,7 +79,7 @@ commit it as part of a contribution to this checkout.
 ## Evidence labels
 
 Use the [release evidence classification](docs/audits/evidence-classification.md)
-for audits and release records. Checked-in `provider.mjs` behavior is
-`automated_fake_provider`; do not describe it as a real Provider or real-Agent
-audit. Keep Repository Verification and Runtime acceptance identifiers and
-event ranges separate from any Agent or Provider work report.
+for audits and release records. Checked-in process-fixture behavior is
+`automated_process_fixture`; do not describe it as a live integration or
+real-Agent audit. Keep Repository Verification and Runtime acceptance
+identifiers and event ranges separate from any participant work report.

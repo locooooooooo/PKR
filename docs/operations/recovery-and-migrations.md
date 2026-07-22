@@ -3,7 +3,7 @@
 PKR recovery preserves four separate claims:
 
 1. SQLite records and events are authoritative project state.
-2. a Provider work report describes attempted work but creates no acceptance;
+2. a participant work report describes attempted work but creates no acceptance;
 3. Repository Verification recomputes repository evidence independently;
 4. Runtime acceptance is a later authoritative transition.
 
@@ -27,10 +27,10 @@ rejected because its Lease is no longer live.
 
 ## External effect fence
 
-Optional Provider process execution is fenced by a stable effect ID in SQLite.
+Optional integration-process execution is fenced by a stable effect ID in SQLite.
 The journal state is one of `pending`, `succeeded`, or `failed`:
 
-- a terminal entry replays its persisted result without executing the Provider
+- a terminal entry replays its persisted result without executing the process
   again;
 - a `pending` entry means the process may have run but PKR did not durably
   observe its result;
@@ -40,7 +40,7 @@ The journal state is one of `pending`, `succeeded`, or `failed`:
   prove from the journal.
 
 This is duplicate-effect protection, not proof that an arbitrary external
-system implements idempotency. Provider-specific output remains
+system implements idempotency. Integration-process output remains
 non-authoritative and still needs Repository Verification and Runtime
 acceptance.
 
@@ -109,6 +109,6 @@ Run the repository-wide verification gate:
 npm run verify
 ```
 
-The focused suite uses a clearly labeled fake Provider only for process effect
-counting. It does not claim evidence from a real Provider, user, sandbox,
+The focused suite uses a clearly labeled process fixture only for effect
+counting. It does not claim evidence from a live integration, user, sandbox,
 performance environment, security review, or production deployment.
