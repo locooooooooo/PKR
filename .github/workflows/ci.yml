@@ -56,3 +56,6 @@ jobs:
         run: |
           npm run benchmark
           npm run soak
+
+      - name: Require a clean candidate worktree
+        run: npm run check:clean

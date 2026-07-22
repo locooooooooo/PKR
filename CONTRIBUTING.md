@@ -8,14 +8,17 @@ Start from a clean dependency install and run the complete local gate:
 
 ```text
 npm ci
-python -m pip install --requirement conformance/requirements.txt
+py -3.11 -m pip install --requirement conformance/requirements.txt
 npm run verify
-git diff --check
+npm run check:clean
 ```
 
-The GitHub Actions CI workflow runs `npm ci` and `npm run verify` on both
-Windows and Ubuntu. A local pass is required before a pull request, but it does
-not substitute for the remote matrix result.
+Use `python -m pip ...` on Ubuntu. The Windows launcher form avoids the Windows
+Store `python` alias.
+
+The GitHub Actions CI workflow runs the candidate gates, benchmark, soak, and a
+final clean-worktree check on both Windows and Ubuntu. A local pass is required
+before a pull request, but it does not substitute for the remote matrix result.
 
 ## Repository contribution path
 

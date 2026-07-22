@@ -282,7 +282,7 @@ Windows or Ubuntu. Install from a source checkout; there is no supported
 
 ```powershell
 npm ci
-python -m pip install --requirement conformance/requirements.txt
+py -3.11 -m pip install --requirement conformance/requirements.txt
 npm run verify
 npm run build
 node dist/cli.js doctor --project C:\path\to\project
@@ -294,6 +294,9 @@ node dist/cli.js lps board --project C:\path\to\project
 node dist/cli.js memory list --project C:\path\to\project
 node dist/cli.js profile list --project C:\path\to\project
 ```
+
+On Ubuntu, use `python -m pip ...`. On Windows, `py -3.11 -m pip ...` avoids
+the Windows Store `python` alias when the Python launcher is installed.
 
 For a local packed-artifact test, run `npm pack --dry-run --json`, then
 `npm pack --json` and install the resulting `.tgz` by file path in a disposable

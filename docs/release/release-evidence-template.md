@@ -36,7 +36,10 @@ source were redacted. Never relabel fixture output as a real-Agent audit.
 | `node scripts/check-public-tree.mjs` | | | | | |
 | `npm pack --dry-run --json` | | | | | |
 | `npm run check:fresh-install` | | | | | |
-| `git diff --check` | | | | | |
+| `npm run audit:repository` | | | | | |
+| `npm run benchmark` | | | | | |
+| `npm run soak` | | | | | |
+| `npm run check:clean` | | | | | |
 
 ## Package and public tree
 
@@ -63,6 +66,8 @@ source were redacted. Never relabel fixture output as a real-Agent audit.
 - Ubuntu CI URL/result:
 - Newcomer trial participant class and redacted notes:
 - Real-Agent audit, if any:
+- Heterogeneous real Provider count:
+- Failed or incomplete newcomer trials:
 
 ## Blockers and decision
 

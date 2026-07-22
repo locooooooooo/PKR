@@ -13,10 +13,14 @@ PKR is currently installed from source. It is not published to npm.
 
 ```text
 npm ci
-python -m pip install --requirement conformance/requirements.txt
+py -3.11 -m pip install --requirement conformance/requirements.txt
 npm run verify
 node dist/cli.js --help
 ```
+
+The command above is for Windows. On Ubuntu, use
+`python -m pip install --requirement conformance/requirements.txt`. The Windows
+launcher form avoids the Windows Store `python` alias.
 
 Use the [README 5-minute path](../README.md#5-minute-alpha-path) in a disposable
 Git repository for the current repository-native flow. The example Verification

@@ -69,11 +69,12 @@
     "check:version": "node scripts/check-version.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:sensitive": "node scripts/check-sensitive-data.mjs",
+    "check:clean": "node scripts/check-clean-worktree.mjs",
     "check:public-tree": "node scripts/check-public-tree.mjs",
     "check:package": "npm run build && node scripts/check-package.mjs",
     "check:fresh-install": "node scripts/check-fresh-install.mjs",
     "test:release": "node --test scripts/release-utils.test.mjs",
-    "check:candidate": "npm run test:release && npm run check:contract && npm run check:version && npm run check:links && npm run check:sensitive && npm run check:public-tree && npm run check:package && npm run audit:repository"
+    "check:candidate": "npm run test:release && npm run check:contract && npm run check:version && npm run check:links && npm run check:sensitive && npm run check:public-tree && npm run check:package && npm run audit:repository && npm run check:clean"
   },
   "engines": {
     "node": ">=24 <25"

@@ -8,7 +8,7 @@ whole.
 | --- | --- | --- | --- |
 | `ajv` | 8.20.0 | MIT | Runtime JSON Schema validation |
 | `fast-deep-equal` | 3.1.3 | MIT | Transitive `ajv` dependency |
-| `fast-uri` | 3.1.3 | BSD-3-Clause | Transitive `ajv` dependency |
+| `fast-uri` | 3.1.4 | BSD-3-Clause | Transitive `ajv` dependency |
 | `json-schema-traverse` | 1.0.0 | MIT | Transitive `ajv` dependency |
 | `require-from-string` | 2.0.2 | MIT | Transitive `ajv` dependency |
 | `typescript` | 5.9.3 | Apache-2.0 | Development compiler |

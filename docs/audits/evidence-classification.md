@@ -14,6 +14,6 @@ stronger-sounding label must never be inferred from a lower layer.
 
 Current automated suites use fake Provider fixtures and disposable repository
 fixtures. No real-Agent audit or newcomer trial is claimed by those suites.
-Real-Agent and newcomer evidence remains absent until a separately identified
-person or external host executes the documented path and the result is recorded
+Count real-Agent or newcomer evidence only when a separately identified person
+or external host executes the documented path and the result is recorded
 without credentials, private prompts, private paths, or private source.

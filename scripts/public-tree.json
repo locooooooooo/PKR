@@ -1,6 +1,7 @@
 {
   "manifestVersion": 1,
   "rootFiles": [
+    ".gitattributes",
     ".gitignore",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
@@ -43,6 +44,7 @@
     "scripts/local/"
   ],
   "requiredPaths": [
+    ".gitattributes",
     ".github/workflows/ci.yml",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
