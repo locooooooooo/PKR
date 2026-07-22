@@ -1,8 +1,47 @@
 {
-  "name": "pkr-runtime",
-  "version": "0.7.0-alpha.1",
-  "description": "Open framework and project Runtime for governed AI-native software development.",
+  "name": "@pkr/reference-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-native project framework and local Runtime for governed state, verification, recovery, and audit.",
   "license": "Apache-2.0",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "pkr": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "!dist/*.test.*",
+    "docs",
+    "schemas",
+    "specs",
+    "examples/quickstart",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "VERSION"
+  ],
+  "keywords": [
+    "ai-agent",
+    "ai-native",
+    "orchestration",
+    "project-governance",
+    "repository-native",
+    "runtime",
+    "workflow",
+    "verification"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/locooooooooo/PKR.git"
@@ -11,50 +50,34 @@
   "bugs": {
     "url": "https://github.com/locooooooooo/PKR/issues"
   },
-  "keywords": [
-    "ai-agent",
-    "agent-harness",
-    "codex",
-    "codex-cli",
-    "governance",
-    "local-first",
-    "runtime",
-    "sqlite",
-    "verification"
-  ],
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "bin": {
-    "pkr": "./dist/cli.js"
-  },
-  "files": [
-    "dist/",
-    "schemas/",
-    "VERSION"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
     "generate:v0.4": "node scripts/generate-v04-artifacts.mjs",
     "check:boundaries": "node scripts/check-runtime-boundaries.mjs",
     "build": "npm run check:boundaries && tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/cli-safety.test.js dist/runtime.test.js dist/orchestration.test.js dist/v07.test.js dist/release.test.js",
-    "verify:schemas": "node scripts/run-conformance.mjs",
-    "verify": "npm run generate:v0.4 && npm run verify:schemas && npm test",
-    "check:package": "node scripts/check-package.mjs",
-    "prepack": "npm run build && npm run check:package",
-    "prepublishOnly": "npm run verify"
+    "test": "npm run build && node --test dist/runtime.test.js dist/orchestration.test.js dist/provider-conformance.test.js dist/v07.test.js dist/v08.test.js dist/project-manager.test.js dist/recovery-migration.test.js dist/security.test.js scripts/security-tools.test.mjs scripts/performance-tools.test.mjs",
+    "test:recovery": "npm run build && node --test dist/recovery-migration.test.js",
+    "prepack": "npm run build",
+    "verify:schemas": "node scripts/verify-schemas.mjs",
+    "security:scan": "npm run build && node scripts/check-sensitive-data.mjs --public-tree --npm-pack",
+    "benchmark": "npm run build && node scripts/benchmark-runtime.mjs",
+    "soak": "npm run build && node scripts/soak-runtime.mjs",
+    "dependency:report": "node scripts/dependency-report.mjs",
+    "audit:repository": "npm run build && node scripts/audit-repository-lifecycle.mjs",
+    "prepare:public-candidate": "node scripts/prepare-public-candidate.mjs",
+    "verify": "npm run generate:v0.4 && npm run verify:schemas && npm test && npm run security:scan",
+    "check:contract": "node scripts/check-contract.mjs",
+    "check:version": "node scripts/check-version.mjs",
+    "check:links": "node scripts/check-links.mjs",
+    "check:sensitive": "node scripts/check-sensitive-data.mjs",
+    "check:clean": "node scripts/check-clean-worktree.mjs",
+    "check:public-tree": "node scripts/check-public-tree.mjs",
+    "check:package": "npm run build && node scripts/check-package.mjs",
+    "check:fresh-install": "node scripts/check-fresh-install.mjs",
+    "test:release": "node --test scripts/release-utils.test.mjs",
+    "check:candidate": "npm run test:release && npm run check:contract && npm run check:version && npm run check:links && npm run check:sensitive && npm run check:public-tree && npm run check:package && npm run audit:repository && npm run check:clean"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24 <25"
   },
   "dependencies": {
     "ajv": "^8.17.1"

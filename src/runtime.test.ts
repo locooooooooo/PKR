@@ -12,6 +12,7 @@ import { PkrStore } from "./store.js";
 import type { JsonObject } from "./types.js";
 import { derivedId, digest } from "./util.js";
 import { runLocalVerification, type VerificationPlan } from "./verifier.js";
+import { collectRepositoryEvidence } from "./workspace.js";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const temporaryRoots: string[] = [];
@@ -96,7 +97,7 @@ test("bootstrap is atomic and restart reconstructs identical state", async () =>
   reopened.close();
 });
 
-test("local golden path reaches done only after independent repository evidence", async () => {
+test("local golden path reaches done only after callback and two gates", async () => {
   const projectRoot = await temporaryProject();
   const runtime = await PkrRuntime.init(projectRoot, repositoryRoot, {
     name: "golden-path",
@@ -115,11 +116,21 @@ test("local golden path reaches done only after independent repository evidence"
   const dispatch = value(await runtime.dispatch(taskId, agentId));
   const assignmentId = dispatch.assignmentId as string;
 
-  const workspace = runtime.workspace(taskId, assignmentId, agentId);
+  const repositoryEvidence = await collectRepositoryEvidence(projectRoot);
+  const workspace = runtime.workspace(
+    taskId,
+    assignmentId,
+    agentId,
+    repositoryEvidence as unknown as JsonObject,
+  );
   assert.equal(workspace.kind, "Workspace");
   assert.equal(
     ((workspace.context as JsonObject).task as JsonObject).id,
     taskId,
+  );
+  assert.equal(
+    ((workspace.extensions as JsonObject)["pkr.workspace/repository"] as JsonObject).head,
+    repositoryEvidence.head,
   );
 
   await assert.rejects(
@@ -127,15 +138,14 @@ test("local golden path reaches done only after independent repository evidence"
     (error: unknown) => error instanceof PkrError && error.code === "PKR-VERIFY-001",
   );
   await writeFile(join(projectRoot, "result.txt"), "real repository change\n", "utf8");
-  await runtime.callback(assignmentId, "verified", ["artifact_worker_evidence"]);
-  assert.equal((runtime.getRecord("Task", taskId).data.status as JsonObject).phase, "verifying");
-  assert.equal(runtime.listRecords("Verification").length, 0);
+  await runtime.callback(assignmentId, "partial", []);
   const formalEvidence = await runLocalVerification(
     projectRoot,
     taskId,
     assignmentId,
     verificationPlan(["result.txt"]),
   );
+  const beforeProviderVerification = runtime.stateDigest();
   await assert.rejects(
     runtime.verify(
       taskId,
@@ -146,6 +156,7 @@ test("local golden path reaches done only after independent repository evidence"
     ),
     (error: unknown) => error instanceof PkrError && error.code === "PKR-VERIFY-002",
   );
+  assert.equal(runtime.stateDigest(), beforeProviderVerification);
   const verification = value(await runtime.verify(
     taskId,
     assignmentId,
@@ -167,84 +178,101 @@ test("local golden path reaches done only after independent repository evidence"
   reopened.close();
 });
 
-test("tampered or failed repository Verification cannot create acceptance", async () => {
+test("failed repository Verification preserves evidence and cannot be forged into acceptance", async () => {
   const projectRoot = await temporaryProject();
   const runtime = await PkrRuntime.init(projectRoot, repositoryRoot, {
     name: "verification-failure",
     title: "Verification Failure",
-    outcome: "Fail closed on repository scope and command errors.",
+    outcome: "Fail closed on real repository scope and command errors.",
   });
   const goal = value(await runtime.createGoal("Prove failed formal Verification"));
-  const task = value(await runtime.createTask(objectId(goal), "Reject invalid evidence"));
+  const task = value(await runtime.createTask(objectId(goal), "Reject invalid repository evidence"));
   const agent = value(await runtime.registerAgent("verification-producer", "local"));
   const taskId = objectId(task);
   const assignmentId = (value(await runtime.dispatch(taskId, objectId(agent))).assignmentId as string);
   await writeFile(join(projectRoot, "outside.txt"), "outside declared scope\n", "utf8");
   await runtime.callback(assignmentId, "partial", []);
   const plan: VerificationPlan = {
-    ...verificationPlan(["src/**"]),
+    version: "pkr.verify/v1",
     commands: [{
       id: "failing-check",
       executable: process.execPath,
       args: ["-e", "process.stderr.write('failed check'); process.exit(7)"],
       timeoutMs: 10_000,
     }],
+    allowedPaths: ["src/**"],
+    forbiddenPaths: [".pkr/**"],
+    requireChanges: true,
   };
-  const failedEvidence = await runLocalVerification(projectRoot, taskId, assignmentId, plan);
+  const failedEvidence = await runLocalVerification(
+    projectRoot,
+    taskId,
+    assignmentId,
+    plan,
+  );
   assert.equal(failedEvidence.passed, false);
   assert.equal(failedEvidence.reason, "RepositoryScopeFailed");
+  assert.equal(((failedEvidence.scope as JsonObject).outsideAllowed as string[]).includes("outside.txt"), true);
+  assert.equal(((failedEvidence.commands as JsonObject[])[0]!.exitCode), 7);
+  assert.equal(((failedEvidence.commands as JsonObject[])[0]!.stderr as string), "failed check");
 
-  const beforeDigestTamper = runtime.stateDigest();
-  await assert.rejects(
-    runtime.verify(
-      taskId,
-      assignmentId,
-      "agent_repository_verifier",
-      "command_bad_digest",
-      { ...failedEvidence, digest: "sha256:tampered" },
-    ),
-    (error: unknown) => error instanceof PkrError && error.code === "PKR-VERIFY-001",
+  const scopeOnlyEvidence = await runLocalVerification(
+    projectRoot,
+    taskId,
+    assignmentId,
+    {
+      ...plan,
+      commands: [{
+        id: "passing-check",
+        executable: process.execPath,
+        args: ["-e", "process.exit(0)"],
+        timeoutMs: 10_000,
+      }],
+    },
   );
-  assert.equal(runtime.stateDigest(), beforeDigestTamper);
-
-  const { digest: _scopeDigest, ...failedContent } = failedEvidence;
-  const forgedVerdictContent: JsonObject = {
-    ...failedContent,
+  const { digest: _scopeDigest, ...scopeOnlyContent } = scopeOnlyEvidence;
+  const forgedScopeContent: JsonObject = {
+    ...scopeOnlyContent,
+    scope: { ...(scopeOnlyContent.scope as JsonObject), passed: true },
     passed: true,
     reason: "VerificationPassed",
   };
-  const beforeVerdictTamper = runtime.stateDigest();
+  const forgedScopeEvidence: JsonObject = {
+    ...forgedScopeContent,
+    digest: digest(forgedScopeContent),
+  };
+  const beforeScopeForgery = runtime.stateDigest();
   await assert.rejects(
     runtime.verify(
       taskId,
       assignmentId,
       "agent_repository_verifier",
-      "command_forged_verdict",
-      { ...forgedVerdictContent, digest: digest(forgedVerdictContent) },
+      "command_forged_scope_verification",
+      forgedScopeEvidence,
     ),
     (error: unknown) => error instanceof PkrError && error.code === "PKR-VERIFY-001",
   );
-  assert.equal(runtime.stateDigest(), beforeVerdictTamper);
+  assert.equal(runtime.stateDigest(), beforeScopeForgery);
 
+  const { digest: _oldDigest, ...failedContent } = failedEvidence;
   const forgedContent: JsonObject = {
     ...failedContent,
-    scope: { ...(failedContent.scope as JsonObject), passed: true, outsideAllowed: [] },
     passed: true,
     reason: "VerificationPassed",
   };
   const forgedEvidence: JsonObject = { ...forgedContent, digest: digest(forgedContent) };
-  const beforeScopeTamper = runtime.stateDigest();
+  const beforeForgery = runtime.stateDigest();
   await assert.rejects(
     runtime.verify(
       taskId,
       assignmentId,
       "agent_repository_verifier",
-      "command_forged_scope",
+      "command_forged_verification",
       forgedEvidence,
     ),
     (error: unknown) => error instanceof PkrError && error.code === "PKR-VERIFY-001",
   );
-  assert.equal(runtime.stateDigest(), beforeScopeTamper);
+  assert.equal(runtime.stateDigest(), beforeForgery);
 
   const recorded = value(await runtime.verify(
     taskId,
@@ -261,17 +289,19 @@ test("tampered or failed repository Verification cannot create acceptance", asyn
   );
   assert.equal((runtime.getRecord("Task", taskId).data.status as JsonObject).phase, "blocked");
   assert.equal(runtime.getRecord("Assignment", assignmentId).data.state, "failed");
-  assert.equal(runtime.listRecords("Artifact").length, 1);
   assert.equal(runtime.listRecords("Verification").filter((record) =>
     (record.data.spec as JsonObject).gate === "acceptance",
   ).length, 0);
-  const finalDigest = runtime.stateDigest();
+  const failedDigest = runtime.stateDigest();
   runtime.close();
 
   const reopened = await PkrRuntime.open(projectRoot, repositoryRoot);
-  assert.equal(reopened.stateDigest(), finalDigest);
+  assert.equal(reopened.stateDigest(), failedDigest);
   assert.equal((reopened.getRecord("Task", taskId).data.status as JsonObject).phase, "blocked");
   assert.equal(reopened.getRecord("Assignment", assignmentId).data.state, "failed");
+  assert.equal(reopened.listRecords("Verification").filter((record) =>
+    (record.data.spec as JsonObject).gate === "acceptance",
+  ).length, 0);
   reopened.close();
 });
 
@@ -395,8 +425,8 @@ test("CLI golden path survives one process per command", async () => {
     "register",
     "--name",
     "cli-worker",
-    "--provider",
-    "local",
+    "--host",
+    "agent-native",
   ]);
   const agentId = objectId(agentResult.value as JsonObject);
   const dispatchResult = runCli(projectRoot, [
@@ -407,35 +437,25 @@ test("CLI golden path survives one process per command", async () => {
     agentId,
   ]);
   const assignmentId = (dispatchResult.value as JsonObject).assignmentId as string;
-  await writeFile(join(projectRoot, "cli-result.txt"), "CLI repository evidence\n", "utf8");
   runCli(projectRoot, [
     "callback",
     "--assignment",
     assignmentId,
     "--outcome",
-    "verified",
-    "--evidence",
-    "artifact_cli_evidence",
+    "partial",
   ]);
-  const pending = runCli(projectRoot, ["status"]);
-  assert.equal(((pending.tasks as JsonObject[])[0]!.phase), "verifying");
-  assert.equal((pending.recordCounts as JsonObject).Verification ?? 0, 0);
-  const evidence = await runLocalVerification(
-    projectRoot,
-    taskId,
-    assignmentId,
-    verificationPlan(["cli-result.txt"]),
+  await writeFile(join(projectRoot, "cli-result.txt"), "real CLI repository change\n", "utf8");
+  await writeFile(
+    join(projectRoot, ".pkr", "verification.json"),
+    JSON.stringify(verificationPlan(["cli-result.txt"])),
+    "utf8",
   );
-  const evidenceFile = join(projectRoot, ".pkr", "cli-verification.json");
-  await writeFile(evidenceFile, JSON.stringify(evidence), "utf8");
   runCli(projectRoot, [
     "verify",
     "--task",
     taskId,
     "--assignment",
     assignmentId,
-    "--evidence-file",
-    evidenceFile,
   ]);
   const status = runCli(projectRoot, ["status"]);
   const counts = status.recordCounts as JsonObject;

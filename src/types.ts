@@ -2,6 +2,14 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
 export type JsonObject = { [key: string]: JsonValue };
 
+export type MetricThresholdOperator = "eq" | "neq" | "gt" | "gte" | "lt" | "lte";
+
+export interface MetricThreshold {
+  operator: MetricThresholdOperator;
+  value: string | number | boolean;
+  severity: "info" | "warning" | "error" | "critical";
+}
+
 export interface StoredRecord {
   projectId: string;
   kind: string;

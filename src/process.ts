@@ -8,6 +8,7 @@ export interface BoundedProcessOptions {
   timeoutMs?: number;
   environment?: NodeJS.ProcessEnv;
   maxOutputBytes?: number;
+  maxInputBytes?: number;
 }
 
 export interface BoundedProcessResult {
@@ -19,6 +20,7 @@ export interface BoundedProcessResult {
   stdout: string;
   stderr: string;
   timedOut: boolean;
+  outputTruncated: boolean;
   failureReason: string | null;
   startedAt: string;
   completedAt: string;
@@ -31,12 +33,25 @@ export function runBoundedProcess(
   const args = options.args ?? [];
   const timeoutMs = options.timeoutMs ?? 30_000;
   const maxOutputBytes = options.maxOutputBytes ?? 256 * 1024;
+  const maxInputBytes = options.maxInputBytes ?? 2 * 1024 * 1024;
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 600_000) {
+    throw new RangeError("process timeout must be between 1 and 600000 milliseconds");
+  }
+  if (!Number.isInteger(maxOutputBytes) || maxOutputBytes < 1 || maxOutputBytes > 1024 * 1024) {
+    throw new RangeError("process output limit must be between 1 byte and 1 MiB");
+  }
+  if (!Number.isInteger(maxInputBytes) || maxInputBytes < 0 || maxInputBytes > 2 * 1024 * 1024) {
+    throw new RangeError("process input limit must be between 0 bytes and 2 MiB");
+  }
+  const input = options.input ?? "";
   const started = Date.now();
   const startedAt = new Date(started).toISOString();
 
   return new Promise((resolve) => {
-    let stdout = "";
-    let stderr = "";
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+    let outputBytes = 0;
+    let outputTruncated = false;
     let timedOut = false;
     let failureReason: string | null = null;
     let settled = false;
@@ -60,15 +75,22 @@ export function runBoundedProcess(
         cwd: options.cwd,
         exitCode,
         signal,
-        stdout,
-        stderr,
+        stdout: Buffer.concat(stdoutChunks).toString("utf8"),
+        stderr: Buffer.concat(stderrChunks).toString("utf8"),
         timedOut,
+        outputTruncated,
         failureReason,
         startedAt,
         completedAt: new Date(completed).toISOString(),
         durationMs: completed - started,
       });
     };
+
+    if (Buffer.byteLength(input, "utf8") > maxInputBytes) {
+      failureReason = "InputLimitExceeded";
+      finish(null, null);
+      return;
+    }
 
     let child;
     try {
@@ -85,26 +107,22 @@ export function runBoundedProcess(
       return;
     }
 
-    const enforceOutputLimit = (): void => {
-      if (
-        !failureReason &&
-        Buffer.byteLength(stdout, "utf8") + Buffer.byteLength(stderr, "utf8") > maxOutputBytes
-      ) {
+    const appendBounded = (chunk: Buffer, target: Buffer[]): void => {
+      const remaining = Math.max(0, maxOutputBytes - outputBytes);
+      if (remaining > 0) {
+        const accepted = chunk.subarray(0, remaining);
+        target.push(accepted);
+        outputBytes += accepted.byteLength;
+      }
+      if (chunk.byteLength > remaining && !failureReason) {
+        outputTruncated = true;
         failureReason = "OutputLimitExceeded";
-        child.kill();
+        child.kill("SIGKILL");
       }
     };
 
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
-      enforceOutputLimit();
-    });
-    child.stderr.on("data", (chunk: string) => {
-      stderr += chunk;
-      enforceOutputLimit();
-    });
+    child.stdout.on("data", (chunk: Buffer) => appendBounded(chunk, stdoutChunks));
+    child.stderr.on("data", (chunk: Buffer) => appendBounded(chunk, stderrChunks));
     child.on("error", (error) => {
       failureReason = `SpawnFailed:${error.message}`;
       finish(null, null);
@@ -115,11 +133,11 @@ export function runBoundedProcess(
       if (!settled) {
         timedOut = true;
         failureReason = "TimedOut";
-        child.kill();
+        child.kill("SIGKILL");
       }
     }, timeoutMs);
 
     child.stdin.on("error", () => undefined);
-    child.stdin.end(options.input ?? "");
+    child.stdin.end(input);
   });
 }

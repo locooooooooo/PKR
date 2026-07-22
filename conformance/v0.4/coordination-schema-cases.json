@@ -131,7 +131,7 @@
         "createdAt": "2026-07-17T14:00:00Z",
         "updatedAt": "2026-07-17T14:00:00Z",
         "agentId": "agent_001",
-        "providerLocator": "local://session/001",
+        "sessionLocator": "agent-native://session/001",
         "adapter": {
           "id": "pkr.adapter.local-process",
           "version": "0.4.0"
@@ -641,7 +641,7 @@
         "payload": {
           "agentId": "agent_001",
           "capabilityStatementId": "capability_001",
-          "providerLocator": "local://session/001"
+          "sessionLocator": "agent-native://session/001"
         },
         "extensions": {}
       }
@@ -1325,7 +1325,7 @@
         "createdAt": "2026-07-17T14:00:00Z",
         "updatedAt": "2026-07-17T14:00:00Z",
         "agentId": "agent_001",
-        "providerLocator": "local://session/001",
+        "sessionLocator": "agent-native://session/001",
         "adapter": {
           "id": "pkr.adapter.local-process",
           "version": "0.4.0"
@@ -1837,7 +1837,7 @@
         "issuedAt": "2026-07-17T14:00:00Z",
         "payload": {
           "capabilityStatementId": "capability_001",
-          "providerLocator": "local://session/001"
+          "sessionLocator": "agent-native://session/001"
         },
         "extensions": {}
       }

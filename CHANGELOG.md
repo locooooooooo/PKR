@@ -1,29 +1,25 @@
 # Changelog
 
+All notable public changes are recorded here. PKR follows semantic versioning
+for the accepted v1 stable contract.
+
 ## Unreleased
 
-- Clarified the public product position, authority boundaries, and current
-  non-goals in the README and product overview.
-- Reframed PKR as an AI-native project framework and Runtime rather than a
-  Provider-specific usage tool.
-- Added a `--case blocked` three-command demo that proves failed verification,
-  durable blocked state, and fresh-process recovery.
-- Recorded the optional real-Provider audit separately from the tagged release.
+## 1.0.0 - 2026-07-22
 
-## 0.7.0-alpha.1 - 2026-07-19
+- Established PKR as an AI-native project framework and local Runtime with
+  SQLite-authoritative project state, governed work, independent Repository
+  Verification, separate Runtime acceptance, recovery, Memory, and audit.
+- Accepted the stable CLI, TypeScript, schema, record, event, support, and
+  semantic-versioning contract while keeping declared integration and evolution
+  surfaces experimental.
+- Added reproducible source installation, newcomer, lifecycle, recovery,
+  security, package, benchmark, soak, and Windows/Ubuntu CI evidence.
+- Adopted Apache-2.0 with NOTICE and third-party notices.
+- Kept the npm package private and unpublished; v1.0.0 is a GitHub source
+  release and does not authorize `npm publish`.
 
-- Public alpha of the local PKR framework and reference Runtime.
-- Added the supported `pkr init`, `pkr run`, and `pkr status` path with
-  persistent SQLite authority and restart-readable status.
-- Separated Provider work reports from independent Repository Verification and
-  Runtime acceptance; failed checks remain blocked with durable evidence.
-- Added the three-command demo, fake-Provider CI coverage, and Windows adapter
-  recovery notes.
-- Published the GitHub prerelease and tag `v0.7.0-alpha.1`.
+## 0.7.0-alpha.1
 
-### Explicitly not released
-
-- The npm package is not published; source installation is required.
-- No OS sandbox, hosted deployment, cloud Provider adapters, automatic model
-  selection, production stability guarantee, or v0.8/v0.9 evolution feature is
-  included.
+- Published the runtime-bearing public alpha as a prerelease.
+- This prerelease is not a stable contract and is not published to npm.

@@ -1,8 +1,15 @@
 import { PkrError } from "./errors.js";
-import type { AgentProviderAdapter, ProviderCallback } from "./provider.js";
+import type {
+  AgentProviderAdapter,
+  ProviderCallback,
+  ProviderExecutionResult,
+  ProviderOutputDeclaration,
+} from "./provider.js";
 import type { PkrRuntime } from "./runtime.js";
+import { isBoundedCallbackPayload, isSafeOutputLocator } from "./security.js";
 import type { JsonObject, StoredRecord } from "./types.js";
-import { derivedId } from "./util.js";
+import { derivedId, digest } from "./util.js";
+import { collectRepositoryEvidence } from "./workspace.js";
 
 const TERMINAL_ASSIGNMENTS = new Set([
   "closed",
@@ -18,6 +25,36 @@ export interface LpsExecutionResult {
   leaseId: string;
   taskId: string;
   callback?: ProviderCallback;
+  process?: ProviderExecutionResult["process"];
+  reused: boolean;
+  board: JsonObject;
+}
+
+export interface AgentNativeSubmission {
+  outcome: "verified" | "partial" | "blocked" | "externalSignoffBlocked";
+  completed: string[];
+  incomplete: string[];
+  blockers: string[];
+  evidenceIds: string[];
+  outputs: ProviderOutputDeclaration[];
+  nextAction: string;
+}
+
+export interface LpsClaimResult {
+  assignmentId: string;
+  sessionId: string;
+  leaseId: string;
+  taskId: string;
+  workspace: JsonObject;
+  reused: boolean;
+  board: JsonObject;
+}
+
+export interface LpsSubmitResult {
+  assignmentId: string;
+  taskId: string;
+  outcome: AgentNativeSubmission["outcome"];
+  repository: JsonObject;
   reused: boolean;
   board: JsonObject;
 }
@@ -25,7 +62,7 @@ export interface LpsExecutionResult {
 export class LpsOrchestrator {
   constructor(
     private readonly runtime: PkrRuntime,
-    private readonly provider: AgentProviderAdapter,
+    private readonly provider?: AgentProviderAdapter,
   ) {}
 
   board(): JsonObject {
@@ -43,14 +80,16 @@ export class LpsOrchestrator {
         : undefined;
       return {
         identity: `[Worker]#${assignment.id}@${assignment.revision}`,
-        thread_id: session ? (session.data.providerLocator as string) : null,
+        thread_id: session ? (session.data.sessionLocator as string) : null,
         role: "short-worker",
         module: assignment.data.taskId as string,
         state: workerState(assignment),
         task_tag: `pkr:task:${assignment.data.taskId as string}`,
         session_tag: session ? `pkr:session:${session.id}` : null,
         current_gate:
-          assignment.data.state === "running" ? "execution" : null,
+          assignment.data.state === "running"
+            ? "execution"
+            : assignment.data.state === "submitted" ? "verification" : null,
         assignment_id: assignment.id,
         lease_id: lease?.id ?? null,
         last_verified_activity: assignment.updatedAt,
@@ -67,11 +106,7 @@ export class LpsOrchestrator {
       loop_state: active ? "active" : "summarized",
       dispatch_state: active ? "dispatching" : "standby",
       delivery_state: active ? "implementing" : "planned",
-      assurance_state: this.runtime.listRecords("Verification").some(
-        (record) =>
-          (record.data.spec as JsonObject).gate === "acceptance" &&
-          (record.data.status as JsonObject).phase === "passed",
-      )
+      assurance_state: workers.some((worker) => worker.state === "archived")
         ? "verified"
         : "unassessed",
       active_gate: active
@@ -86,11 +121,167 @@ export class LpsOrchestrator {
     };
   }
 
-  async executeLane(taskId: string, agentId: string): Promise<LpsExecutionResult> {
-    this.assertCapabilities(["filesystem.read", "filesystem.write", "terminal"]);
-    const existing = this.runtime
+  async claim(
+    taskId: string,
+    agentId: string,
+    sessionLocator?: string,
+  ): Promise<LpsClaimResult> {
+    await this.runtime.recoverInterruptedSessions();
+    const assignments = this.runtime
       .listRecords("Assignment")
-      .find((record) => record.data.taskId === taskId);
+      .filter((record) => record.data.taskId === taskId);
+    const existing = assignments.find((record) =>
+      ["offered", "accepted", "running", "submitted"].includes(record.data.state as string),
+    );
+    const expired = assignments
+      .filter((record) => record.data.state === "expired")
+      .sort((left, right) =>
+        (right.data.projectSequence as number) - (left.data.projectSequence as number),
+      )[0];
+    let assignmentId: string;
+    let sessionId: string;
+    let leaseId: string;
+    let reused = false;
+    if (existing) {
+      if (existing.data.state !== "running") {
+        throw new PkrError(
+          "PKR-COORD-006",
+          `Task Assignment ${existing.id} is ${existing.data.state as string}; it cannot be claimed for work`,
+        );
+      }
+      const lease = this.relatedLease(existing);
+      if (lease.data.agentId !== agentId) {
+        throw new PkrError("PKR-COORD-005", `Assignment ${existing.id} is leased to another Agent`);
+      }
+      const session = this.relatedSession(existing);
+      const native = (session.data.extensions as JsonObject)["pkr.agent-native/session"] as JsonObject | undefined;
+      if (native?.mode !== "pull") {
+        throw new PkrError("PKR-COORD-006", `Assignment ${existing.id} belongs to an Adapter execution lane`);
+      }
+      assignmentId = existing.id;
+      sessionId = session.id;
+      leaseId = lease.id;
+      reused = true;
+    } else {
+      const baseline = await collectRepositoryEvidence(this.runtime.paths.root);
+      const dispatch = await this.runtime.dispatch(
+        taskId,
+        agentId,
+        derivedId(
+          "command",
+          `lps-agent-native:${this.runtime.projectId}:${taskId}:${agentId}:claim` +
+            (expired ? `:reassign:${expired.id}` : ""),
+        ),
+        {
+          executionMode: "agent-native",
+          ...(sessionLocator ? { sessionLocator } : {}),
+          repositoryBaseline: baseline as unknown as JsonObject,
+          ...(expired ? { recoveryFromAssignmentId: expired.id } : {}),
+        },
+      );
+      const value = dispatch.value as JsonObject;
+      assignmentId = value.assignmentId as string;
+      sessionId = value.sessionId as string;
+      leaseId = value.leaseId as string;
+    }
+    const current = await collectRepositoryEvidence(this.runtime.paths.root);
+    const workspace = this.runtime.workspace(
+      taskId,
+      assignmentId,
+      agentId,
+      current as unknown as JsonObject,
+    );
+    return {
+      assignmentId,
+      sessionId,
+      leaseId,
+      taskId,
+      workspace,
+      reused,
+      board: this.board(),
+    };
+  }
+
+  async submit(
+    assignmentId: string,
+    agentId: string,
+    submission?: Partial<AgentNativeSubmission>,
+  ): Promise<LpsSubmitResult> {
+    await this.runtime.recoverInterruptedSessions();
+    const assignment = this.runtime.getRecord("Assignment", assignmentId);
+    const taskId = assignment.data.taskId as string;
+    const lease = this.relatedLease(assignment);
+    if (lease.data.agentId !== agentId) {
+      throw new PkrError("PKR-COORD-005", `Assignment ${assignmentId} is leased to another Agent`);
+    }
+    const session = this.relatedSession(assignment);
+    const native = (session.data.extensions as JsonObject)["pkr.agent-native/session"] as JsonObject | undefined;
+    if (native?.mode !== "pull") {
+      throw new PkrError("PKR-COORD-008", "Agent-native submit cannot submit an Adapter execution lane");
+    }
+    if (assignment.data.state === "submitted") {
+      return {
+        assignmentId,
+        taskId,
+        outcome: assignment.data.disposition as AgentNativeSubmission["outcome"],
+        repository: await collectRepositoryEvidence(this.runtime.paths.root) as unknown as JsonObject,
+        reused: true,
+        board: this.board(),
+      };
+    }
+    if (assignment.data.state !== "running") {
+      throw new PkrError("PKR-COORD-008", "Agent-native submit requires a running Assignment");
+    }
+    const baseline = native?.repositoryBaseline;
+    if (!baseline || typeof baseline !== "object" || Array.isArray(baseline)) {
+      throw new PkrError("PKR-COORD-008", "Agent-native submit requires its persisted claim baseline");
+    }
+    const callback = normalizeAgentNativeSubmission(submission);
+    const current = await collectRepositoryEvidence(this.runtime.paths.root);
+    const workspaceEvidence: JsonObject = {
+      baseline: baseline as JsonObject,
+      current: current as unknown as JsonObject,
+    };
+    await this.runtime.callback(
+      assignmentId,
+      callback.outcome,
+      callback.evidenceIds,
+      derivedId("command", `lps-agent-native:${assignmentId}:submit:${digest({
+        callback,
+        baselineDigest: (baseline as JsonObject).contentDigest ?? null,
+        currentDigest: current.contentDigest,
+      })}`),
+      callback as unknown as JsonObject,
+      undefined,
+      workspaceEvidence,
+    );
+    return {
+      assignmentId,
+      taskId,
+      outcome: callback.outcome,
+      repository: current as unknown as JsonObject,
+      reused: false,
+      board: this.board(),
+    };
+  }
+
+  async executeLane(taskId: string, agentId: string): Promise<LpsExecutionResult> {
+    if (!this.provider) {
+      throw new PkrError("PKR-PROVIDER-001", "optional Adapter execution requires a configured Provider");
+    }
+    await this.runtime.recoverInterruptedSessions();
+    this.assertCapabilities(["filesystem.read", "filesystem.write", "terminal"]);
+    const assignments = this.runtime
+      .listRecords("Assignment")
+      .filter((record) => record.data.taskId === taskId);
+    const existing = assignments.find((record) =>
+      ["offered", "accepted", "running", "submitted"].includes(record.data.state as string),
+    ) ?? assignments.find((record) => record.data.state === "closed");
+    const expired = assignments
+      .filter((record) => record.data.state === "expired")
+      .sort((left, right) =>
+        (right.data.projectSequence as number) - (left.data.projectSequence as number),
+      )[0];
     if (existing && existing.data.state === "closed") {
       return {
         assignmentId: existing.id,
@@ -119,9 +310,23 @@ export class LpsOrchestrator {
     } else {
       const dispatchCommand = derivedId(
         "command",
-        `lps:${this.runtime.projectId}:${taskId}:${agentId}:dispatch`,
+        `lps:${this.runtime.projectId}:${taskId}:${agentId}:dispatch` +
+          (expired ? `:reassign:${expired.id}` : ""),
       );
-      const dispatch = await this.runtime.dispatch(taskId, agentId, dispatchCommand);
+      const dispatch = await this.runtime.dispatch(
+        taskId,
+        agentId,
+        dispatchCommand,
+        {
+          executionMode: "adapter",
+          providerBinding: {
+            id: this.provider.id,
+            version: this.provider.version,
+            capabilities: [...this.provider.capabilities],
+          },
+          ...(expired ? { recoveryFromAssignmentId: expired.id } : {}),
+        },
+      );
       const value = dispatch.value as JsonObject;
       assignmentId = value.assignmentId as string;
       sessionId = value.sessionId as string;
@@ -140,30 +345,86 @@ export class LpsOrchestrator {
       };
     }
 
-    const workspace = this.runtime.workspace(taskId, assignmentId, agentId);
-    const callback = await this.provider.execute({
+    const baseline = await collectRepositoryEvidence(this.runtime.paths.root);
+    const workspace = this.runtime.workspace(
+      taskId,
+      assignmentId,
+      agentId,
+      baseline as unknown as JsonObject,
+    );
+    const providerRequest = {
       assignmentId,
       sessionId,
       workspace,
-    });
-    await this.runtime.callback(
-      assignmentId,
-      callback.outcome,
-      callback.evidenceIds,
-      derivedId("command", `lps:${assignmentId}:callback`),
-      {
-        completed: callback.completed,
-        incomplete: callback.incomplete,
-        blockers: callback.blockers,
-        nextAction: callback.nextAction,
-      },
-    );
+    };
+    const effectId = derivedId("effect", `provider:${assignmentId}:execute`);
+    const priorEffect = this.runtime.externalEffect(effectId);
+    const effect = priorEffect
+      ? { ...priorEffect, execute: false }
+      : this.runtime.beginExternalEffect(
+          assignmentId,
+          effectId,
+          providerRequest as unknown as JsonObject,
+        );
+    if (!effect.execute && effect.state === "pending") {
+      throw new PkrError(
+        "PKR-RECOVERY-003",
+        `Provider effect ${effectId} has an unknown outcome and requires reconciliation`,
+      );
+    }
+    let execution: ProviderExecutionResult;
+    let workspaceEvidence: JsonObject;
+    if (effect.execute) {
+      execution = await this.provider.execute(providerRequest);
+      if (process.env.PKR_FAILPOINT === "after-provider-execute") {
+        throw new Error("PKR failpoint after-provider-execute");
+      }
+      const current = await collectRepositoryEvidence(this.runtime.paths.root);
+      workspaceEvidence = {
+        baseline: baseline as unknown as JsonObject,
+        current: current as unknown as JsonObject,
+      };
+      this.runtime.completeExternalEffect(
+        effectId,
+        "succeeded",
+        { execution: execution as unknown as JsonObject, workspaceEvidence },
+      );
+    } else {
+      const retained = effect.result as JsonObject | undefined;
+      if (!retained?.execution || !retained.workspaceEvidence) {
+        throw new PkrError("PKR-RECOVERY-003", `Provider effect ${effectId} has no replayable result`);
+      }
+      execution = retained.execution as unknown as ProviderExecutionResult;
+      workspaceEvidence = retained.workspaceEvidence as JsonObject;
+    }
+    if (process.env.PKR_FAILPOINT === "after-provider-effect") {
+      throw new Error("PKR failpoint after-provider-effect");
+    }
+    if (execution.callback) {
+      await this.runtime.callback(
+        assignmentId,
+        execution.callback.outcome,
+        execution.callback.evidenceIds,
+        derivedId("command", `lps:${assignmentId}:callback`),
+        execution.callback as unknown as JsonObject,
+        execution.process as unknown as JsonObject,
+        workspaceEvidence,
+      );
+    } else {
+      await this.runtime.recordProviderFailure(
+        assignmentId,
+        execution.process as unknown as JsonObject,
+        workspaceEvidence,
+        derivedId("command", `lps:${assignmentId}:provider-failure`),
+      );
+    }
     return {
       assignmentId,
       sessionId,
       leaseId,
       taskId,
-      callback,
+      ...(execution.callback ? { callback: execution.callback } : {}),
+      process: execution.process,
       reused: false,
       board: this.board(),
     };
@@ -201,7 +462,21 @@ export class LpsOrchestrator {
   }
 
   private assertCapabilities(required: string[]): void {
-    const available = new Set(this.provider.capabilities);
+    if (!this.provider) {
+      throw new PkrError("PKR-PROVIDER-001", "optional Adapter execution requires a configured Provider");
+    }
+    const binding = this.runtime.inspectProviderAdapterBinding({
+      id: this.provider.id,
+      version: this.provider.version,
+      capabilities: [...this.provider.capabilities],
+    });
+    if (JSON.stringify(binding.isolation) !== JSON.stringify(this.provider.isolation)) {
+      throw new PkrError(
+        "PKR-COORD-005",
+        `provider ${this.provider.id}@${this.provider.version} isolation does not match its Runtime binding`,
+      );
+    }
+    const available = new Set(binding.capabilities as string[]);
     const missing = required.filter((capability) => !available.has(capability));
     if (missing.length) {
       throw new PkrError(
@@ -232,9 +507,7 @@ function workerState(assignment: StoredRecord): string {
     case "running":
       return "active";
     case "submitted":
-      return ["verified", "partial"].includes(assignment.data.disposition as string)
-        ? "waiting_verification"
-        : "blocked";
+      return "waiting_verification";
     case "closed":
       return "archived";
     case "blocked":
@@ -247,4 +520,39 @@ function workerState(assignment: StoredRecord): string {
     default:
       return "active";
   }
+}
+
+function normalizeAgentNativeSubmission(
+  input?: Partial<AgentNativeSubmission>,
+): AgentNativeSubmission {
+  const submission: AgentNativeSubmission = {
+    outcome: input?.outcome ?? "partial",
+    completed: input?.completed ?? [],
+    incomplete: input?.incomplete ?? ["independent-verification", "acceptance"],
+    blockers: input?.blockers ?? [],
+    evidenceIds: input?.evidenceIds ?? [],
+    outputs: input?.outputs ?? [],
+    nextAction: input?.nextAction ?? "Run independent repository Verification.",
+  };
+  const stringLists = [
+    submission.completed,
+    submission.incomplete,
+    submission.blockers,
+    submission.evidenceIds,
+  ];
+  if (
+    !isBoundedCallbackPayload(submission as unknown) ||
+    !["verified", "partial", "blocked", "externalSignoffBlocked"].includes(submission.outcome) ||
+    stringLists.some((values) => !Array.isArray(values) || values.some((value) => typeof value !== "string")) ||
+    !Array.isArray(submission.outputs) ||
+    submission.outputs.some((output) =>
+      !output ||
+      !["proposal", "result", "patch", "log", "artifact"].includes(output.kind) ||
+      !isSafeOutputLocator(output.locator)
+    ) ||
+    typeof submission.nextAction !== "string"
+  ) {
+    throw new PkrError("PKR-COORD-008", "Agent-native submission has an invalid callback shape");
+  }
+  return submission;
 }

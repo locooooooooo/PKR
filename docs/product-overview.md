@@ -1,65 +1,56 @@
 # Why PKR
 
-An Agent tool can edit a checkout and return a successful-looking message. That
-still leaves four questions unanswered: what state is authoritative, did the
-declared repository check run, can a failure be resumed, and what evidence can
-someone inspect later?
+PKR is an AI-native project framework and local Runtime. It gives a project one
+place for intent, decisions, work, evidence, memory, and recovery. The point is
+not to make one AI tool smarter; it is to make the project state trustworthy
+when people, Agents, and tools work across sessions.
 
-PKR is the project framework and Runtime around that gap, not a wrapper around
-one model or CLI. It gives humans, Agents, tools, and workflows one
-authoritative project state and a governed operating contract. The current
-reference implementation stores that state and audit trail in `.pkr/runtime.sqlite`,
-asks a separate
-Repository Verifier to run the declared check, and records enough Git/process
-evidence to recompute acceptance after the Provider has finished. A fresh
-`pkr status` process reads the same state, so a restart does not turn an
-in-progress or blocked run into an undocumented guess.
+## The gap
 
-## The three boundaries
+An AI tool can read a request, edit files, and report that it finished. That
+report is useful, but it is not project truth. Without a governed Runtime, a
+team still has to reconstruct which goal was approved, what work was claimed,
+which files changed, whether the checks were independent, what failed, and how
+to resume safely after a restart.
 
-- **Provider work report:** the Provider describes the work it attempted and the
-  repository changes it declares. This is useful evidence, but it is not
-  acceptance and a `verified` callback cannot close a Task.
-- **Repository Verification:** the Verifier runs the declared host command and
-  captures its exit result plus Git HEAD, status, diff, staged diff, and changed
-  paths. Failed verification remains durable evidence.
-- **Runtime acceptance:** PKR re-collects current evidence, checks the declared
-  scope and command, and creates acceptance only after a passing Verification.
-  Otherwise the Task remains blocked and visible to `pkr status`.
+## What PKR adds
 
-This separation is the product: Agent execution can be useful without being
-the authority that decides whether the repository is done.
+| Without a project Runtime | With PKR |
+| --- | --- |
+| Request and implementation are mixed together | Intent becomes explicit Mission, Goal, and Task state |
+| A worker success message is treated as completion | Work reports stay non-authoritative until independent Verification |
+| Boards and notes drift from source state | SQLite is authoritative; projections and Memory rebuild from it |
+| Failure is a chat message or lost process | Blocked state, evidence, leases, and restart recovery are durable |
+| Acceptance is implicit | Repository Verification and Runtime acceptance are separate records |
 
-## What this alpha is
+## The core loop
 
-- A source-installed, local reference Runtime for an existing Git repository.
-- A Provider-neutral Runtime contract with one current local adapter.
-- A small CLI path: `pkr init`, `pkr run`, and `pkr status`.
-- A public alpha with deterministic fake-Provider CI tests and an optional
-  local real-Provider audit.
+1. A human or Agent submits intent to the governed Steward.
+2. PKR records a bounded Goal and Task and exposes the next allowed action.
+3. An Agent or tool claims a scoped Workspace and reports the work it attempted.
+4. A distinct Repository Verifier recomputes Git and command evidence.
+5. Runtime acceptance, blocking, or recovery is recorded in SQLite.
+6. Status, Memory, and orchestration views are rebuilt from authoritative state.
 
-## What this alpha is not
+This is the framework contract. Optional execution integrations may participate
+in step 3, but they do not own project truth, verification, or acceptance.
 
-- Not a hosted or multi-tenant cloud service.
-- Not an OS sandbox: Provider and verification commands are trusted host
-  processes with the current user's filesystem, network, and credentials.
-- Not a general Agent marketplace, model router, or automatic model-selection
-  service.
-- Not a published npm package yet. Use the source install in the README.
-- Not a production-stability or adoption claim. The API is pre-stable and the
-  soak material is a time-bounded pilot record.
+## What PKR is not
 
-## Evidence you can inspect
+- Not a vendor-specific rule set, CLI wrapper, or model prompt library.
+- Not a cloud control plane, hosted Agent marketplace, or multi-tenant service.
+- Not an operating-system sandbox, VM, credential vault, or guarantee against a
+  trusted host process damaging the local machine.
+- Not a claim of universal model, Agent-host, operating-system, or production
+  support.
+- Not a replacement for project-specific tests, human approval, or security
+  review.
 
-- The [public verification workflow](../.github/workflows/verify.yml) runs the
-  supported checks on Windows and Linux.
-- The [v0.7.0-alpha.1 release notes](releases/v0.7.0-alpha.1.md) state the tag's
-  prerequisites and non-goals.
-- The [sanitized real-Provider audit](../soak/audits/2026-07-19-public-alpha1-real-codex.json)
-  records one optional local success observation without a machine path,
-  credential, full prompt, or source content.
-- The [release regression tests](../src/release.test.ts) use a fake Provider
-  executable to prove both completed and blocked recovery paths deterministically.
+## Read next
 
-The detailed RFCs under `specs/` explain the design contracts; they should not
-be read as additional v0.7 product capabilities.
+- [Architecture](architecture.md) for the authority and evidence diagram.
+- [Source quickstart](quickstart.md) for the reproducible repository path.
+- [Operational limits](operations/limits.md) and
+  [recovery](operations/recovery-and-migrations.md) for safety and restart
+  behavior.
+- [Stable contract](release/v1-stable-contract.md) for v1 API boundaries.

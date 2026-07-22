@@ -18,7 +18,7 @@ export interface RepositoryEvidence {
   collectedAt: string;
 }
 
-const REPOSITORY_PATHSPEC = ["--", ".", ":(exclude).pkr", ":(exclude).pkr/**"];
+const REPOSITORY_PATHSPEC = ["--", ".", ":(exclude).pkr/**"];
 
 function parseChangedFiles(porcelain: string): string[] {
   const entries = porcelain.split("\0");
@@ -44,7 +44,11 @@ function parseChangedFiles(porcelain: string): string[] {
   return [...new Set(files)].sort();
 }
 
-async function git(root: string, args: string[], maxOutputBytes = 512 * 1024): Promise<string> {
+async function git(
+  root: string,
+  args: string[],
+  maxOutputBytes = 512 * 1024,
+): Promise<string> {
   const result = await runBoundedProcess({
     executable: "git",
     args,
@@ -65,12 +69,18 @@ export async function collectRepositoryEvidence(
   projectRoot: string,
 ): Promise<RepositoryEvidence> {
   const root = resolve(projectRoot);
-  const canonicalRoot = await realpath(root);
-  const gitRoot = await realpath((await git(root, ["rev-parse", "--show-toplevel"])).trim());
-  if (!gitRoot || gitRoot.toLowerCase() !== canonicalRoot.toLowerCase()) {
+  const gitRoot = (await git(root, ["rev-parse", "--show-toplevel"])).trim();
+  const [canonicalRoot, canonicalGitRoot] = await Promise.all([
+    realpath(root),
+    gitRoot ? realpath(gitRoot) : Promise.resolve(""),
+  ]);
+  const samePath = process.platform === "win32"
+    ? canonicalRoot.toLowerCase() === canonicalGitRoot.toLowerCase()
+    : canonicalRoot === canonicalGitRoot;
+  if (!gitRoot || !samePath) {
     throw new PkrError(
       "PKR-WORKSPACE-001",
-      `PKR project root ${canonicalRoot} must be the Git repository root ${gitRoot || "<unknown>"}`,
+      "PKR project root must resolve to the exact Git repository root",
     );
   }
   const head = (await git(root, ["rev-parse", "--verify", "HEAD"])).trim();

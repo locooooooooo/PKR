@@ -1,0 +1,14 @@
+{
+  "version": "pkr.verify/v1",
+  "commands": [
+    {
+      "id": "quickstart-result",
+      "executable": "node",
+      "args": [".pkr/verify.mjs"],
+      "timeoutMs": 30000
+    }
+  ],
+  "allowedPaths": ["src/**"],
+  "forbiddenPaths": [".github/**"],
+  "requireChanges": true
+}

@@ -549,8 +549,8 @@
         },
         "spec": {
           "provider": {
-            "vendor": "openai",
-            "model": "gpt-5"
+            "vendor": "example-provider",
+            "model": "example-model"
           },
           "capabilities": [
             "code",

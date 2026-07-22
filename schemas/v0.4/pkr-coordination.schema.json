@@ -640,7 +640,7 @@
         "agentId": {
           "$ref": "#/$defs/Id"
         },
-        "providerLocator": {
+        "sessionLocator": {
           "$ref": "#/$defs/NonEmptyString"
         },
         "adapter": {
@@ -700,7 +700,7 @@
         "createdAt",
         "updatedAt",
         "agentId",
-        "providerLocator",
+        "sessionLocator",
         "adapter",
         "protocolVersion",
         "capabilityStatementId",
@@ -2214,14 +2214,14 @@
             "capabilityStatementId": {
               "$ref": "#/$defs/Id"
             },
-            "providerLocator": {
+            "sessionLocator": {
               "$ref": "#/$defs/NonEmptyString"
             }
           },
           "required": [
             "agentId",
             "capabilityStatementId",
-            "providerLocator"
+            "sessionLocator"
           ],
           "additionalProperties": false
         },
