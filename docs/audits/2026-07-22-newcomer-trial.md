@@ -1,7 +1,7 @@
 # PKR non-author newcomer trial
 
 - Date: 2026-07-22
-- Candidate base: `8378f58f2c2beeaa7d7ab6e44f41afe2a00fc17a`
+- Audited candidate: `4211473a571f3ba4010f3c211dbdee27f4e1c677`
 - Evidence class: `newcomer_trial`
 - Participant class: non-author task session
 - Environment: Windows, Node.js 24, Python 3.11, Git
