@@ -131,7 +131,7 @@ function topLevelHelp(name: string): string {
 
 export function rootHelp(): string {
   return [
-    "PKR 0.7.0 public alpha CLI",
+    "PKR 1.0.0 stable CLI",
     "",
     "Usage: pkr <command> [options]",
     "",

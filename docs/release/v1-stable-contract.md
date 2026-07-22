@@ -1,16 +1,16 @@
-# Proposed v1 stable contract
+# PKR v1 stable contract
 
-- Target: `1.0.0`
-- Current package: `0.7.0`, private, npm unpublished
-- Contract status: `candidate_contract_unaccepted`
+- Version: `1.0.0`
+- Package: private, npm unpublished
+- Contract status: `stable_contract_accepted`
+- Accepted by: `xjf` on 2026-07-22
 - Machine inventory: [v1-contract-manifest.json](v1-contract-manifest.json)
 
-This is the complete candidate inventory required by G0. It is not an owner
-Decision, a version bump, or a stable-release claim. `npm run check:contract`
-compares the inventory with the current CLI routes, root TypeScript exports,
-schema files, persisted record kinds, and literal Runtime event types.
+This is the accepted inventory required by G0. `npm run check:contract`
+compares it with the current CLI routes, root TypeScript exports, schema files,
+persisted record kinds, and literal Runtime event types.
 
-## Stable candidate surfaces
+## Stable v1 surfaces
 
 The manifest lists every candidate-stable CLI route and TypeScript export by
 name. The compatibility promise also includes:
@@ -62,8 +62,7 @@ service compatibility evidence unless a separate integration makes that claim.
 
 ## Semantic-versioning policy
 
-Before the target contract is accepted, `0.x` may break only with an explicit
-compatibility note and migration rule. After `1.0.0`:
+The accepted v1 contract follows these rules:
 
 - patch releases may fix behavior without changing accepted CLI, TypeScript,
   schema, record, or event meaning;
@@ -81,7 +80,7 @@ package version. The version manifest is the binding between them.
 
 ## Supported environment
 
-| Surface | Candidate support |
+| Surface | v1 support |
 | --- | --- |
 | Node.js | 24.x only |
 | Operating systems | GitHub `windows-latest` and `ubuntu-latest` |
@@ -90,5 +89,5 @@ package version. The version manifest is the binding between them.
 | macOS, Node 25+, other Linux distributions | Not declared for v1 |
 | Security boundary | Trusted host process; no OS sandbox or production SLA |
 
-The matrix is a proposed contract until the exact public candidate completes
-CI and the owner accepts G0.
+Reviewer `xjf` accepted this matrix on 2026-07-22 after the exact public
+candidate completed Windows and Ubuntu CI.

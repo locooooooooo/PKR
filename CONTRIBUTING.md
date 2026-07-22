@@ -1,6 +1,6 @@
 # Contributing to PKR
 
-PKR is an alpha project with a repository-first trust boundary. Keep changes
+PKR is a local Runtime with a repository-first trust boundary. Keep changes
 small, attributable, and independently verifiable. Node.js 24, Python 3.11,
 Git, and the Python packages in `conformance/requirements.txt` are required.
 
@@ -16,7 +16,7 @@ npm run check:clean
 Use `python -m pip ...` on Ubuntu. The Windows launcher form avoids the Windows
 Store `python` alias.
 
-The GitHub Actions CI workflow runs the candidate gates, benchmark, soak, and a
+The GitHub Actions CI workflow runs the release gates, benchmark, soak, and a
 final clean-worktree check on both Windows and Ubuntu. A local pass is required
 before a pull request, but it does not substitute for the remote matrix result.
 
@@ -55,9 +55,9 @@ fixture changes must be reviewed with their source change.
 For package metadata or public-file changes, also run
 `npm run check:candidate`, `npm pack --dry-run --json`, and
 `npm run check:fresh-install`. Verify that every packed path is intentional and
-covered by the package `files` allowlist. Apache-2.0 is the candidate source
-license. Do not remove `private: true`, change the release version, publish a
-package, or create release metadata without the corresponding owner decision.
+covered by the package `files` allowlist. Apache-2.0 is the source license. Do
+not remove `private: true`, change the release version, publish a package, or
+create release metadata without the corresponding owner decision.
 
 ## Working-tree and authority boundaries
 

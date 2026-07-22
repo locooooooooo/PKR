@@ -69,7 +69,8 @@ A release commit requires:
 9. package metadata, NOTICE, and the selected license agree;
 10. GitHub publication and npm publication are recorded as separate gates.
 
-Candidate source, package metadata, `LICENSE`, `NOTICE`, and third-party notices
-use Apache-2.0 consistently. The package remains `private: true`, versioned
-`0.7.0`, and unpublished to npm. License alignment does not itself accept G7 or
-authorize publication; those remain separate owner and release decisions.
+The v1 source, package metadata, `LICENSE`, `NOTICE`, and third-party notices use
+Apache-2.0 consistently. The package remains `private: true`, versioned
+`1.0.0`, and unpublished to npm. The owner accepted G7 and authorized the
+GitHub source-release transaction separately; npm publication remains
+unauthorized.

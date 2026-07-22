@@ -53,4 +53,4 @@ in step 3, but they do not own project truth, verification, or acceptance.
 - [Operational limits](operations/limits.md) and
   [recovery](operations/recovery-and-migrations.md) for safety and restart
   behavior.
-- [Stable contract](release/v1-stable-contract.md) for candidate API boundaries.
+- [Stable contract](release/v1-stable-contract.md) for v1 API boundaries.

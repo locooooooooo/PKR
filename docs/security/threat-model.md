@@ -1,6 +1,6 @@
 # PKR threat model
 
-Status: local security baseline for the pre-stable Runtime. This model does not
+Status: accepted local security baseline for the v1 Runtime. This model does not
 claim penetration testing, an external audit, an OS sandbox, or production
 security certification.
 
@@ -36,9 +36,9 @@ them from the host filesystem, process table, credentials, or network.
 | Malicious repository content | Large files, crafted names, hostile scripts, or untrusted verification configuration trigger execution or resource use. | Git evidence output caps, strict relative path rules, bounded JSON/callback/file scans, verification plan validation; no command is inferred from repository content. | scope, command failure, path, and scanner tests | Running repository-provided commands means trusting them. No malware scanner or content sandbox is included. |
 | Denial of service | Huge input/output, event history, repeated restarts, SQLite contention, or archive expansion consumes resources. | Hard process, callback, diagnostic, archive, and scan bounds; SQLite busy timeout; explicit failures; reproducible long-history/restart soak. | process bounds, benchmark, and soak scripts | No multi-tenant quotas, process-tree cgroup/job limits, or production SLA. |
 
-## Required external decisions
+## Accepted residual risk
 
-G5 cannot be accepted solely from this repository. The Project owner must
-accept the trusted-host residual risk. Independent penetration review and an
-external security/privacy audit remain release blockers if required for the
-stable candidate.
+Reviewer `xjf` accepted the documented trusted-host residual risk for v1 on
+2026-07-22. That decision does not claim an independent penetration review,
+external security/privacy audit, OS sandbox, or security certification. Any
+deployment that requires those controls must supply and verify them separately.

@@ -13,11 +13,12 @@ assert(packageJson.version === version, "package.json and VERSION disagree");
 assert(lock.version === version, "package-lock root version disagrees");
 assert(lock.packages?.[""]?.version === version, "package-lock package version disagrees");
 assert(contract.packageVersion === version, "contract packageVersion disagrees");
-assert(version === "0.7.0", "candidate preparation must not bump the package to stable");
-assert(packageJson.private === true, "candidate package must remain private");
+assert(version === "1.0.0", "G10 release candidate must use the accepted stable version");
+assert(contract.status === "stable_contract_accepted", "v1 contract must be owner-accepted");
+assert(packageJson.private === true, "npm publication is not authorized; package must remain private");
 assert(packageJson.license === "Apache-2.0", "package license must match LICENSE");
 assert(packageJson.engines?.node === ">=24 <25", "Node support must stay 24.x");
-assert(help.includes(`PKR ${version} public alpha CLI`), "CLI help version disagrees");
+assert(help.includes(`PKR ${version} stable CLI`), "CLI help version disagrees");
 
 process.stdout.write(`${JSON.stringify({
   ok: true,

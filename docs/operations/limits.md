@@ -1,6 +1,6 @@
 # Operational limits
 
-These are pre-stable local Runtime limits, not production SLA targets.
+These are v1 local Runtime limits, not production SLA targets.
 
 | Surface | Limit | Failure behavior |
 | --- | --- | --- |
@@ -26,6 +26,6 @@ CLI yet. The G6 benchmark's restore measurement copies a closed test fixture's
 not a G3 operational restore guarantee.
 
 Long histories increase status digest and full projection rebuild cost. Use the
-benchmark and soak scripts on the intended candidate environment. Production
+benchmark and soak scripts on the intended supported environment. Production
 retention, compaction, backup encryption, secure deletion, recovery point,
 recovery time, and SLA targets remain explicit release blockers.

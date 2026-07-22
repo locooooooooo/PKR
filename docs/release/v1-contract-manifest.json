@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
   "targetVersion": "1.0.0",
-  "status": "candidate_contract_unaccepted",
-  "packageVersion": "0.7.0",
+  "status": "stable_contract_accepted",
+  "packageVersion": "1.0.0",
   "authority": {
     "state": ".pkr/runtime.sqlite",
     "providerReports": "non_authoritative",

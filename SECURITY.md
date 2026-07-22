@@ -1,7 +1,7 @@
 # Security policy
 
-PKR is alpha software. Its APIs and security model are pre-stable, and it is not
-a hardened isolation boundary.
+PKR v1 is a stable local Runtime contract, not a hardened isolation boundary or
+production security certification.
 
 ## Trust boundary
 

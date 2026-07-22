@@ -16,7 +16,7 @@ host, CLI, or execution service. Optional host-specific notes belong under
 Contribution changes are checked by the [CI workflow](.github/workflows/ci.yml)
 on Windows and Ubuntu. See [CONTRIBUTING.md](CONTRIBUTING.md) for the local and
 product-level verification paths, and [SECURITY.md](SECURITY.md) for private
-vulnerability reporting and the current alpha trust boundary.
+vulnerability reporting and the v1 trusted-host boundary.
 
 PKR provides policy, evidence, timeout, size, and path controls. It is not an
 OS sandbox, credential vault, or guarantee that trusted host processes cannot
@@ -68,7 +68,7 @@ path below. See [the architecture](docs/architecture.md) for the authority and
 evidence boundaries.
 For the product rationale, see [Why PKR](docs/product-overview.md).
 
-## 5-minute alpha path
+## 5-minute source path
 
 This is the smallest real repository flow after an Agent host has loaded PKR.
 The loaded Agent claims work from PKR, edits the repository
@@ -78,12 +78,12 @@ Node 24+ and Git installed:
 
 ```powershell
 $PkrRoot = (Get-Location).Path
-$Target = Join-Path $env:TEMP "pkr-alpha-quickstart"
+$Target = Join-Path $env:TEMP "pkr-v1-quickstart"
 New-Item -ItemType Directory -Force $Target | Out-Null
 Set-Location $Target
 git init -b main
 Set-Content .gitignore ".pkr/"
-Set-Content README.md "# PKR alpha target"
+Set-Content README.md "# PKR v1 target"
 git add .
 git -c user.name="PKR Quickstart" -c user.email="pkr@example.invalid" commit -m baseline
 
@@ -212,12 +212,13 @@ cannot create acceptance.
 
 ## Status
 
-PKR includes a **v0.7 local reference Runtime and persistent intelligence
-loop** proving the v0.2 object model, v0.4 coordination contracts, governed
-Steward intake, LPS-compatible dispatch, provenance-aware Memory, portable
-Workflows, atomic Packages, and two starter project Profiles. The API remains
-pre-stable. Hosted deployment, a package registry, and production Agent-host
-integrations are not yet claimed.
+PKR **v1.0.0** is the first stable GitHub source release of the local reference
+Runtime and its accepted compatibility contract. It includes governed Steward
+intake, Agent-native work claiming and submission, independent Repository
+Verification, separate Runtime acceptance, recovery, provenance-aware Memory,
+portable Workflows, atomic Packages, and two starter project Profiles. The npm
+package remains private and unpublished. Hosted deployment, a package registry,
+and production Agent-host integrations are not claimed.
 
 The current specification set is:
 
@@ -255,16 +256,16 @@ The current specification set is:
 
 ## Current boundary
 
-The verified baseline is **v0.7**. It includes the local reference Runtime,
-Steward and LPS flow, an optional local-process integration, persistent Memory,
-declarative Workflows, project Profiles, and atomic Package lifecycle.
+The accepted **v1 stable surface** is listed in the
+[stable contract](docs/release/v1-stable-contract.md). It covers the local
+Runtime, Steward and Agent-native LPS flow, authoritative state, work reports,
+Repository Verification, Runtime acceptance, recovery, Memory, declarative
+Workflows, project Profiles, and atomic Package lifecycle.
 
-**v0.8 is in development** and targets governed observation-to-promotion
-evolution with immutable candidates, separation of duties, bounded canaries,
-and rollback. Until its evidence bundle and full verification pass, v0.7
-remains the claimed implementation boundary. Hosted deployment, a package
-registry, and production model adapters are still outside the checked-in
-implementation surface.
+Governed evolution, Metrics, managed Prompts and Policies, and optional
+execution integrations ship as explicitly experimental surfaces outside the v1
+compatibility promise. Hosted deployment, a package registry, production model
+integrations, an OS sandbox, and a production SLA remain out of scope.
 
 ## Operating model
 
@@ -320,7 +321,7 @@ semantic harness. They do not claim to prove durable Runtime persistence.
 
 ## Source installation
 
-The supported candidate environment is Node 24.x, Python 3.11, and Git on
+The supported v1 environment is Node 24.x, Python 3.11, and Git on
 Windows or Ubuntu. Install from a source checkout; there is no supported
 `npm install <registry-name>` path because PKR is not published to npm:
 
@@ -449,14 +450,14 @@ Agent that produced the work result from acting as Verifier. Failed
 verification preserves the Artifact and failed Verification while blocking the
 Task; it does not create an acceptance Verification.
 
-The v0.7 Runtime also exposes `memory derive|list|promote`,
+The stable v1 Runtime also exposes `memory derive|list|promote`,
 `profile install|list`, `workflow start|transition`, and
 `package uninstall|rollback`. Memory entries are derived from exact source
 revisions and become persistently invalid when those sources change. Profile
 Packages contribute declarative Workflow definitions; they cannot execute
 code, access time or network state, or mutate POM lifecycle state.
 
-The in-development v0.8 slices add `metric record`,
+Experimental v1 surfaces include `metric record`,
 `evolution propose|observe|revise|approve|evaluate`, and
 `evolution external-evaluate|promote|status`. They currently normalize repeated
 Assignment failures, failed or waived Verification debt, breached Metrics, and
@@ -471,10 +472,8 @@ AgentSession, and live callback contract. Candidate, observation, Policy,
 Adapter, and external-result JSON may be supplied inline or from files. Runtime
 candidates use the fail-closed external-evaluation boundary. Adapter activation
 does not hot-swap an integration binary; the host must supply the exact active
-version. These commands do not expand the verified `0.7.0` package boundary
-while v0.8 is still in development. The next exit priority is to stabilize the
-repository-native harness golden path before adding another evolution target
-class.
+version. These commands remain outside the accepted stable compatibility
+promise and cannot weaken Repository Verification or Runtime acceptance.
 
 ```powershell
 node dist/cli.js metric record --project C:\path\to\project `
@@ -513,34 +512,31 @@ and `npm run verify` for the complete generation, schema, build, and test gate.
 
 ## Repository model
 
-This checkout is the private development workspace. Temporary design records
-belong in `iterations/`. The runtime-bearing public alpha lives in the separate
-`locooooooooo/PKR` repository. Promotion uses a fresh independent clone or
-worktree at a verified remote SHA according to
-[the development and release policy](docs/repository-model.md); the ignored
-local `release/` directory is historical staging and is not public truth.
+This checkout is the public source-release repository. Public `main`, signed or
+annotated release tags, and GitHub Release metadata define its published state.
+Private development records and the historical local `release/` staging path
+are not public truth. See
+[the development and release policy](docs/repository-model.md).
 
 The public product model is summarized in the
 [framework overview](docs/product-framework.md) and
-[architecture](docs/architecture.md). The proposed stable contract and its
-current blocker register live in the
+[architecture](docs/architecture.md). The accepted stable contract and its
+release gate record live in the
 [v1 stable contract](docs/release/v1-stable-contract.md) and
-[v1 blocker register](docs/release/v1.0-blockers.md); these are candidate
-documents, not a stable-release claim.
+[v1 blocker register](docs/release/v1.0-blockers.md).
 
-## Public candidate status
+## v1.0.0 release status
 
 This checkout is installable from source or as a local tarball after
 `npm run build`. Source, package metadata, `LICENSE`, `NOTICE`, and third-party
 notices are aligned to Apache-2.0, while `package.json` deliberately retains
-`private: true` and version `0.7.0`. This is candidate preparation, not a stable
-release or an npm publication decision.
+`private: true` and version `1.0.0`. The supported distribution is the GitHub
+source release; npm publication is not authorized.
 
-The exact proposed contract, blockers, and local candidate commands are in the
+The exact contract, gate results, release checks, and owner decisions are in the
 [v1 stable-contract inventory](docs/release/v1-stable-contract.md),
-[blocker register](docs/release/v1.0-blockers.md), and
-[candidate checklist](docs/release/v1.0-candidate-checklist.md). The five
-remaining human decisions are collected in the
-[v1 owner review](docs/release/v1-owner-review.md). Completing that review does
-not itself authorize a version bump, merge, tag, GitHub Release, or npm
-publication.
+[gate register](docs/release/v1.0-blockers.md),
+[release checklist](docs/release/v1.0-candidate-checklist.md), and
+[owner review](docs/release/v1-owner-review.md). See the
+[v1.0.0 release notes](docs/release/v1.0.0.md) for the shipped scope and
+boundaries.

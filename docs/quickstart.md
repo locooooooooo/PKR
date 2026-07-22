@@ -7,7 +7,7 @@ PKR is currently installed from source. It is not published to npm.
 - Node.js 24.x;
 - Python 3.11;
 - Git;
-- Windows or Ubuntu for the declared candidate matrix.
+- Windows or Ubuntu for the declared v1 support matrix.
 
 ## Build and inspect
 
@@ -22,7 +22,7 @@ The command above is for Windows. On Ubuntu, use
 `python -m pip install --requirement conformance/requirements.txt`. The Windows
 launcher form avoids the Windows Store `python` alias.
 
-Use the [README 5-minute path](../README.md#5-minute-alpha-path) in a disposable
+Use the [README 5-minute path](../README.md#5-minute-source-path) in a disposable
 Git repository for the current repository-native flow. The example Verification
 plan is a demonstration fixture, not a production acceptance policy.
 
