@@ -107,7 +107,7 @@ try {
   await emitReport({
     version: "pkr.benchmark/v1",
     generatedAt: new Date().toISOString(),
-    fixture: "synthetic local Git repository; no real Provider or production workload",
+    fixture: "synthetic local Git repository; no live Agent host or production workload",
     referenceEnvironment: referenceEnvironment(),
     repetitions,
     semantics: {

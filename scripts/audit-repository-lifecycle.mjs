@@ -160,7 +160,7 @@ async function failureScenario() {
   await writeFile(join(root, "outside.txt"), "outside declared scope\n", "utf8");
   await lps.submit(claim.assignmentId, agentId, {
     outcome: "partial",
-    completed: ["provider-work-report"],
+    completed: ["participant-work-report"],
     incomplete: ["repository-verification", "acceptance"],
     blockers: [],
     evidenceIds: [],
@@ -272,13 +272,13 @@ try {
     version: "pkr.repository-lifecycle-audit/v1",
     generatedAt: new Date().toISOString(),
     evidenceClass: "automated_repository_fixture",
-    fixture: "disposable local Git repositories; no real Provider or newcomer claim",
+    fixture: "disposable local Git repositories; no live Agent host or newcomer claim",
     referenceEnvironment: referenceEnvironment(),
     success: await successScenario(),
     verificationFailure: await failureScenario(),
     restartRecovery: await recoveryScenario(),
     assertions: {
-      providerReportCreatedAcceptance: false,
+      workReportCreatedAcceptance: false,
       failedVerificationCreatedAcceptance: false,
       restartCreatedDuplicateLiveWork: false,
     },

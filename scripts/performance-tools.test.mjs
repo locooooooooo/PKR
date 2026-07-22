@@ -25,7 +25,7 @@ test("benchmark emits every declared operation with raw samples", async () => {
   for (const name of ["startup", "status", "claim", "submit", "verify", "projectionRebuild", "restore"]) {
     assert.equal(report.measurements[name].samplesMs.length, 1, `missing ${name}`);
   }
-  assert.equal(report.fixture.includes("no real Provider"), true);
+  assert.equal(report.fixture.includes("no live Agent host"), true);
 });
 
 test("soak restarts without state drift or silent acceptance", async () => {
