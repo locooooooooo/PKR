@@ -236,6 +236,9 @@ export class LpsOrchestrator {
     if (!baseline || typeof baseline !== "object" || Array.isArray(baseline)) {
       throw new PkrError("PKR-COORD-008", "Agent-native submit requires its persisted claim baseline");
     }
+    const baselineEvidence = baseline.refVersion === "pkr.repository-evidence-ref/v1"
+      ? this.runtime.resolveRepositoryEvidence(baseline as JsonObject)
+      : baseline as JsonObject;
     const callback = normalizeAgentNativeSubmission(submission);
     const current = await collectRepositoryEvidence(this.runtime.paths.root);
     const workspaceEvidence: JsonObject = {
@@ -248,7 +251,7 @@ export class LpsOrchestrator {
       callback.evidenceIds,
       derivedId("command", `lps-agent-native:${assignmentId}:submit:${digest({
         callback,
-        baselineDigest: (baseline as JsonObject).contentDigest ?? null,
+        baselineDigest: baselineEvidence.contentDigest ?? null,
         currentDigest: current.contentDigest,
       })}`),
       callback as unknown as JsonObject,

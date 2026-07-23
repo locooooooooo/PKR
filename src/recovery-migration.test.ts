@@ -173,6 +173,8 @@ test("restart expires an interrupted Session and permits one reassignment withou
 test("fake Provider execution is fenced across restart and an unknown effect is never rerun", async () => {
   const runtime = await initializedRuntime("effect-fence");
   const { taskId, firstAgentId, secondAgentId } = await taskAndAgents(runtime);
+  const evidenceSentinel = `PKR_EXTERNAL_EFFECT_EVIDENCE_${"large-payload\n".repeat(8_000)}`;
+  await writeFile(join(runtime.paths.root, "README.md"), evidenceSentinel, "utf8");
   let calls = 0;
   const fakeProvider: AgentProviderAdapter = {
     id: "pkr.adapter.local-process",
@@ -219,8 +221,29 @@ test("fake Provider execution is fenced across restart and an unknown effect is 
   process.env.PKR_FAILPOINT = "after-provider-effect";
   await assert.rejects(new LpsOrchestrator(runtime, fakeProvider).executeLane(taskId, firstAgentId));
   assert.equal(calls, 1);
+  const completedAssignment = runtime.listRecords("Assignment").find(
+    (record) => record.data.taskId === taskId,
+  )!;
+  const completedEffectId = derivedId("effect", `provider:${completedAssignment.id}:execute`);
+  const completedEffect = runtime.externalEffect(completedEffectId)!;
+  assert.equal(JSON.stringify(completedEffect).includes("PKR_EXTERNAL_EFFECT_EVIDENCE_"), false);
+  assert.match(JSON.stringify(completedEffect), /pkr\.repository-evidence-ref\/v1/);
   const projectRoot = runtime.paths.root;
+  const databasePath = runtime.paths.database;
   runtime.close();
+  const persisted = new DatabaseSync(databasePath);
+  const effectJson = persisted.prepare(
+    "SELECT request_json, result_json FROM external_effects WHERE project_id = ? AND effect_id = ?",
+  ).get(runtime.projectId, completedEffectId) as { request_json: string; result_json: string };
+  assert.equal(effectJson.request_json.includes("PKR_EXTERNAL_EFFECT_EVIDENCE_"), false);
+  assert.equal(effectJson.result_json.includes("PKR_EXTERNAL_EFFECT_EVIDENCE_"), false);
+  assert.equal(
+    (persisted.prepare(
+      "SELECT COUNT(*) AS count FROM repository_evidence WHERE project_id = ? AND instr(payload_json, ?) > 0",
+    ).get(runtime.projectId, "PKR_EXTERNAL_EFFECT_EVIDENCE_") as { count: number }).count,
+    1,
+  );
+  persisted.close();
   delete process.env.PKR_FAILPOINT;
 
   const reopened = await PkrRuntime.open(projectRoot, repositoryRoot);
@@ -410,6 +433,56 @@ test("public alpha upgrade and bounded downgrade reject unsupported, partial, st
   const downgradedPath = join(projectRoot, "downgraded-alpha.sqlite");
   upgraded.exportPublicAlpha(upgraded.findProjectId()!, downgradedPath);
   upgraded.close();
+
+  const legacyCandidatePath = join(projectRoot, "v1-candidate.sqlite");
+  await copyFile(alphaPath, legacyCandidatePath);
+  const legacyCandidate = new DatabaseSync(legacyCandidatePath);
+  legacyCandidate.exec("DROP TABLE repository_evidence; PRAGMA user_version = 1");
+  legacyCandidate.close();
+  const upgradedCandidate = new PkrStore(legacyCandidatePath);
+  assert.deepEqual(upgradedCandidate.openReport, {
+    sourceFormat: CANDIDATE_STORE_FORMAT,
+    targetFormat: CANDIDATE_STORE_FORMAT,
+    migrated: true,
+  });
+  assert.equal(upgradedCandidate.stateDigest(upgradedCandidate.findProjectId()!), expectedDigest);
+  upgradedCandidate.close();
+  const upgradedCandidateDb = new DatabaseSync(legacyCandidatePath);
+  assert.equal(
+    (upgradedCandidateDb.prepare("PRAGMA user_version").get() as { user_version: number }).user_version,
+    2,
+  );
+  assert.equal(
+    (upgradedCandidateDb.prepare(
+      "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name = 'repository_evidence'",
+    ).get() as { count: number }).count,
+    1,
+  );
+  upgradedCandidateDb.close();
+
+  const legacyCandidateFailpointPath = join(projectRoot, "v1-candidate-failpoint.sqlite");
+  await copyFile(alphaPath, legacyCandidateFailpointPath);
+  const legacyCandidateFailpoint = new DatabaseSync(legacyCandidateFailpointPath);
+  legacyCandidateFailpoint.exec("DROP TABLE repository_evidence; PRAGMA user_version = 1");
+  legacyCandidateFailpoint.close();
+  process.env.PKR_FAILPOINT = "migration-after-schema";
+  assert.throws(() => new PkrStore(legacyCandidateFailpointPath));
+  delete process.env.PKR_FAILPOINT;
+  const rolledBackCandidate = new DatabaseSync(legacyCandidateFailpointPath);
+  assert.equal(
+    (rolledBackCandidate.prepare("PRAGMA user_version").get() as { user_version: number }).user_version,
+    1,
+  );
+  assert.equal(
+    (rolledBackCandidate.prepare(
+      "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name = 'repository_evidence'",
+    ).get() as { count: number }).count,
+    0,
+  );
+  rolledBackCandidate.close();
+  const retriedCandidate = new PkrStore(legacyCandidateFailpointPath);
+  assert.equal(retriedCandidate.openReport.migrated, true);
+  retriedCandidate.close();
 
   const failpointPath = join(projectRoot, "migration-failpoint.sqlite");
   await copyFile(downgradedPath, failpointPath);

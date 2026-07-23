@@ -1,9 +1,9 @@
 # PKR v1 stable contract
 
-- Version: `1.0.0`
+- Version: `1.1.0` (backward-compatible extension of `1.0.0`)
 - Package: private, npm unpublished
 - Contract status: `stable_contract_accepted`
-- Accepted by: `xjf` on 2026-07-22
+- Accepted by: `xjf` on 2026-07-23
 - Machine inventory: [v1-contract-manifest.json](v1-contract-manifest.json)
 
 This is the accepted inventory required by G0. `npm run check:contract`

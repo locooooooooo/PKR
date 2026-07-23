@@ -123,6 +123,7 @@ try {
     final: { stateDigest: expectedDigest, projectionDigest: await readProjectionDigest(root) },
   }, output);
 } finally {
-  await rm(root, { recursive: true, force: true });
-  await rm(snapshotRoot, { recursive: true, force: true });
+  const cleanup = { recursive: true, force: true, maxRetries: 50, retryDelay: 100 };
+  await rm(root, cleanup);
+  await rm(snapshotRoot, cleanup);
 }

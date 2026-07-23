@@ -95,6 +95,7 @@ const COMMANDS: CommandSpec[] = [
   command("lease expire", "Expire a Lease and block its Task.", ["--assignment"]),
   command("digest", "Print the authoritative state digest."),
   command("projection rebuild", "Rebuild inspectable projections from authority."),
+  command("projection export", "Write an explicitly lossy projection for external sharing.", ["--profile", "--output", "--max-bytes"]),
 ];
 
 const TOP_LEVEL = [...new Set(COMMANDS.map((spec) => spec.route[0]!))];
@@ -131,7 +132,7 @@ function topLevelHelp(name: string): string {
 
 export function rootHelp(): string {
   return [
-    "PKR 1.0.0 stable CLI",
+    "PKR 1.1.0 stable CLI",
     "",
     "Usage: pkr <command> [options]",
     "",

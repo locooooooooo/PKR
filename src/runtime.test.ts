@@ -3,10 +3,12 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { PkrError } from "./errors.js";
+import { buildShareableProjection, ShareableProjectionError } from "./projection.js";
 import { PkrRuntime } from "./runtime.js";
 import { PkrStore } from "./store.js";
 import type { JsonObject } from "./types.js";
@@ -63,6 +65,83 @@ function value(result: { value?: JsonObject }): JsonObject {
 function objectId(object: JsonObject): string {
   return ((object.metadata as JsonObject).id as string);
 }
+
+test("shareable projection redacts repeated repository evidence without changing its source digest", () => {
+  const rawDiff = "diff --git a/src/private.ts b/src/private.ts\n+Bearer eyJhbGciOiJub25lIn0.payload.signature\n".repeat(8_000);
+  const source: JsonObject = {
+    projectId: "project_shareable_001",
+    digest: "sha256:authoritative-state",
+    records: [{
+      projectId: "project_shareable_001",
+      kind: "Verification",
+      id: "verification_001",
+      revision: 1,
+      updatedAt: "2026-07-23T00:00:00.000Z",
+      data: {
+        repositoryRoot: "E:\\PKR\\private-repository",
+        diff: rawDiff,
+        stagedDiff: rawDiff,
+        commands: [{
+          stdout: "C:\\Users\\operator\\output\nBearer secret-token-value",
+          stderr: "failure detail",
+        }],
+        provider: {
+          [["access", "Token"].join("")]: ["secret", "access", "token"].join("-"),
+        },
+        privatePrompt: "Do not publish this private system prompt.",
+        unclassifiedValues: [
+          ["sk", "-proj-", "abcdefghijklmnopqrstuvwx"].join(""),
+          ["ghp", "_", "abcdefghijklmnopqrstuvwxyz1234567890"].join(""),
+          ["AK", "IA", "1234567890ABCDEF"].join(""),
+          ["AI", "za", "123456789012345678901234567890123"].join(""),
+          ["xoxb", "-", "1234567890-abcdefghijkl"].join(""),
+        ],
+      },
+    }],
+    events: [{
+      projectId: "project_shareable_001",
+      sequence: 1,
+      data: {
+        cwd: "E:\\PKR\\private-repository",
+        stdout: rawDiff,
+      },
+    }],
+  };
+
+  const shareable = buildShareableProjection(source);
+  const output = JSON.stringify(shareable);
+  const redaction = shareable.redaction as JsonObject;
+  const notices = redaction.notices as JsonObject[];
+  const rawEvidence = notices.filter((notice) => notice.reason === "raw-evidence");
+
+  assert.equal(shareable.sourceStateDigest, source.digest);
+  assert.match(shareable.digest as string, /^sha256:/);
+  assert.equal(rawEvidence.length, 5);
+  assert.equal(rawEvidence[0]?.digest, rawEvidence[1]?.digest);
+  assert.doesNotMatch(output, /diff --git/);
+  assert.doesNotMatch(output, /E:\\PKR\\private-repository/);
+  assert.doesNotMatch(output, /C:\\Users\\operator/);
+  assert.doesNotMatch(output, /secret-access-token/);
+  assert.doesNotMatch(output, /private system prompt/);
+  assert.doesNotMatch(output, /sk-proj-/);
+  assert.doesNotMatch(output, /ghp_/);
+  assert.doesNotMatch(output, /AKIA123/);
+  assert.doesNotMatch(output, /AIza/);
+  assert.doesNotMatch(output, /xoxb-/);
+  assert.doesNotMatch(output, /eyJhbGciOiJub25lIn0/);
+  assert.match(output, /Raw evidence remains in SQLite authority/);
+  for (const notice of notices.filter((notice) => notice.reason !== "raw-evidence")) {
+    assert.equal("digest" in notice, false);
+    assert.equal("bytes" in notice, false);
+  }
+  const serializedBytes = Buffer.byteLength(`${JSON.stringify(shareable, null, 2)}\n`, "utf8");
+  assert.doesNotThrow(() => buildShareableProjection(source, { maxBytes: serializedBytes }));
+  assert.throws(
+    () => buildShareableProjection(source, { maxBytes: serializedBytes - 1 }),
+    (error: unknown) =>
+      error instanceof ShareableProjectionError && error.code === "PKR-PROJECTION-003",
+  );
+});
 
 function runCli(projectRoot: string, args: string[]): JsonObject {
   const cli = resolve(repositoryRoot, "dist", "cli.js");
@@ -176,6 +255,240 @@ test("local golden path reaches done only after callback and two gates", async (
   assert.equal(reopened.stateDigest(), finalDigest);
   assert.equal((reopened.getRecord("Task", taskId).data.status as JsonObject).phase, "done");
   reopened.close();
+});
+
+test("RepositoryEvidence is content-addressed once across Session, Message, and Verification", async () => {
+  const projectRoot = await temporaryProject();
+  const rawNeedle = "PKR_LARGE_EVIDENCE_SENTINEL_";
+  const runtime = await PkrRuntime.init(projectRoot, repositoryRoot, {
+    name: "evidence-dedup",
+    title: "Evidence Dedup",
+    outcome: "Persist one authoritative RepositoryEvidence payload.",
+  });
+  await writeFile(
+    join(projectRoot, "README.md"),
+    `# Runtime test repository\n${rawNeedle}${"repository evidence payload\n".repeat(12_000)}`,
+    "utf8",
+  );
+  const goalId = objectId(value(await runtime.createGoal("Deduplicate repository evidence.")));
+  const taskId = objectId(value(await runtime.createTask(goalId, "Use one large evidence snapshot.")));
+  const agentId = objectId(value(await runtime.registerAgent("evidence-producer", "local")));
+  const rawEvidence = await collectRepositoryEvidence(projectRoot);
+  assert.ok(rawEvidence.diff.length > 250_000);
+  const dispatchCommand = "command_repository_evidence_dispatch";
+  const dispatch = await runtime.dispatch(taskId, agentId, dispatchCommand, {
+    executionMode: "agent-native",
+    repositoryBaseline: rawEvidence as unknown as JsonObject,
+  });
+  assert.deepEqual(
+    await runtime.dispatch(taskId, agentId, dispatchCommand, {
+      executionMode: "agent-native",
+      repositoryBaseline: {
+        ...rawEvidence,
+        collectedAt: "2099-01-01T00:00:00.000Z",
+      } as unknown as JsonObject,
+    }),
+    dispatch,
+  );
+  const assignmentId = (dispatch.value as JsonObject).assignmentId as string;
+  const sessionId = (dispatch.value as JsonObject).sessionId as string;
+  const session = runtime.getRecord("AgentSession", sessionId);
+  const native = (session.data.extensions as JsonObject)["pkr.agent-native/session"] as JsonObject;
+  const baselineRef = native.repositoryBaseline as JsonObject;
+  assert.equal(baselineRef.refVersion, "pkr.repository-evidence-ref/v1");
+  assert.equal(baselineRef.contentDigest, rawEvidence.contentDigest);
+  assert.equal("diff" in baselineRef, false);
+
+  const callbackCommand = "command_repository_evidence_callback";
+  const callback = await runtime.callback(
+    assignmentId,
+    "partial",
+    [],
+    callbackCommand,
+    undefined,
+    undefined,
+    {
+      baseline: rawEvidence as unknown as JsonObject,
+      current: rawEvidence as unknown as JsonObject,
+    },
+  );
+  const message = runtime.getRecord(
+    "AgentMessage",
+    (callback.value as JsonObject).messageId as string,
+  );
+  const workspaceEvidence = (message.data.extensions as JsonObject)["pkr.workspace/evidence"] as JsonObject;
+  assert.equal((workspaceEvidence.baseline as JsonObject).contentDigest, rawEvidence.contentDigest);
+  assert.equal((workspaceEvidence.current as JsonObject).contentDigest, rawEvidence.contentDigest);
+  assert.equal("diff" in (workspaceEvidence.current as JsonObject), false);
+
+  const formalEvidence = await runLocalVerification(
+    projectRoot,
+    taskId,
+    assignmentId,
+    verificationPlan(["README.md"]),
+  );
+  const verifyCommand = "command_repository_evidence_verify";
+  const verified = await runtime.verify(
+    taskId,
+    assignmentId,
+    "agent_repository_verifier",
+    verifyCommand,
+    formalEvidence,
+  );
+  const artifact = runtime.getRecord("Artifact", (verified.value as JsonObject).artifactId as string);
+  const persistedVerification = (artifact.data.extensions as JsonObject)["pkr.verification/repository"] as JsonObject;
+  const repositoryRef = persistedVerification.repository as JsonObject;
+  assert.equal(repositoryRef.contentDigest, rawEvidence.contentDigest);
+  assert.equal("diff" in repositoryRef, false);
+  const verificationStateDigest = runtime.stateDigest();
+  const databasePath = runtime.paths.database;
+  const projectId = runtime.projectId;
+  const snapshotPath = join(projectRoot, "repository-evidence.snapshot.json");
+  const snapshot = runtime.createSnapshot(snapshotPath);
+  assert.equal(snapshot.repositoryEvidence?.length, 1);
+  assert.throws(
+    () => runtime.exportPublicAlpha(join(projectRoot, "unsupported-evidence-downgrade.sqlite")),
+    (error: unknown) => error instanceof PkrError && error.code === "PKR-MIGRATION-005",
+  );
+  await runtime.rebuildProjections();
+  runtime.close();
+
+  const database = new DatabaseSync(databasePath);
+  const evidenceCount = database
+    .prepare("SELECT COUNT(*) AS count FROM repository_evidence WHERE project_id = ?")
+    .get(projectId) as { count: number };
+  assert.equal(evidenceCount.count, 1);
+  for (const table of ["records", "events", "commands"] as const) {
+    const column = table === "records" ? "data_json" : table === "events" ? "data_json" : "result_json";
+    const rawCount = database
+      .prepare(`SELECT COUNT(*) AS count FROM ${table} WHERE project_id = ? AND instr(${column}, ?) > 0`)
+      .get(projectId, rawNeedle) as { count: number };
+    assert.equal(rawCount.count, 0, `${table} must not contain raw RepositoryEvidence`);
+  }
+  const payload = database
+    .prepare("SELECT payload_json FROM repository_evidence WHERE project_id = ?")
+    .get(projectId) as { payload_json: string };
+  assert.match(payload.payload_json, new RegExp(rawNeedle));
+  database.close();
+
+  const stateProjection = JSON.parse(
+    await readFile(join(projectRoot, ".pkr", "projections", "state.json"), "utf8"),
+  ) as JsonObject;
+  assert.doesNotMatch(JSON.stringify(stateProjection), new RegExp(rawNeedle));
+  const evidenceFiles = stateProjection.repositoryEvidence as JsonObject[];
+  assert.equal(evidenceFiles.length, 1);
+  const evidenceProjection = JSON.parse(
+    await readFile(
+      join(
+        projectRoot,
+        ".pkr",
+        "projections",
+        "repository-evidence",
+        `${rawEvidence.contentDigest.replace(/^sha256:/, "")}.json`,
+      ),
+      "utf8",
+    ),
+  ) as JsonObject;
+  assert.match(JSON.stringify(evidenceProjection), new RegExp(rawNeedle));
+
+  const reopened = await PkrRuntime.open(projectRoot, repositoryRoot);
+  assert.equal(reopened.stateDigest(), verificationStateDigest);
+  const resolved = reopened.resolveRepositoryEvidence(baselineRef);
+  assert.equal(resolved.diff, rawEvidence.diff);
+  assert.equal(resolved.collectedAt, rawEvidence.collectedAt);
+  assert.throws(
+    () => reopened.resolveRepositoryEvidence({
+      ...baselineRef,
+      byteLength: (baselineRef.byteLength as number) + 1,
+    }),
+    (error: unknown) => error instanceof PkrError && error.code === "PKR-EVIDENCE-002",
+  );
+  assert.deepEqual(
+    await reopened.verify(
+      taskId,
+      assignmentId,
+      "agent_repository_verifier",
+      verifyCommand,
+      formalEvidence,
+    ),
+    verified,
+  );
+  reopened.close();
+
+  const restoredRoot = await temporaryProject();
+  const restored = await PkrRuntime.restore(snapshotPath, restoredRoot, repositoryRoot);
+  assert.equal(restored.stateDigest(), verificationStateDigest);
+  assert.equal(restored.resolveRepositoryEvidence(baselineRef).diff, rawEvidence.diff);
+  restored.close();
+});
+
+test("legacy inline RepositoryEvidence remains resolvable and projects as one ref", async () => {
+  const projectRoot = await temporaryProject();
+  const runtime = await PkrRuntime.init(projectRoot, repositoryRoot, {
+    name: "legacy-evidence",
+    title: "Legacy Evidence",
+    outcome: "Read legacy inline RepositoryEvidence without lossy migration.",
+  });
+  const databasePath = runtime.paths.database;
+  const projectId = runtime.projectId;
+  const rawEvidence = await collectRepositoryEvidence(projectRoot);
+  runtime.close();
+
+  const store = new PkrStore(databasePath);
+  store.execute(projectId, "command_legacy_inline_evidence", { action: "legacyEvidence" }, (transaction) => {
+    transaction.putRecord(
+      "LegacyRepositoryEvidence",
+      "legacy_repository_evidence_001",
+      0,
+      { repository: rawEvidence as unknown as JsonObject },
+    );
+    return transaction.committed({ migrated: false });
+  });
+  assert.equal(store.listRepositoryEvidence(projectId).length, 0);
+  assert.equal(store.projectionRepositoryEvidence(projectId).length, 1);
+  const projected = store.projectionRecords(projectId).find(
+    (record) => record.kind === "LegacyRepositoryEvidence",
+  )!;
+  const ref = projected.data.repository as JsonObject;
+  assert.equal(ref.contentDigest, rawEvidence.contentDigest);
+  assert.equal("diff" in ref, false);
+  assert.equal(store.resolveRepositoryEvidence(projectId, ref).diff, rawEvidence.diff);
+  store.close();
+
+  const reopened = await PkrRuntime.open(projectRoot, repositoryRoot);
+  await reopened.rebuildProjections();
+  reopened.close();
+  const state = await readFile(join(projectRoot, ".pkr", "projections", "state.json"), "utf8");
+  assert.doesNotMatch(state, /"diff"/);
+  assert.match(state, /pkr\.repository-evidence-ref\/v1/);
+});
+
+test("RepositoryEvidence blob insertion rolls back with its Runtime command", async () => {
+  const projectRoot = await temporaryProject();
+  const runtime = await PkrRuntime.init(projectRoot, repositoryRoot, {
+    name: "evidence-rollback",
+    title: "Evidence Rollback",
+    outcome: "Roll back evidence and records atomically.",
+  });
+  const databasePath = runtime.paths.database;
+  const projectId = runtime.projectId;
+  const rawEvidence = await collectRepositoryEvidence(projectRoot);
+  runtime.close();
+
+  const store = new PkrStore(databasePath);
+  process.env.PKR_FAILPOINT = "before-commit";
+  try {
+    assert.throws(() =>
+      store.execute(projectId, "command_evidence_failpoint", { action: "evidenceFailpoint" }, (transaction) => {
+        transaction.putRepositoryEvidence(rawEvidence as unknown as JsonObject);
+        return transaction.committed({ persisted: true });
+      }),
+    );
+  } finally {
+    delete process.env.PKR_FAILPOINT;
+  }
+  assert.equal(store.listRepositoryEvidence(projectId).length, 0);
+  store.close();
 });
 
 test("failed repository Verification preserves evidence and cannot be forged into acceptance", async () => {
@@ -403,6 +716,45 @@ test("CLI golden path survives one process per command", async () => {
     "Prove the process-boundary CLI flow.",
   ]);
   assert.equal(initialized.projectSequence, 8);
+
+  const shareablePath = join(projectRoot, ".pkr", "exports", "shareable-state.json");
+  const shareableResult = runCli(projectRoot, [
+    "projection",
+    "export",
+    "--profile",
+    "shareable",
+    "--output",
+    shareablePath,
+  ]);
+  const shareableState = JSON.parse(await readFile(shareablePath, "utf8")) as JsonObject;
+  const fullState = JSON.parse(
+    await readFile(join(projectRoot, ".pkr", "projections", "state.json"), "utf8"),
+  ) as JsonObject;
+  assert.equal(shareableResult.sourceStateDigest, fullState.digest);
+  assert.equal(shareableState.sourceStateDigest, fullState.digest);
+  assert.equal(shareableState.profile, "shareable");
+
+  const cli = resolve(repositoryRoot, "dist", "cli.js");
+  const protectedProjectionPath = join(projectRoot, ".pkr", "projections", "state.json");
+  const protectedProjectionBefore = await readFile(protectedProjectionPath, "utf8");
+  const protectedExport = spawnSync(
+    process.execPath,
+    [
+      cli,
+      "projection",
+      "export",
+      "--profile",
+      "shareable",
+      "--output",
+      protectedProjectionPath,
+      "--project",
+      projectRoot,
+    ],
+    { encoding: "utf8" },
+  );
+  assert.notEqual(protectedExport.status, 0);
+  assert.match(protectedExport.stderr, /PKR-PROJECTION-004/);
+  assert.equal(await readFile(protectedProjectionPath, "utf8"), protectedProjectionBefore);
 
   const goalResult = runCli(projectRoot, [
     "goal",

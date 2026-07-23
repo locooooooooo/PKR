@@ -33,3 +33,8 @@ digests, and audit records. It is not an operating-system sandbox, container,
 credential vault, hosted control plane, or production SLA. Optional execution
 Adapters and host-specific examples may appear in integration documents, but
 they are not the framework architecture or a v1 compatibility requirement.
+
+Repository evidence uses content-addressed SQLite rows so repeated Git payloads
+do not expand every Session, Message, Artifact, command, and external-effect
+record. See [evidence and projections](operations/evidence-and-projections.md)
+for the authority, compatibility, and sharing boundaries.

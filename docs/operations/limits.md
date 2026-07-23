@@ -12,6 +12,7 @@ These are v1 local Runtime limits, not production SLA targets.
 | Command arguments | 128 arguments; 64 KiB per argument | integration config or Verification plan rejected |
 | Callback JSON | 256 KiB encoded; 128 entries per list; 4 KiB per string; 2 KiB locator | callback rejected before authoritative mutation |
 | Diagnostic export | 64 KiB; 50 event summaries; no record/event bodies | export fails rather than emitting an oversized report |
+| Shareable projection | 1 MiB by default; larger limit must be explicit | export fails before writing an oversized projection |
 | Sensitive-data scan | 2 MiB per text file; 32 MiB expanded tar; 10,000 tar files | finding or explicit scan error; archive is not partially accepted |
 | SQLite writer wait | 5,000 ms busy timeout | command fails; no inferred success |
 
@@ -20,8 +21,8 @@ These are v1 local Runtime limits, not production SLA targets.
 PKR currently performs no automatic deletion or compaction of authoritative
 records, events, commands, Decisions, Verification, or acceptance evidence.
 They remain in `.pkr/runtime.sqlite`; projections are disposable and
-rebuildable. There is no supported public snapshot/restore or retention-policy
-CLI yet. The G6 benchmark's restore measurement copies a closed test fixture's
+rebuildable. Snapshot/restore and retention remain experimental TypeScript
+surfaces with no stable public CLI. The G6 benchmark's restore measurement copies a closed test fixture's
 `.pkr` snapshot, opens it, and compares the state digest. That measurement is
 not a G3 operational restore guarantee.
 

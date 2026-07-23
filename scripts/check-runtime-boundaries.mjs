@@ -19,9 +19,10 @@ const allowed = {
   workspace: ["errors", "process", "util"],
   verifier: ["errors", "process", "security", "types", "util", "workspace"],
   "evolution-model": ["errors", "profiles", "provider-contract", "security", "types", "util", "workflow"],
-  store: ["errors", "types", "util"],
+  "repository-evidence": ["errors", "types", "util"],
+  store: ["errors", "repository-evidence", "types", "util"],
   projection: ["store", "types", "util"],
-  runtime: ["contracts", "errors", "evolution-model", "objects", "profiles", "projection", "provider-contract", "store", "types", "util", "workflow"],
+  runtime: ["contracts", "errors", "evolution-model", "objects", "profiles", "projection", "provider-contract", "repository-evidence", "store", "types", "util", "workflow"],
   evolution: ["evolution-model", "runtime", "types"],
   memory: ["runtime", "types"],
   packages: ["errors", "profiles", "runtime", "types"],
@@ -36,7 +37,7 @@ const allowed = {
   lps: ["errors", "provider", "runtime", "security", "types", "util", "workspace"],
   steward: ["clarification", "errors", "question-sheet", "runtime", "types", "util"],
   cli: ["clarification", "cli-contract", "errors", "evolution", "evolution-model", "lps", "memory", "packages", "preflight", "profiles", "project-manager", "provider", "question-sheet-renderer", "runtime", "security", "steward", "types", "verifier", "workspace"],
-  index: ["clarification", "contracts", "errors", "evolution", "evolution-model", "lps", "memory", "packages", "path-safety", "preflight", "process", "profiles", "project-manager", "provider", "question-sheet", "question-sheet-renderer", "runtime", "security", "steward", "store", "types", "verifier", "workflow", "workspace"],
+  index: ["clarification", "contracts", "errors", "evolution", "evolution-model", "lps", "memory", "packages", "path-safety", "preflight", "process", "profiles", "project-manager", "provider", "question-sheet", "question-sheet-renderer", "repository-evidence", "runtime", "security", "steward", "store", "types", "verifier", "workflow", "workspace"],
 };
 
 const failures = [];

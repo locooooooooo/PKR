@@ -5,6 +5,18 @@ for the accepted v1 stable contract.
 
 ## Unreleased
 
+## 1.1.0 - 2026-07-23
+
+- Stored repeated RepositoryEvidence payloads once in content-addressed SQLite
+  authority while Sessions, Messages, Artifacts, commands, and external-effect
+  journals retain digest-bound references.
+- Added a transactional v1.0-to-v1.1 store migration, evidence-aware snapshots
+  and restore, fail-closed downgrade behavior, and legacy inline compatibility.
+- Added `pkr projection export --profile shareable` with deterministic
+  redaction and an explicit output-size budget for reviewed external sharing.
+- Kept the npm package private and unpublished; v1.1.0 remains a GitHub source
+  release and does not authorize `npm publish`.
+
 ## 1.0.0 - 2026-07-22
 
 - Established PKR as an AI-native project framework and local Runtime with

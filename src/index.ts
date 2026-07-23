@@ -126,5 +126,14 @@ export {
   validateVerificationPlan,
 } from "./verifier.js";
 export { collectRepositoryEvidence } from "./workspace.js";
+export {
+  REPOSITORY_EVIDENCE_ADAPTER,
+  REPOSITORY_EVIDENCE_REF_VERSION,
+} from "./repository-evidence.js";
+export type {
+  RepositoryEvidenceContent,
+  RepositoryEvidenceRef,
+  StoredRepositoryEvidence,
+} from "./repository-evidence.js";
 export { evaluateExpression, parseWorkflowDefinition } from "./workflow.js";
 export type * from "./types.js";

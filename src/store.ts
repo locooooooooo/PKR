@@ -10,8 +10,19 @@ import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { PkrError } from "./errors.js";
+import {
+  assertRepositoryEvidenceRef,
+  collectRepositoryEvidenceRefs,
+  findRawRepositoryEvidence,
+  repositoryEvidenceContent,
+  repositoryEvidenceRef,
+  replaceRawRepositoryEvidence,
+  stableRepositoryEvidenceRef,
+  type RepositoryEvidenceRef,
+  type StoredRepositoryEvidence,
+} from "./repository-evidence.js";
 import type { CommandResult, JsonObject, JsonValue, RuntimeEvent, StoredRecord } from "./types.js";
-import { newId, now, sha256, stableStringify } from "./util.js";
+import { digest, newId, now, sha256, stableStringify } from "./util.js";
 
 interface RecordRow {
   project_id: string;
@@ -70,9 +81,10 @@ export const PUBLIC_ALPHA_STORE_FORMAT = "pkr.store/v0.7.0-alpha.1";
 export const CANDIDATE_STORE_FORMAT = "pkr.store/v1-candidate";
 export const SNAPSHOT_FORMAT = "pkr.snapshot/v1";
 
-const CURRENT_USER_VERSION = 1;
+const LEGACY_CANDIDATE_USER_VERSION = 1;
+const CURRENT_USER_VERSION = 2;
 const CORE_TABLES = ["commands", "events", "metadata", "records"] as const;
-const CANDIDATE_TABLES = ["event_archives", "external_effects"] as const;
+const CANDIDATE_TABLES = ["event_archives", "external_effects", "repository_evidence"] as const;
 const TABLE_COLUMNS: Record<string, string[]> = {
   metadata: ["key", "value"],
   records: ["project_id", "kind", "record_id", "revision", "data_json", "updated_at"],
@@ -88,6 +100,9 @@ const TABLE_COLUMNS: Record<string, string[]> = {
   external_effects: [
     "project_id", "effect_id", "assignment_id", "request_digest", "request_json",
     "state", "result_json", "created_at", "completed_at",
+  ],
+  repository_evidence: [
+    "project_id", "content_digest", "adapter", "byte_length", "payload_json", "created_at",
   ],
 };
 
@@ -141,6 +156,7 @@ interface SnapshotPayload {
   events: RuntimeEvent[];
   commands: SnapshotCommand[];
   externalEffects: ExternalEffect[];
+  repositoryEvidence?: StoredRepositoryEvidence[];
   retentionPolicy: RetentionPolicy | null;
 }
 
@@ -152,6 +168,14 @@ export interface StoreOpenReport {
   sourceFormat: "empty" | typeof PUBLIC_ALPHA_STORE_FORMAT | typeof CANDIDATE_STORE_FORMAT;
   targetFormat: typeof CANDIDATE_STORE_FORMAT;
   migrated: boolean;
+}
+
+interface RepositoryEvidenceRow {
+  content_digest: string;
+  adapter: string;
+  byte_length: number;
+  payload_json: string;
+  created_at: string;
 }
 
 export class StoreTransaction {
@@ -377,6 +401,45 @@ export class StoreTransaction {
     };
   }
 
+  putRepositoryEvidence(evidence: JsonObject): RepositoryEvidenceRef {
+    const ref = repositoryEvidenceRef(evidence);
+    const content = repositoryEvidenceContent(evidence);
+    const payload = stableStringify(content);
+    this.database
+      .prepare(
+        "INSERT OR IGNORE INTO repository_evidence(" +
+          "project_id, content_digest, adapter, byte_length, payload_json, created_at) " +
+          "VALUES (?, ?, ?, ?, ?, ?)",
+      )
+      .run(
+        this.projectId,
+        ref.contentDigest,
+        ref.adapter,
+        ref.byteLength,
+        payload,
+        now(),
+      );
+    const stored = this.database
+      .prepare(
+        "SELECT content_digest, adapter, byte_length, payload_json, created_at " +
+          "FROM repository_evidence WHERE project_id = ? AND content_digest = ?",
+      )
+      .get(this.projectId, ref.contentDigest) as RepositoryEvidenceRow | undefined;
+    if (
+      !stored ||
+      stored.adapter !== ref.adapter ||
+      stored.byte_length !== ref.byteLength ||
+      stored.payload_json !== payload
+    ) {
+      throw new PkrError(
+        "PKR-EVIDENCE-002",
+        `RepositoryEvidence digest collision or corrupt stored payload for ${ref.contentDigest}`,
+        "conflict",
+      );
+    }
+    return ref;
+  }
+
   committed<T extends JsonValue>(value: T): CommandResult<T> {
     const lastSequence = this.currentSequence();
     return {
@@ -515,20 +578,54 @@ export class PkrStore {
         `unsupported PKR store format ${formatRow?.value ?? `user_version:${userVersion}`}`,
       );
     }
-    const missingCandidate = CANDIDATE_TABLES.filter((table) => !tables.includes(table));
-    if (userVersion !== CURRENT_USER_VERSION || missingCandidate.length !== 0) {
-      throw new PkrError(
-        "PKR-MIGRATION-002",
-        `partial ${CANDIDATE_STORE_FORMAT} store has user_version ${userVersion} and missing tables: ` +
-          (missingCandidate.join(", ") || "none"),
-      );
-    }
     const supportedTables = new Set<string>([...CORE_TABLES, ...CANDIDATE_TABLES]);
     const unsupportedTables = tables.filter((table) => !supportedTables.has(table));
     if (unsupportedTables.length !== 0) {
       throw new PkrError(
         "PKR-MIGRATION-001",
         `candidate store has unsupported tables: ${unsupportedTables.join(", ")}`,
+      );
+    }
+    const missingCandidate = CANDIDATE_TABLES.filter((table) => !tables.includes(table));
+    if (userVersion === LEGACY_CANDIDATE_USER_VERSION) {
+      const missingLegacyTables = missingCandidate.filter((table) => table !== "repository_evidence");
+      if (missingLegacyTables.length !== 0) {
+        throw new PkrError(
+          "PKR-MIGRATION-002",
+          `partial ${CANDIDATE_STORE_FORMAT} v1 store is missing tables: ${missingLegacyTables.join(", ")}`,
+        );
+      }
+      for (const table of CANDIDATE_TABLES) {
+        if (tables.includes(table)) {
+          this.assertTableColumns(table);
+        }
+      }
+      this.database.exec("BEGIN IMMEDIATE");
+      try {
+        this.createCandidateSchema();
+        this.database.exec(`PRAGMA user_version = ${CURRENT_USER_VERSION}`);
+        if (process.env.PKR_FAILPOINT === "migration-after-schema") {
+          throw new Error("PKR failpoint migration-after-schema");
+        }
+        this.validateStore(true);
+        this.database.exec("COMMIT");
+      } catch (error) {
+        if (this.database.isTransaction) {
+          this.database.exec("ROLLBACK");
+        }
+        throw error;
+      }
+      return {
+        sourceFormat: CANDIDATE_STORE_FORMAT,
+        targetFormat: CANDIDATE_STORE_FORMAT,
+        migrated: true,
+      };
+    }
+    if (userVersion !== CURRENT_USER_VERSION || missingCandidate.length !== 0) {
+      throw new PkrError(
+        "PKR-MIGRATION-002",
+        `partial ${CANDIDATE_STORE_FORMAT} store has user_version ${userVersion} and missing tables: ` +
+          (missingCandidate.join(", ") || "none"),
       );
     }
     for (const table of CANDIDATE_TABLES) {
@@ -639,6 +736,15 @@ export class PkrStore {
           (state != 'pending' AND result_json IS NOT NULL AND completed_at IS NOT NULL)
         )
       );
+      CREATE TABLE IF NOT EXISTS repository_evidence(
+        project_id TEXT NOT NULL,
+        content_digest TEXT NOT NULL,
+        adapter TEXT NOT NULL,
+        byte_length INTEGER NOT NULL CHECK(byte_length >= 0),
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY(project_id, content_digest)
+      );
     `);
   }
 
@@ -654,7 +760,11 @@ export class PkrStore {
       "SELECT project_id FROM events",
       "SELECT project_id FROM commands",
       ...(candidate
-        ? ["SELECT project_id FROM event_archives", "SELECT project_id FROM external_effects"]
+        ? [
+            "SELECT project_id FROM event_archives",
+            "SELECT project_id FROM external_effects",
+            "SELECT project_id FROM repository_evidence",
+          ]
         : []),
     ];
     const projectRows = this.database
@@ -711,6 +821,11 @@ export class PkrStore {
           parseStoredJson(row.result_json, "external effect result");
         }
       }
+      for (const row of this.database.prepare(
+        "SELECT content_digest, adapter, byte_length, payload_json, created_at FROM repository_evidence",
+      ).all() as unknown as RepositoryEvidenceRow[]) {
+        this.rowToRepositoryEvidence(row);
+      }
       const projectId = projectRows[0]?.project_id;
       if (projectId) {
         const logicalEvents = this.listEvents(projectId);
@@ -720,6 +835,9 @@ export class PkrStore {
             logicalEvents.at(-1)!.sequence !== Number(metadataSequence?.value))
         ) {
           throw new PkrError("PKR-MIGRATION-003", "stale event history is not contiguous from sequence 1");
+        }
+        for (const ref of this.repositoryEvidenceRefs(projectId)) {
+          this.resolveRepositoryEvidence(projectId, ref);
         }
       }
     }
@@ -812,10 +930,18 @@ export class PkrStore {
     effectId: string,
     assignmentId: string,
     request: JsonObject,
+    repositoryEvidence: JsonObject[] = [],
+    repositoryEvidenceRefs: RepositoryEvidenceRef[] = [],
   ): { effect: ExternalEffect; execute: boolean } {
     this.database.exec("BEGIN IMMEDIATE");
     try {
       const transaction = new StoreTransaction(this.database, projectId, effectId);
+      for (const evidence of repositoryEvidence) {
+        transaction.putRepositoryEvidence(evidence);
+      }
+      for (const ref of repositoryEvidenceRefs) {
+        this.resolveRepositoryEvidence(projectId, ref);
+      }
       const reserved = transaction.reserveExternalEffect(effectId, assignmentId, request);
       this.database.exec("COMMIT");
       return reserved;
@@ -832,10 +958,18 @@ export class PkrStore {
     effectId: string,
     state: Exclude<ExternalEffectState, "pending">,
     result: JsonObject,
+    repositoryEvidence: JsonObject[] = [],
+    repositoryEvidenceRefs: RepositoryEvidenceRef[] = [],
   ): { effect: ExternalEffect; changed: boolean } {
     this.database.exec("BEGIN IMMEDIATE");
     try {
       const transaction = new StoreTransaction(this.database, projectId, effectId);
+      for (const evidence of repositoryEvidence) {
+        transaction.putRepositoryEvidence(evidence);
+      }
+      for (const ref of repositoryEvidenceRefs) {
+        this.resolveRepositoryEvidence(projectId, ref);
+      }
       const completed = transaction.completeExternalEffect(effectId, state, result);
       this.database.exec("COMMIT");
       return completed;
@@ -845,6 +979,29 @@ export class PkrStore {
       }
       throw error;
     }
+  }
+
+  replayCandidates<T extends JsonValue>(
+    projectId: string,
+    commandId: string,
+    contents: JsonObject[],
+  ): CommandResult<T> | undefined {
+    const existing = this.database
+      .prepare(
+        "SELECT digest, result_json FROM commands WHERE project_id = ? AND command_id = ?",
+      )
+      .get(projectId, commandId) as CommandRow | undefined;
+    if (!existing) {
+      return undefined;
+    }
+    if (!contents.some((content) => existing.digest === sha256(content))) {
+      throw new PkrError(
+        "PKR-RUNTIME-006",
+        `command ${commandId} was reused with different content`,
+        "conflict",
+      );
+    }
+    return JSON.parse(existing.result_json) as CommandResult<T>;
   }
 
   getRecord(projectId: string, kind: string, id: string): StoredRecord | undefined {
@@ -934,23 +1091,143 @@ export class PkrStore {
     return combined;
   }
 
+  projectionRecords(projectId: string): StoredRecord[] {
+    return this.listRecords(projectId).map((record) => ({
+      ...record,
+      data: replaceRawRepositoryEvidence(record.data, repositoryEvidenceRef) as JsonObject,
+    }));
+  }
+
+  projectionEvents(projectId: string): RuntimeEvent[] {
+    return this.listEvents(projectId).map((event) => ({
+      ...event,
+      data: replaceRawRepositoryEvidence(event.data, repositoryEvidenceRef) as JsonObject,
+    }));
+  }
+
+  listRepositoryEvidence(projectId: string): StoredRepositoryEvidence[] {
+    const rows = this.database
+      .prepare(
+        "SELECT content_digest, adapter, byte_length, payload_json, created_at " +
+          "FROM repository_evidence WHERE project_id = ? ORDER BY content_digest",
+      )
+      .all(projectId) as unknown as RepositoryEvidenceRow[];
+    return rows.map((row) => this.rowToRepositoryEvidence(row));
+  }
+
+  projectionRepositoryEvidence(projectId: string): StoredRepositoryEvidence[] {
+    const byDigest = new Map(
+      this.listRepositoryEvidence(projectId).map((item) => [item.ref.contentDigest, item]),
+    );
+    const collect = (value: JsonValue): void => {
+      const raw = findRawRepositoryEvidenceValues(value);
+      for (const evidence of raw) {
+        const ref = repositoryEvidenceRef(evidence);
+        if (!byDigest.has(ref.contentDigest)) {
+          byDigest.set(ref.contentDigest, {
+            ref,
+            content: repositoryEvidenceContent(evidence),
+            createdAt: typeof evidence.collectedAt === "string" ? evidence.collectedAt : "legacy",
+          });
+        }
+      }
+    };
+    for (const record of this.listRecords(projectId)) {
+      collect(record.data);
+    }
+    for (const event of this.listEvents(projectId)) {
+      collect(event.data);
+    }
+    return [...byDigest.values()].sort((left, right) =>
+      left.ref.contentDigest.localeCompare(right.ref.contentDigest)
+    );
+  }
+
+  resolveRepositoryEvidence(
+    projectId: string,
+    refValue: JsonObject,
+  ): JsonObject {
+    const ref = assertRepositoryEvidenceRef(refValue);
+    const row = this.database
+      .prepare(
+        "SELECT content_digest, adapter, byte_length, payload_json, created_at " +
+          "FROM repository_evidence WHERE project_id = ? AND content_digest = ?",
+      )
+      .get(projectId, ref.contentDigest) as RepositoryEvidenceRow | undefined;
+    const legacy = row ? undefined : this.findLegacyRepositoryEvidence(projectId, ref.contentDigest);
+    if (!row && !legacy) {
+      throw new PkrError(
+        "PKR-EVIDENCE-003",
+        `RepositoryEvidence ${ref.contentDigest} is not present in Runtime authority`,
+      );
+    }
+    const stored = row
+      ? this.rowToRepositoryEvidence(row)
+      : {
+          ref: repositoryEvidenceRef(legacy!),
+          content: repositoryEvidenceContent(legacy!),
+          createdAt: legacy!.collectedAt as string ?? "legacy",
+        };
+    if (
+      stored.ref.adapter !== ref.adapter ||
+      stored.ref.byteLength !== ref.byteLength
+    ) {
+      throw new PkrError(
+        "PKR-EVIDENCE-002",
+        `RepositoryEvidenceRef conflicts with Runtime authority for ${ref.contentDigest}`,
+      );
+    }
+    const observation = ref.observation;
+    if (
+      (ref.head !== undefined && ref.head !== stored.content.head) ||
+      (ref.changedFiles !== undefined &&
+        stableStringify(ref.changedFiles) !== stableStringify(stored.content.changedFiles)) ||
+      (ref.clean !== undefined && ref.clean !== (stored.content.changedFiles.length === 0))
+    ) {
+      throw new PkrError(
+        "PKR-EVIDENCE-002",
+        `RepositoryEvidenceRef summary conflicts with Runtime authority for ${ref.contentDigest}`,
+      );
+    }
+    return {
+      adapter: ref.adapter,
+      ...(typeof observation?.repositoryRoot === "string"
+        ? { repositoryRoot: observation.repositoryRoot }
+        : {}),
+      ...stored.content,
+      clean: ref.clean ?? stored.content.changedFiles.length === 0,
+      contentDigest: ref.contentDigest,
+      ...(typeof observation?.collectedAt === "string"
+        ? { collectedAt: observation.collectedAt }
+        : {}),
+    };
+  }
+
   stateDigest(projectId: string): string {
-    return sha256({
+    const content: JsonObject = {
       records: this.listRecords(projectId).map((record) => ({
         kind: record.kind,
         id: record.id,
         revision: record.revision,
         data: record.data,
       })),
-      events: this.listEvents(projectId),
-    });
+      events: this.listEvents(projectId) as unknown as JsonValue,
+    };
+    const repositoryEvidence = this.listRepositoryEvidence(projectId);
+    if (repositoryEvidence.length) {
+      content.repositoryEvidence = repositoryEvidence.map((item) =>
+        stableRepositoryEvidenceRef(item.ref)
+      );
+    }
+    return sha256(content);
   }
 
   exportState(projectId: string): JsonObject {
     return {
       projectId,
-      records: this.listRecords(projectId) as unknown as JsonValue,
-      events: this.listEvents(projectId) as unknown as JsonValue,
+      records: this.projectionRecords(projectId) as unknown as JsonValue,
+      events: this.projectionEvents(projectId) as unknown as JsonValue,
+      repositoryEvidence: this.projectionRepositoryEvidence(projectId).map((item) => item.ref) as unknown as JsonValue,
       digest: this.stateDigest(projectId),
     };
   }
@@ -1097,6 +1374,7 @@ export class PkrStore {
       events: this.listEvents(projectId),
       commands,
       externalEffects: this.listExternalEffects(projectId),
+      repositoryEvidence: this.listRepositoryEvidence(projectId),
       retentionPolicy,
     };
     const snapshot: StoreSnapshot = { ...payload, checksum: sha256(payload) };
@@ -1130,6 +1408,7 @@ export class PkrStore {
       !Array.isArray(snapshot.events) ||
       !Array.isArray(snapshot.commands) ||
       !Array.isArray(snapshot.externalEffects) ||
+      (snapshot.repositoryEvidence !== undefined && !Array.isArray(snapshot.repositoryEvidence)) ||
       typeof snapshot.checksum !== "string"
     ) {
       throw new PkrError("PKR-RECOVERY-002", "unsupported or partial snapshot");
@@ -1170,6 +1449,8 @@ export class PkrStore {
           verified.stateDigest(snapshot.projectId) !== snapshot.stateDigest ||
           sha256(verified.snapshotCommands(snapshot.projectId)) !== sha256(snapshot.commands) ||
           sha256(verified.listExternalEffects(snapshot.projectId)) !== sha256(snapshot.externalEffects) ||
+          sha256(verified.listRepositoryEvidence(snapshot.projectId)) !==
+            sha256(snapshot.repositoryEvidence ?? []) ||
           sha256(verified.retentionPolicy()) !== sha256(snapshot.retentionPolicy)
         ) {
           throw new PkrError("PKR-RECOVERY-002", "restored authority or journals do not match snapshot");
@@ -1188,6 +1469,15 @@ export class PkrStore {
   }
 
   exportPublicAlpha(projectId: string, targetPath: string): void {
+    if (
+      this.listRepositoryEvidence(projectId).length !== 0 ||
+      this.repositoryEvidenceRefs(projectId).length !== 0
+    ) {
+      throw new PkrError(
+        "PKR-MIGRATION-005",
+        "downgrade cannot represent content-addressed RepositoryEvidence references",
+      );
+    }
     if (this.listExternalEffects(projectId).length !== 0) {
       throw new PkrError(
         "PKR-MIGRATION-005",
@@ -1272,6 +1562,18 @@ export class PkrStore {
     }));
   }
 
+  private repositoryEvidenceRefs(projectId: string): RepositoryEvidenceRef[] {
+    const values: JsonValue[] = [
+      ...this.listRecords(projectId).map((record) => record.data),
+      ...this.listEvents(projectId).map((event) => event.data),
+      ...this.snapshotCommands(projectId).map((command) => command.result),
+      ...this.listExternalEffects(projectId).flatMap((effect) =>
+        effect.result === null ? [effect.request] : [effect.request, effect.result]
+      ),
+    ];
+    return values.flatMap((value) => collectRepositoryEvidenceRefs(value));
+  }
+
   private restoreSnapshotData(snapshot: StoreSnapshot): void {
     this.database.exec("BEGIN IMMEDIATE");
     try {
@@ -1336,6 +1638,20 @@ export class PkrStore {
           effect.completedAt,
         );
       }
+      const insertEvidence = this.database.prepare(
+        "INSERT INTO repository_evidence(project_id, content_digest, adapter, byte_length, " +
+          "payload_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      );
+      for (const evidence of snapshot.repositoryEvidence ?? []) {
+        insertEvidence.run(
+          snapshot.projectId,
+          evidence.ref.contentDigest,
+          evidence.ref.adapter,
+          evidence.ref.byteLength,
+          stableStringify(evidence.content),
+          evidence.createdAt,
+        );
+      }
       this.database
         .prepare(
           "INSERT INTO metadata(key, value) VALUES ('project_sequence', ?) " +
@@ -1358,6 +1674,72 @@ export class PkrStore {
       throw error;
     }
   }
+  private rowToRepositoryEvidence(row: RepositoryEvidenceRow): StoredRepositoryEvidence {
+    const content = JSON.parse(row.payload_json) as JsonObject;
+    const ref = {
+      refVersion: "pkr.repository-evidence-ref/v1",
+      adapter: row.adapter,
+      contentDigest: row.content_digest,
+      byteLength: row.byte_length,
+    } as RepositoryEvidenceRef;
+    assertRepositoryEvidenceRef(ref);
+    const normalized = repositoryEvidenceContent({ adapter: row.adapter, ...content });
+    if (
+      digest(normalized) !== ref.contentDigest ||
+      Buffer.byteLength(stableStringify(normalized), "utf8") !== ref.byteLength
+    ) {
+      throw new PkrError(
+        "PKR-EVIDENCE-002",
+        `RepositoryEvidence payload integrity check failed for ${ref.contentDigest}`,
+      );
+    }
+    return { ref, content: normalized, createdAt: row.created_at };
+  }
+
+  private findLegacyRepositoryEvidence(
+    projectId: string,
+    contentDigest: string,
+  ): JsonObject | undefined {
+    for (const record of this.listRecords(projectId)) {
+      const found = findRawRepositoryEvidence(record.data, contentDigest);
+      if (found) {
+        return found;
+      }
+    }
+    for (const event of this.listEvents(projectId)) {
+      const found = findRawRepositoryEvidence(event.data, contentDigest);
+      if (found) {
+        return found;
+      }
+    }
+    return undefined;
+  }
+}
+
+function findRawRepositoryEvidenceValues(value: JsonValue): JsonObject[] {
+  const found: JsonObject[] = [];
+  const visit = (candidate: JsonValue): void => {
+    if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
+      const evidence = candidate as JsonObject;
+      if (
+        evidence.adapter === "pkr.git-workspace/v1" &&
+        typeof evidence.diff === "string" &&
+        typeof evidence.stagedDiff === "string"
+      ) {
+        found.push(evidence);
+        return;
+      }
+      for (const child of Object.values(evidence)) {
+        visit(child as JsonValue);
+      }
+      return;
+    }
+    if (Array.isArray(candidate)) {
+      candidate.forEach(visit);
+    }
+  };
+  visit(value);
+  return found;
 }
 
 function rowToRecord(row: RecordRow): StoredRecord {
@@ -1474,15 +1856,38 @@ function validateSnapshot(snapshot: StoreSnapshot): void {
       throw new PkrError("PKR-RECOVERY-002", "snapshot contains an invalid external effect entry");
     }
   }
-  const logicalDigest = sha256({
+  const repositoryEvidence = snapshot.repositoryEvidence ?? [];
+  let previousDigest = "";
+  for (const evidence of repositoryEvidence) {
+    const ref = assertRepositoryEvidenceRef(evidence.ref);
+    const stableRef = stableRepositoryEvidenceRef(ref);
+    const content = repositoryEvidenceContent({ adapter: ref.adapter, ...evidence.content });
+    if (
+      stableStringify(ref) !== stableStringify(stableRef) ||
+      digest(content) !== ref.contentDigest ||
+      Buffer.byteLength(stableStringify(content), "utf8") !== ref.byteLength ||
+      !Number.isFinite(Date.parse(evidence.createdAt)) ||
+      ref.contentDigest <= previousDigest
+    ) {
+      throw new PkrError("PKR-RECOVERY-002", "snapshot contains invalid RepositoryEvidence");
+    }
+    previousDigest = ref.contentDigest;
+  }
+  const logicalState: JsonObject = {
     records: snapshot.records.map((record) => ({
       kind: record.kind,
       id: record.id,
       revision: record.revision,
       data: record.data,
-    })),
-    events: snapshot.events,
-  });
+    })) as unknown as JsonValue,
+    events: snapshot.events as unknown as JsonValue,
+  };
+  if (repositoryEvidence.length !== 0) {
+    logicalState.repositoryEvidence = repositoryEvidence.map((evidence) =>
+      stableRepositoryEvidenceRef(evidence.ref)
+    ) as unknown as JsonValue;
+  }
+  const logicalDigest = sha256(logicalState);
   if (logicalDigest !== snapshot.stateDigest) {
     throw new PkrError("PKR-RECOVERY-002", "snapshot logical state digest mismatch");
   }

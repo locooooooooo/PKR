@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
-  "targetVersion": "1.0.0",
+  "targetVersion": "1.1.0",
   "status": "stable_contract_accepted",
-  "packageVersion": "1.0.0",
+  "packageVersion": "1.1.0",
   "authority": {
     "state": ".pkr/runtime.sqlite",
     "providerReports": "non_authoritative",
@@ -52,7 +52,8 @@
       "lease heartbeat",
       "lease expire",
       "digest",
-      "projection rebuild"
+      "projection rebuild",
+      "projection export"
     ],
     "experimental": [
       "prompt register",
@@ -130,11 +131,16 @@
       "RenderedQuestionSheet",
       "RepositoryPreflightOptions",
       "RepositoryPreflightReport",
+      "RepositoryEvidenceContent",
+      "RepositoryEvidenceRef",
+      "REPOSITORY_EVIDENCE_ADAPTER",
+      "REPOSITORY_EVIDENCE_REF_VERSION",
       "ResolvedQuestionAnswer",
       "RuntimeEvent",
       "RuntimePaths",
       "STARTER_PROFILES",
       "StewardService",
+      "StoredRepositoryEvidence",
       "StoredRecord",
       "answerMap",
       "assessClarificationNeed",

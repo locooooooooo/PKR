@@ -212,11 +212,12 @@ cannot create acceptance.
 
 ## Status
 
-PKR **v1.0.0** is the first stable GitHub source release of the local reference
+PKR **v1.1.0** is the current stable GitHub source release of the local reference
 Runtime and its accepted compatibility contract. It includes governed Steward
 intake, Agent-native work claiming and submission, independent Repository
 Verification, separate Runtime acceptance, recovery, provenance-aware Memory,
-portable Workflows, atomic Packages, and two starter project Profiles. The npm
+portable Workflows, atomic Packages, two starter project Profiles, and
+content-addressed RepositoryEvidence with reviewed shareable projections. The npm
 package remains private and unpublished. Hosted deployment, a package registry,
 and production Agent-host integrations are not claimed.
 
@@ -525,18 +526,18 @@ release gate record live in the
 [v1 stable contract](docs/release/v1-stable-contract.md) and
 [v1 blocker register](docs/release/v1.0-blockers.md).
 
-## v1.0.0 release status
+## v1.1.0 release status
 
 This checkout is installable from source or as a local tarball after
 `npm run build`. Source, package metadata, `LICENSE`, `NOTICE`, and third-party
 notices are aligned to Apache-2.0, while `package.json` deliberately retains
-`private: true` and version `1.0.0`. The supported distribution is the GitHub
+`private: true` and version `1.1.0`. The supported distribution is the GitHub
 source release; npm publication is not authorized.
 
 The exact contract, gate results, release checks, and owner decisions are in the
 [v1 stable-contract inventory](docs/release/v1-stable-contract.md),
 [gate register](docs/release/v1.0-blockers.md),
-[release checklist](docs/release/v1.0-candidate-checklist.md), and
+[v1.1 release checklist](docs/release/v1.1-candidate-checklist.md), and
 [owner review](docs/release/v1-owner-review.md). See the
-[v1.0.0 release notes](docs/release/v1.0.0.md) for the shipped scope and
+[v1.1.0 release notes](docs/release/v1.1.0.md) for the current shipped scope and
 boundaries.

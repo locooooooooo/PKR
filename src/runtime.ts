@@ -49,7 +49,19 @@ import {
   verificationObject,
 } from "./objects.js";
 import type { ProfilePackage } from "./profiles.js";
-import { rebuildProjections } from "./projection.js";
+import {
+  collectRepositoryEvidenceRefs,
+  replaceRawRepositoryEvidence,
+  repositoryEvidenceRef,
+  stabilizeRepositoryEvidenceRefs,
+  type RepositoryEvidenceRef,
+} from "./repository-evidence.js";
+import {
+  rebuildProjections,
+  ShareableProjectionError,
+  writeShareableProjection,
+  type ShareableProjectionOptions,
+} from "./projection.js";
 import {
   PkrStore,
   commandContent,
@@ -113,6 +125,13 @@ export interface DispatchOptions {
   sessionLocator?: string;
   repositoryBaseline?: JsonObject;
   recoveryFromAssignmentId?: string;
+}
+
+interface PreparedRepositoryEvidence {
+  value?: JsonObject;
+  commandValue?: JsonObject;
+  raw: JsonObject[];
+  refs: RepositoryEvidenceRef[];
 }
 
 function normalizeDispatchOptions(
@@ -363,6 +382,35 @@ export class PkrRuntime {
       projections: join(stateDir, "projections"),
       config: join(stateDir, "config.json"),
     };
+  }
+
+  private prepareRepositoryEvidence(value?: JsonObject): PreparedRepositoryEvidence {
+    if (!value) {
+      return { raw: [], refs: [] };
+    }
+    const raw: JsonObject[] = [];
+    const prepared = replaceRawRepositoryEvidence(value, (evidence) => {
+      raw.push(evidence);
+      return repositoryEvidenceRef(evidence);
+    }) as JsonObject;
+    return {
+      value: prepared,
+      commandValue: stabilizeRepositoryEvidenceRefs(prepared) as JsonObject,
+      raw,
+      refs: collectRepositoryEvidenceRefs(prepared),
+    };
+  }
+
+  private storeRepositoryEvidence(
+    transaction: StoreTransaction,
+    prepared: PreparedRepositoryEvidence,
+  ): void {
+    for (const evidence of prepared.raw) {
+      transaction.putRepositoryEvidence(evidence);
+    }
+    for (const ref of prepared.refs) {
+      this.store.resolveRepositoryEvidence(this.projectId, ref);
+    }
   }
 
   static async init(
@@ -813,6 +861,7 @@ export class PkrRuntime {
     input?: ProviderAdapterBinding | DispatchOptions,
   ): Promise<CommandResult<JsonObject>> {
     const options = normalizeDispatchOptions(input);
+    const preparedBaseline = this.prepareRepositoryEvidence(options.repositoryBaseline);
     const executionMode = options.executionMode ?? (options.providerBinding ? "adapter" : "agent-native");
     if (executionMode === "adapter" && !options.providerBinding) {
       throw new PkrError("PKR-COORD-005", "Adapter dispatch requires an explicit Provider Adapter binding");
@@ -827,7 +876,7 @@ export class PkrRuntime {
           capabilities: [...options.providerBinding.capabilities],
         }
       : undefined;
-    const command = commandContent({
+    const legacyCommand = commandContent({
       action: "dispatch",
       taskId,
       agentId,
@@ -839,7 +888,25 @@ export class PkrRuntime {
         ? { recoveryFromAssignmentId: options.recoveryFromAssignmentId }
         : {}),
     });
-    const replay = this.store.replay<JsonObject>(this.projectId, commandId, command);
+    const command = commandContent({
+      action: "dispatch",
+      taskId,
+      agentId,
+      executionMode,
+      ...(requestedBinding ? { providerBinding: requestedBinding } : {}),
+      ...(options.sessionLocator ? { sessionLocator: options.sessionLocator } : {}),
+      ...(preparedBaseline.commandValue
+        ? { repositoryBaseline: preparedBaseline.commandValue }
+        : {}),
+      ...(options.recoveryFromAssignmentId
+        ? { recoveryFromAssignmentId: options.recoveryFromAssignmentId }
+        : {}),
+    });
+    const replay = this.store.replayCandidates<JsonObject>(
+      this.projectId,
+      commandId,
+      [command, legacyCommand],
+    );
     if (replay) {
       return replay;
     }
@@ -946,6 +1013,7 @@ export class PkrRuntime {
     const objective = (taskRecord.data.spec as JsonObject).objective as string;
 
     return this.mutate(commandId, command, (transaction) => {
+      this.storeRepositoryEvidence(transaction, preparedBaseline);
       const ready = revisePom(taskRecord.data, taskRecord.revision + 1, {
         phase: "ready",
         reason: recovery ? "RecoveredForReassignment" : "ReadyForExecution",
@@ -1028,7 +1096,7 @@ export class PkrRuntime {
                 locator: options.sessionLocator ?? `agent-native://${sessionId}`,
                 locatorIsIdentity: false,
                 locatorIsAuthority: false,
-                ...(options.repositoryBaseline ? { repositoryBaseline: options.repositoryBaseline } : {}),
+                ...(preparedBaseline.value ? { repositoryBaseline: preparedBaseline.value } : {}),
               },
             }
           : adapterBinding.adapterVersionId
@@ -1160,7 +1228,8 @@ export class PkrRuntime {
     processEvidence?: JsonObject,
     workspaceEvidence?: JsonObject,
   ): Promise<CommandResult<JsonObject>> {
-    const command = commandContent({
+    const preparedWorkspaceEvidence = this.prepareRepositoryEvidence(workspaceEvidence);
+    const legacyCommand = commandContent({
       action: "callback",
       assignmentId,
       outcome,
@@ -1169,7 +1238,22 @@ export class PkrRuntime {
       ...(processEvidence ? { processEvidence } : {}),
       ...(workspaceEvidence ? { workspaceEvidence } : {}),
     });
-    const replay = this.store.replay<JsonObject>(this.projectId, commandId, command);
+    const command = commandContent({
+      action: "callback",
+      assignmentId,
+      outcome,
+      evidenceIds,
+      ...(workReport ? { workReport } : {}),
+      ...(processEvidence ? { processEvidence } : {}),
+      ...(preparedWorkspaceEvidence.commandValue
+        ? { workspaceEvidence: preparedWorkspaceEvidence.commandValue }
+        : {}),
+    });
+    const replay = this.store.replayCandidates<JsonObject>(
+      this.projectId,
+      commandId,
+      [command, legacyCommand],
+    );
     if (replay) {
       return replay;
     }
@@ -1242,6 +1326,7 @@ export class PkrRuntime {
     const issuedAt = now();
 
     return this.mutate(commandId, command, (transaction) => {
+      this.storeRepositoryEvidence(transaction, preparedWorkspaceEvidence);
       const message: JsonObject = {
         apiVersion: "pkr.dev/v0.4",
         kind: "AgentMessage",
@@ -1266,7 +1351,9 @@ export class PkrRuntime {
         },
         extensions: {
           ...(processEvidence ? { "pkr.provider/process": processEvidence } : {}),
-          ...(workspaceEvidence ? { "pkr.workspace/evidence": workspaceEvidence } : {}),
+          ...(preparedWorkspaceEvidence.value
+            ? { "pkr.workspace/evidence": preparedWorkspaceEvidence.value }
+            : {}),
         },
       };
       this.contracts.validateCoordination(message);
@@ -1332,13 +1419,24 @@ export class PkrRuntime {
     if (processEvidence.failureReason === null) {
       throw new PkrError("PKR-COORD-006", "Provider failure requires a deterministic failure reason");
     }
-    const command = commandContent({
+    const preparedWorkspaceEvidence = this.prepareRepositoryEvidence(workspaceEvidence);
+    const legacyCommand = commandContent({
       action: "recordProviderFailure",
       assignmentId,
       processEvidence,
       workspaceEvidence,
     });
-    const replay = this.store.replay<JsonObject>(this.projectId, commandId, command);
+    const command = commandContent({
+      action: "recordProviderFailure",
+      assignmentId,
+      processEvidence,
+      workspaceEvidence: preparedWorkspaceEvidence.commandValue!,
+    });
+    const replay = this.store.replayCandidates<JsonObject>(
+      this.projectId,
+      commandId,
+      [command, legacyCommand],
+    );
     if (replay) {
       return replay;
     }
@@ -1389,11 +1487,12 @@ export class PkrRuntime {
       },
       extensions: {
         "pkr.provider/process": processEvidence,
-        "pkr.workspace/evidence": workspaceEvidence,
+        "pkr.workspace/evidence": preparedWorkspaceEvidence.value!,
       },
     };
     this.contracts.validateCoordination(message);
     return this.mutate(commandId, command, (transaction) => {
+      this.storeRepositoryEvidence(transaction, preparedWorkspaceEvidence);
       transaction.putRecord("AgentMessage", messageId, 0, message);
       transaction.appendEvent("pkr.execution.providerFailed", "AgentMessage", messageId, 1, {
         assignmentId,
@@ -1484,6 +1583,7 @@ export class PkrRuntime {
       assignmentId,
       this.paths.root,
     );
+    const preparedVerificationEvidence = this.prepareRepositoryEvidence(verificationEvidence);
     const command = commandContent({
       action: "verify",
       taskId,
@@ -1531,7 +1631,7 @@ export class PkrRuntime {
       createdBy: actorId,
     });
     artifact.extensions = {
-      "pkr.verification/repository": verificationEvidence,
+      "pkr.verification/repository": preparedVerificationEvidence.value!,
     };
     const testVerification = verificationObject({
       id: testVerificationId,
@@ -1567,6 +1667,7 @@ export class PkrRuntime {
     }
 
     return this.mutate<JsonObject>(commandId, command, (transaction) => {
+      this.storeRepositoryEvidence(transaction, preparedVerificationEvidence);
       transaction.putRecord("Artifact", artifactId, 0, artifact);
       transaction.appendEvent("pkr.artifact.available", "Artifact", artifactId, 1, {
         artifactType: "pkr/repository-verification",
@@ -2061,11 +2162,14 @@ export class PkrRuntime {
     ) {
       throw new PkrError("PKR-RECOVERY-003", "external effects require a running Assignment and live Lease");
     }
+    const preparedRequest = this.prepareRepositoryEvidence(request);
     const reserved = this.store.beginExternalEffect(
       this.projectId,
       effectId,
       assignmentId,
-      commandContent(request),
+      commandContent(preparedRequest.value!),
+      preparedRequest.raw,
+      preparedRequest.refs,
     );
     return {
       effectId,
@@ -2081,11 +2185,14 @@ export class PkrRuntime {
     state: "succeeded" | "failed",
     result: JsonObject,
   ): JsonObject {
+    const preparedResult = this.prepareRepositoryEvidence(result);
     const completed = this.store.finishExternalEffect(
       this.projectId,
       effectId,
       state,
-      commandContent(result),
+      commandContent(preparedResult.value!),
+      preparedResult.raw,
+      preparedResult.refs,
     );
     return {
       effectId,
@@ -5080,6 +5187,10 @@ export class PkrRuntime {
     return this.store.stateDigest(this.projectId);
   }
 
+  resolveRepositoryEvidence(ref: JsonObject): JsonObject {
+    return this.store.resolveRepositoryEvidence(this.projectId, ref);
+  }
+
   async rebuildProjections(): Promise<void> {
     await rebuildProjections(
       this.store,
@@ -5087,6 +5198,40 @@ export class PkrRuntime {
       this.paths.stateDir,
       this.paths.projections,
     );
+  }
+
+  async exportShareableProjection(
+    outputPath: string,
+    options: ShareableProjectionOptions = {},
+  ): Promise<JsonObject> {
+    const resolvedOutput = resolve(outputPath);
+    const normalizedOutput = resolvedOutput.toLowerCase();
+    const stateRoot = resolve(this.paths.stateDir).toLowerCase();
+    const exportsRoot = resolve(this.paths.stateDir, "exports").toLowerCase();
+    const isAtOrBelow = (path: string, root: string): boolean =>
+      path === root || path.startsWith(`${root}\\`) || path.startsWith(`${root}/`);
+    if (
+      isAtOrBelow(normalizedOutput, stateRoot) &&
+      !isAtOrBelow(normalizedOutput, exportsRoot)
+    ) {
+      throw new PkrError(
+        "PKR-PROJECTION-004",
+        "shareable exports inside .pkr must be written under .pkr/exports",
+      );
+    }
+    try {
+      return await writeShareableProjection(
+        this.store,
+        this.projectId,
+        resolvedOutput,
+        options,
+      );
+    } catch (error) {
+      if (error instanceof ShareableProjectionError) {
+        throw new PkrError(error.code, error.message);
+      }
+      throw error;
+    }
   }
 
   private async mutate<T extends JsonValue>(

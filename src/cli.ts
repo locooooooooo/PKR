@@ -937,8 +937,33 @@ async function main(): Promise<number> {
       print({ projectId: runtime.projectId, rebuilt: true });
       return 0;
     }
+    if (command === "projection" && args[1] === "export") {
+      const profile = required(args, "--profile");
+      if (profile !== "shareable") {
+        throw new Error("--profile must be shareable");
+      }
+      const outputPath = resolve(projectRoot, required(args, "--output"));
+      const maxBytesOption = option(args, "--max-bytes");
+      const maxBytes = maxBytesOption === undefined ? undefined : Number(maxBytesOption);
+      if (maxBytes !== undefined && (!Number.isInteger(maxBytes) || maxBytes < 1)) {
+        throw new Error("--max-bytes must be a positive integer");
+      }
+      const exported = await runtime.exportShareableProjection(
+        outputPath,
+        maxBytes === undefined ? {} : { maxBytes },
+      );
+      print({
+        projectId: runtime.projectId,
+        profile,
+        outputPath,
+        sourceStateDigest: exported.sourceStateDigest,
+        digest: exported.digest,
+        summary: exported.summary,
+      });
+      return 0;
+    }
     throw new Error(
-      "usage: pkr doctor|init|setup|run|status|diagnostics export|project intake|project bootstrap|project plan|project status|goal create|decision create|task create|agent register|dispatch|callback|verify|events|workspace|memory derive|memory list|memory promote|profile install|profile list|workflow start|workflow transition|package uninstall|package rollback|prompt register|prompt status|prompt rollback|policy register|policy status|policy rollback|adapter register|adapter status|adapter rollback|metric record|evolution propose|evolution observe|evolution revise|evolution approve|evolution evaluate|evolution external-evaluate|evolution promote|evolution monitor|evolution status|steward propose|steward apply|lps claim|lps submit|lps adapter-run|lps board|assignment cancel|lease heartbeat|lease expire|digest|projection rebuild",
+      "usage: pkr doctor|init|setup|run|status|diagnostics export|project intake|project bootstrap|project plan|project status|goal create|decision create|task create|agent register|dispatch|callback|verify|events|workspace|memory derive|memory list|memory promote|profile install|profile list|workflow start|workflow transition|package uninstall|package rollback|prompt register|prompt status|prompt rollback|policy register|policy status|policy rollback|adapter register|adapter status|adapter rollback|metric record|evolution propose|evolution observe|evolution revise|evolution approve|evolution evaluate|evolution external-evaluate|evolution promote|evolution monitor|evolution status|steward propose|steward apply|lps claim|lps submit|lps adapter-run|lps board|assignment cancel|lease heartbeat|lease expire|digest|projection rebuild|projection export",
     );
   } finally {
     runtime.close();

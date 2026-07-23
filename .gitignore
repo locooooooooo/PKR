@@ -1,5 +1,6 @@
 /.agents/
 /release/
+/demo/
 __pycache__/
 *.py[cod]
 .DS_Store

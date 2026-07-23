@@ -13,7 +13,7 @@ assert(packageJson.version === version, "package.json and VERSION disagree");
 assert(lock.version === version, "package-lock root version disagrees");
 assert(lock.packages?.[""]?.version === version, "package-lock package version disagrees");
 assert(contract.packageVersion === version, "contract packageVersion disagrees");
-assert(version === "1.0.0", "G10 release candidate must use the accepted stable version");
+assert(version === "1.1.0", "v1.1 release candidate must use the accepted stable version");
 assert(contract.status === "stable_contract_accepted", "v1 contract must be owner-accepted");
 assert(packageJson.private === true, "npm publication is not authorized; package must remain private");
 assert(packageJson.license === "Apache-2.0", "package license must match LICENSE");
