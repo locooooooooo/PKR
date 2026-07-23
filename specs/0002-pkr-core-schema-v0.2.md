@@ -1,6 +1,7 @@
 # PKR Core Schema v0.2
 
 - Status: Draft
+- Index: [PKR specification index](README.md)
 - Scope: Field-level representation of the fourteen core object kinds
 - Depends on: [PKR Object Model v0.2](0001-pkr-object-model-v0.2.md)
 - Normative schema: [`pkr-object.schema.json`](../schemas/v0.2/pkr-object.schema.json)

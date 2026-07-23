@@ -78,6 +78,7 @@
     "scripts/check-package.mjs",
     "scripts/check-public-tree.mjs",
     "scripts/check-sensitive-data.mjs",
+    "specs/README.md",
     "src/cli.ts",
     "src/index.ts",
     "src/runtime.test.ts",

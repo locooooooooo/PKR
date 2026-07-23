@@ -1,6 +1,7 @@
 # PKR Workspace and Memory v0.3
 
 - Status: Draft
+- Index: [PKR specification index](README.md)
 - Scope: Bounded task context, persistent derived memory, retention, and promotion
 - Depends on: [PKR Object Model v0.2](0001-pkr-object-model-v0.2.md)
 - Runtime reads: [PKR Runtime Protocol v0.2](0004-pkr-runtime-protocol-v0.2.md)
