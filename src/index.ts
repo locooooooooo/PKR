@@ -106,6 +106,20 @@ export {
 } from "./security.js";
 export type { DispatchOptions, ProviderAdapterBinding } from "./runtime.js";
 export { StewardService } from "./steward.js";
+export { SupervisorRunner, loadSupervisorConfig } from "./supervisor.js";
+export type {
+  SupervisorAction,
+  SupervisorAttention,
+  SupervisorAttentionCode,
+  SupervisorConfig,
+  SupervisorDependencies,
+  SupervisorReconcileResult,
+  SupervisorRecordState,
+  SupervisorSkillMatch,
+  SupervisorSkillRequirement,
+  SupervisorSkillResolver,
+  SupervisorState,
+} from "./supervisor.js";
 export {
   CANDIDATE_STORE_FORMAT,
   PkrStore,

@@ -1,6 +1,6 @@
 {
   "name": "@pkr/reference-runtime",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "AI-native project framework and local Runtime for governed state, verification, recovery, and audit.",
   "license": "Apache-2.0",
@@ -54,7 +54,7 @@
     "generate:v0.4": "node scripts/generate-v04-artifacts.mjs",
     "check:boundaries": "node scripts/check-runtime-boundaries.mjs",
     "build": "npm run check:boundaries && tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/runtime.test.js dist/orchestration.test.js dist/provider-conformance.test.js dist/v07.test.js dist/v08.test.js dist/project-manager.test.js dist/recovery-migration.test.js dist/security.test.js scripts/security-tools.test.mjs scripts/performance-tools.test.mjs",
+    "test": "npm run build && node --test dist/runtime.test.js dist/orchestration.test.js dist/provider-conformance.test.js dist/supervisor.test.js dist/v07.test.js dist/v08.test.js dist/project-manager.test.js dist/recovery-migration.test.js dist/security.test.js scripts/security-tools.test.mjs scripts/performance-tools.test.mjs",
     "test:recovery": "npm run build && node --test dist/recovery-migration.test.js",
     "prepack": "npm run build",
     "verify:schemas": "node scripts/verify-schemas.mjs",

@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
-  "targetVersion": "1.1.0",
+  "targetVersion": "1.2.0",
   "status": "stable_contract_accepted",
-  "packageVersion": "1.1.0",
+  "packageVersion": "1.2.0",
   "authority": {
     "state": ".pkr/runtime.sqlite",
     "providerReports": "non_authoritative",
@@ -75,7 +75,8 @@
       "evolution promote",
       "evolution monitor",
       "evolution status",
-      "lps adapter-run"
+      "lps adapter-run",
+      "supervise"
     ]
   },
   "typescriptExports": {
@@ -235,6 +236,19 @@
       "resolveSafeRepositoryPath",
       "runBoundedProcess",
       "sanitizeProcessResult",
+      "SupervisorAction",
+      "SupervisorAttention",
+      "SupervisorAttentionCode",
+      "SupervisorConfig",
+      "SupervisorDependencies",
+      "SupervisorReconcileResult",
+      "SupervisorRecordState",
+      "SupervisorRunner",
+      "SupervisorSkillMatch",
+      "SupervisorSkillRequirement",
+      "SupervisorSkillResolver",
+      "SupervisorState",
+      "loadSupervisorConfig",
       "validateEvolutionCandidate",
       "validateEvolutionObservation",
       "validateExternalSupervisorResult",
@@ -359,6 +373,8 @@
   },
   "adapterContracts": [
     { "version": "pkr.provider/v1", "classification": "experimental", "surface": "local process Provider config and callback" },
+    { "version": "pkr.supervisor/v1", "classification": "experimental", "surface": "explicit single-Task Supervisor configuration" },
+    { "version": "pkr.supervisor-result/v1", "classification": "experimental", "surface": "structured deterministic reconcile result" },
     { "version": "pkr.verify/v1", "classification": "stable_candidate", "surface": "independent repository Verification plan" },
     { "version": "pkr.preflight/v1", "classification": "stable_candidate", "surface": "read-only repository readiness report" }
   ],

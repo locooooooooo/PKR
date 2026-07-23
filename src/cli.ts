@@ -232,6 +232,7 @@ async function main(): Promise<number> {
     { runRepositoryPreflight },
     { PkrRuntime },
     { StewardService },
+    { SupervisorRunner },
   ] = await Promise.all([
     import("./clarification.js"),
     import("./security.js"),
@@ -244,6 +245,7 @@ async function main(): Promise<number> {
     import("./preflight.js"),
     import("./runtime.js"),
     import("./steward.js"),
+    import("./supervisor.js"),
   ]);
   const projectRoot = resolve(option(args, "--project", process.cwd())!);
   const command = args[0];
@@ -911,6 +913,33 @@ async function main(): Promise<number> {
       print(lps.board());
       return 0;
     }
+    if (command === "supervise") {
+      const once = args.includes("--once");
+      const watch = args.includes("--watch");
+      if (once === watch) {
+        throw new Error("supervise requires exactly one of --once or --watch");
+      }
+      const interval = Number(option(args, "--interval", "1000"));
+      if (!Number.isInteger(interval) || interval < 100 || interval > 600_000) {
+        throw new Error("--interval must be an integer between 100 and 600000 milliseconds");
+      }
+      const supervisor = await SupervisorRunner.open(
+        runtime,
+        option(args, "--config", join(projectRoot, ".pkr", "supervisor.json"))!,
+      );
+      if (once) {
+        const result = await supervisor.reconcile();
+        print(result);
+        return result.outcome === "attention" ? 2 : 0;
+      }
+      while (true) {
+        const result = await supervisor.reconcile();
+        process.stdout.write(`${JSON.stringify(result)}\n`);
+        if (result.outcome === "attention") return 2;
+        if (result.nextAction === "none") return 0;
+        await new Promise<void>((resume) => setTimeout(resume, interval));
+      }
+    }
     if (command === "assignment" && args[1] === "cancel") {
       print(
         await lps.cancel(
@@ -963,7 +992,7 @@ async function main(): Promise<number> {
       return 0;
     }
     throw new Error(
-      "usage: pkr doctor|init|setup|run|status|diagnostics export|project intake|project bootstrap|project plan|project status|goal create|decision create|task create|agent register|dispatch|callback|verify|events|workspace|memory derive|memory list|memory promote|profile install|profile list|workflow start|workflow transition|package uninstall|package rollback|prompt register|prompt status|prompt rollback|policy register|policy status|policy rollback|adapter register|adapter status|adapter rollback|metric record|evolution propose|evolution observe|evolution revise|evolution approve|evolution evaluate|evolution external-evaluate|evolution promote|evolution monitor|evolution status|steward propose|steward apply|lps claim|lps submit|lps adapter-run|lps board|assignment cancel|lease heartbeat|lease expire|digest|projection rebuild|projection export",
+      "usage: pkr doctor|init|setup|run|status|diagnostics export|project intake|project bootstrap|project plan|project status|goal create|decision create|task create|agent register|dispatch|callback|verify|events|workspace|memory derive|memory list|memory promote|profile install|profile list|workflow start|workflow transition|package uninstall|package rollback|prompt register|prompt status|prompt rollback|policy register|policy status|policy rollback|adapter register|adapter status|adapter rollback|metric record|evolution propose|evolution observe|evolution revise|evolution approve|evolution evaluate|evolution external-evaluate|evolution promote|evolution monitor|evolution status|steward propose|steward apply|lps claim|lps submit|lps adapter-run|lps board|supervise|assignment cancel|lease heartbeat|lease expire|digest|projection rebuild|projection export",
     );
   } finally {
     runtime.close();

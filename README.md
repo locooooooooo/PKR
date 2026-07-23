@@ -68,6 +68,11 @@ path below. See [the architecture](docs/architecture.md) for the authority and
 evidence boundaries.
 For the product rationale, see [Why PKR](docs/product-overview.md).
 
+For an explicitly configured, recoverable drive loop over an existing governed
+Task, use [the Runtime and Supervisor guide](docs/runtime-guide.md). The
+Supervisor is optional liveness infrastructure; it does not select Providers,
+approve protected decisions, or replace independent Verification.
+
 ## 5-minute source path
 
 This is the smallest real repository flow after an Agent host has loaded PKR.
@@ -212,14 +217,16 @@ cannot create acceptance.
 
 ## Status
 
-PKR **v1.1.0** is the current stable GitHub source release of the local reference
+PKR **v1.2.0** is the current stable GitHub source release of the local reference
 Runtime and its accepted compatibility contract. It includes governed Steward
 intake, Agent-native work claiming and submission, independent Repository
 Verification, separate Runtime acceptance, recovery, provenance-aware Memory,
 portable Workflows, atomic Packages, two starter project Profiles, and
-content-addressed RepositoryEvidence with reviewed shareable projections. The npm
-package remains private and unpublished. Hosted deployment, a package registry,
-and production Agent-host integrations are not claimed.
+content-addressed RepositoryEvidence with reviewed shareable projections. An
+optional, explicitly configured Provider-neutral Supervisor can drive one
+governed reconciliation action at a time without changing those authority
+boundaries. The npm package remains private and unpublished. Hosted deployment,
+a package registry, and production Agent-host integrations are not claimed.
 
 The current specification set is:
 
@@ -526,18 +533,18 @@ release gate record live in the
 [v1 stable contract](docs/release/v1-stable-contract.md) and
 [v1 blocker register](docs/release/v1.0-blockers.md).
 
-## v1.1.0 release status
+## v1.2.0 release status
 
 This checkout is installable from source or as a local tarball after
 `npm run build`. Source, package metadata, `LICENSE`, `NOTICE`, and third-party
 notices are aligned to Apache-2.0, while `package.json` deliberately retains
-`private: true` and version `1.1.0`. The supported distribution is the GitHub
+`private: true` and version `1.2.0`. The supported distribution is the GitHub
 source release; npm publication is not authorized.
 
 The exact contract, gate results, release checks, and owner decisions are in the
 [v1 stable-contract inventory](docs/release/v1-stable-contract.md),
 [gate register](docs/release/v1.0-blockers.md),
-[v1.1 release checklist](docs/release/v1.1-candidate-checklist.md), and
+[v1.2 release checklist](docs/release/v1.2-candidate-checklist.md), and
 [owner review](docs/release/v1-owner-review.md). See the
-[v1.1.0 release notes](docs/release/v1.1.0.md) for the current shipped scope and
+[v1.2.0 release notes](docs/release/v1.2.0.md) for the current shipped scope and
 boundaries.

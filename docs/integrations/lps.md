@@ -5,6 +5,12 @@ LPS coordinates that current Agent through a pull loop; it does not need to
 launch another Provider process. PKR SQLite remains authoritative and the LPS
 board is rebuilt from current records and events.
 
+An optional, explicitly configured Supervisor can drive the same LPS primitives
+with `pkr supervise --once` or `pkr supervise --watch`. Supervisor liveness is
+distinct from Runtime safety: one reconcile performs one controlled action and
+never treats a board, host Skill, Provider callback, or session locator as
+authority. See [the Runtime and Supervisor guide](../runtime-guide.md).
+
 ## Default pull loop
 
 1. `pkr lps claim --task <id> --agent <id>` creates or reuses an Assignment,

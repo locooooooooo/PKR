@@ -123,7 +123,7 @@ test("CLI help and unknown options are side-effect free", async () => {
     "doctor", "init", "setup", "run", "status", "goal", "decision", "task", "agent", "dispatch",
     "callback", "verify", "events", "workspace", "memory", "profile", "workflow",
     "package", "prompt", "policy", "adapter", "metric", "evolution", "steward",
-    "clarification", "lps", "assignment", "lease", "digest", "projection", "diagnostics",
+    "clarification", "lps", "supervise", "assignment", "lease", "digest", "projection", "diagnostics",
   ];
   for (const command of topLevelCommands) {
     const help = invokeCli(root, [command, "--help"]);

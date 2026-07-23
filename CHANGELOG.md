@@ -5,6 +5,17 @@ for the accepted v1 stable contract.
 
 ## Unreleased
 
+## 1.2.0 - 2026-07-23
+
+- Added an experimental, explicitly configured Provider-neutral Supervisor
+  with deterministic `--once` / `--watch` reconciliation, restart-safe
+  Provider and Verification effect fencing, and fail-closed Owner attention.
+- Kept SQLite as the sole Runtime authority and independent Repository
+  Verification as the only path to acceptance; Skill metadata and Provider
+  reports remain non-authoritative.
+- Kept the npm package private and unpublished; v1.2.0 remains a GitHub source
+  release and does not authorize `npm publish`.
+
 ## 1.1.0 - 2026-07-23
 
 - Stored repeated RepositoryEvidence payloads once in content-addressed SQLite

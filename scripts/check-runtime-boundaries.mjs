@@ -35,9 +35,10 @@ const allowed = {
   preflight: ["errors", "provider", "runtime", "types", "verifier", "workspace"],
   "cli-contract": [],
   lps: ["errors", "provider", "runtime", "security", "types", "util", "workspace"],
+  supervisor: ["errors", "lps", "provider", "runtime", "types", "util", "verifier"],
   steward: ["clarification", "errors", "question-sheet", "runtime", "types", "util"],
-  cli: ["clarification", "cli-contract", "errors", "evolution", "evolution-model", "lps", "memory", "packages", "preflight", "profiles", "project-manager", "provider", "question-sheet-renderer", "runtime", "security", "steward", "types", "verifier", "workspace"],
-  index: ["clarification", "contracts", "errors", "evolution", "evolution-model", "lps", "memory", "packages", "path-safety", "preflight", "process", "profiles", "project-manager", "provider", "question-sheet", "question-sheet-renderer", "repository-evidence", "runtime", "security", "steward", "store", "types", "verifier", "workflow", "workspace"],
+  cli: ["clarification", "cli-contract", "errors", "evolution", "evolution-model", "lps", "memory", "packages", "preflight", "profiles", "project-manager", "provider", "question-sheet-renderer", "runtime", "security", "steward", "supervisor", "types", "verifier", "workspace"],
+  index: ["clarification", "contracts", "errors", "evolution", "evolution-model", "lps", "memory", "packages", "path-safety", "preflight", "process", "profiles", "project-manager", "provider", "question-sheet", "question-sheet-renderer", "repository-evidence", "runtime", "security", "steward", "store", "supervisor", "types", "verifier", "workflow", "workspace"],
 };
 
 const failures = [];

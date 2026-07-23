@@ -1,6 +1,6 @@
 # PKR v1 stable contract
 
-- Version: `1.1.0` (backward-compatible extension of `1.0.0`)
+- Version: `1.2.0` (backward-compatible extension of `1.0.0`)
 - Package: private, npm unpublished
 - Contract status: `stable_contract_accepted`
 - Accepted by: `xjf` on 2026-07-23
@@ -34,8 +34,9 @@ documented record/event semantics and supported migration path.
 The manifest explicitly marks the following families experimental:
 
 - `metric`, `prompt`, `policy`, `adapter`, and `evolution` CLI routes;
-- `lps adapter-run` and the legacy-named `pkr.provider/v1` local-process Adapter
-  contract;
+- `lps adapter-run`, `supervise`, the legacy-named `pkr.provider/v1`
+  local-process Adapter contract, and the `pkr.supervisor/v1` configuration and
+  `pkr.supervisor-result/v1` result contracts;
 - evolution, canary, managed Adapter, raw process, and direct store exports;
 - `Metric` persistence and the listed adapter/evolution/metric/policy/prompt
   events.

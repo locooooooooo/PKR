@@ -268,11 +268,17 @@ export class LpsOrchestrator {
     };
   }
 
-  async executeLane(taskId: string, agentId: string): Promise<LpsExecutionResult> {
+  async executeLane(
+    taskId: string,
+    agentId: string,
+    options: { recoverInterruptedSessions?: boolean } = {},
+  ): Promise<LpsExecutionResult> {
     if (!this.provider) {
       throw new PkrError("PKR-PROVIDER-001", "optional Adapter execution requires a configured Provider");
     }
-    await this.runtime.recoverInterruptedSessions();
+    if (options.recoverInterruptedSessions !== false) {
+      await this.runtime.recoverInterruptedSessions();
+    }
     this.assertCapabilities(["filesystem.read", "filesystem.write", "terminal"]);
     const assignments = this.runtime
       .listRecords("Assignment")

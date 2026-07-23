@@ -90,6 +90,7 @@ const COMMANDS: CommandSpec[] = [
   command("lps submit", "Submit current Agent work and real Git evidence without acceptance.", ["--assignment", "--agent", "--result", "--result-file", "--outcome"]),
   command("lps adapter-run", "Run one optional configured Provider Adapter lane.", ["--task", "--agent", "--provider-file"]),
   command("lps board", "Rebuild the LPS board from PKR truth."),
+  command("supervise", "Reconcile one explicitly configured Supervisor action from Runtime authority.", ["--config", "--interval"], ["--once", "--watch"]),
   command("assignment cancel", "Cancel a running Assignment.", ["--assignment", "--reason"]),
   command("lease heartbeat", "Renew a live Lease.", ["--assignment"]),
   command("lease expire", "Expire a Lease and block its Task.", ["--assignment"]),
@@ -132,7 +133,7 @@ function topLevelHelp(name: string): string {
 
 export function rootHelp(): string {
   return [
-    "PKR 1.1.0 stable CLI",
+    "PKR 1.2.0 stable CLI",
     "",
     "Usage: pkr <command> [options]",
     "",

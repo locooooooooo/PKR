@@ -2180,6 +2180,39 @@ export class PkrRuntime {
     };
   }
 
+  beginVerificationEffect(
+    taskId: string,
+    assignmentId: string,
+    effectId: string,
+    request: JsonObject,
+  ): JsonObject {
+    const task = this.getRecord("Task", taskId);
+    const assignment = this.getRecord("Assignment", assignmentId);
+    if (
+      assignment.data.taskId !== taskId ||
+      assignment.data.state !== "submitted" ||
+      (task.data.status as JsonObject).phase !== "verifying"
+    ) {
+      throw new PkrError(
+        "PKR-RECOVERY-003",
+        "verification effects require a submitted Assignment and verifying Task",
+      );
+    }
+    const reserved = this.store.beginExternalEffect(
+      this.projectId,
+      effectId,
+      assignmentId,
+      commandContent(request),
+    );
+    return {
+      effectId,
+      assignmentId,
+      state: reserved.effect.state,
+      execute: reserved.execute,
+      ...(reserved.effect.result ? { result: reserved.effect.result } : {}),
+    };
+  }
+
   completeExternalEffect(
     effectId: string,
     state: "succeeded" | "failed",
