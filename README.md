@@ -228,10 +228,11 @@ governed reconciliation action at a time without changing those authority
 boundaries. The npm package remains private and unpublished. Hosted deployment,
 a package registry, and production Agent-host integrations are not claimed.
 
-The public [specification index](specs/README.md) organizes the v0.1 vision
-baseline and the v0.2-v0.4 Draft RFCs, links each document to its machine schema
-and conformance material, and explains how those protocol versions relate to
-the accepted v1 compatibility inventory. Draft publication and stable release
+The public [specification index](specs/README.md) organizes the complete v0.1 to
+v1.2 evolution: the v0.2-v0.4 Draft RFCs, implemented v0.5-v0.6 milestones,
+public v0.7 Alpha, integrated v0.8-v0.9 stages, and stable v1.0-v1.2 source
+releases. It links each version to its schemas, companion contracts, and release
+status. Draft publication, milestone verification, and stable release
 acceptance are deliberately separate.
 
 ## Current boundary
