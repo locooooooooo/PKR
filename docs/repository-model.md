@@ -12,8 +12,10 @@ The development repository location and remote are private operational data;
 they are not part of the public product contract or public-tree inventory.
 
 `iterations/` is explicitly non-authoritative. Material there may be incomplete,
-contradictory, or abandoned. Normative candidates live in `specs/` and become
-publishable only after their schemas and conformance checks pass.
+contradictory, or abandoned. Normative candidates live in the
+[`specs/` library](../specs/README.md) and become publishable only after their
+schemas and conformance checks pass. Published Draft RFCs and an accepted
+stable release contract remain distinct statuses.
 
 ## Public release repository
 
@@ -69,8 +71,7 @@ A release commit requires:
 9. package metadata, NOTICE, and the selected license agree;
 10. GitHub publication and npm publication are recorded as separate gates.
 
-The v1 source, package metadata, `LICENSE`, `NOTICE`, and third-party notices use
-Apache-2.0 consistently. The package remains `private: true`, versioned
-`1.0.0`, and unpublished to npm. The owner accepted G7 and authorized the
-GitHub source-release transaction separately; npm publication remains
-unauthorized.
+The current source, package metadata, `LICENSE`, `NOTICE`, and third-party
+notices use Apache-2.0 consistently. The package remains `private: true` and
+unpublished to npm. Each GitHub source release requires its own exact-source
+evidence; npm publication remains a separate, unauthorized transaction.

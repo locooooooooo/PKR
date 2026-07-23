@@ -1,6 +1,7 @@
 # PKR Package and Governed Evolution v0.3
 
 - Status: Draft
+- Index: [PKR specification index](README.md)
 - Scope: Package compatibility, installation, and controlled self-improvement
 - Depends on: [PKR Object Model v0.2](0001-pkr-object-model-v0.2.md)
 - Workflow policy: [PKR Workflow and Verification Profile v0.3](0006-pkr-workflow-verification-v0.3.md)

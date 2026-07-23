@@ -5,6 +5,9 @@ for the accepted v1 stable contract.
 
 ## Unreleased
 
+- Added public version specifications for v0.5 through v1.2, including the
+  release status and compatibility role of every milestone after v0.4.
+
 ## 1.2.0 - 2026-07-23
 
 - Added an experimental, explicitly configured Provider-neutral Supervisor

@@ -1,6 +1,7 @@
 # PKR Agent Session Protocol v0.3
 
 - Status: Draft
+- Index: [PKR specification index](README.md)
 - Scope: Agent capability handshake, Assignment, Session, Lease, messaging, and callback
 - Depends on: [PKR Object Model v0.2](0001-pkr-object-model-v0.2.md)
 - Reuses: [PKR Runtime Protocol v0.2](0004-pkr-runtime-protocol-v0.2.md)

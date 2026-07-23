@@ -29,8 +29,10 @@ recovery. Derived boards, Memory indexes, session locators, and repository
 views cannot become a second source of truth. A successful Agent report is
 still only a report until the Runtime accepts independent Verification evidence.
 
-The detailed contracts remain in `specs/`; this page is the product-level
-explanation of how those contracts fit together.
+The detailed versioned design contracts remain in the
+[`specs/` index](../specs/README.md); this page is the product-level explanation
+of how they fit together. The [v1 stable contract](release/v1-stable-contract.md)
+is the accepted compatibility inventory for the current public release.
 
 ## Evidence boundary
 

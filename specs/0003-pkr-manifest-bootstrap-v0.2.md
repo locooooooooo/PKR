@@ -1,6 +1,7 @@
 # PKR Manifest and Bootstrap v0.2
 
 - Status: Draft
+- Index: [PKR specification index](README.md)
 - Scope: Project identity, manifest, genesis authority, and atomic bootstrap
 - Depends on: [PKR Object Model v0.2](0001-pkr-object-model-v0.2.md)
 - Reuses: [PKR Core Schema v0.2](0002-pkr-core-schema-v0.2.md)

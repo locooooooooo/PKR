@@ -1,6 +1,7 @@
 # PKR Object Model v0.2
 
 - Status: Draft
+- Index: [PKR specification index](README.md)
 - Scope: Core object model
 - Depends on: [PKR v0.1 Definition](0000-pkr-v0.1.md)
 - Field schema: [PKR Core Schema v0.2](0002-pkr-core-schema-v0.2.md)

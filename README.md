@@ -228,39 +228,12 @@ governed reconciliation action at a time without changing those authority
 boundaries. The npm package remains private and unpublished. Hosted deployment,
 a package registry, and production Agent-host integrations are not claimed.
 
-The current specification set is:
-
-- [PKR v0.1 definition](specs/0000-pkr-v0.1.md): vision, scope, runtime modules,
-  and roadmap.
-- [PKR Object Model v0.2 draft](specs/0001-pkr-object-model-v0.2.md): core
-  objects, relationships, lifecycle rules, events, and conformance rules.
-- [PKR Core Schema v0.2 draft](specs/0002-pkr-core-schema-v0.2.md): field-level
-  representation and the structural-versus-semantic validation boundary.
-- [PKR v0.2 JSON Schema](schemas/v0.2/pkr-object.schema.json): machine-readable
-  Draft 2020-12 contract for all fourteen core object kinds.
-- [PKR Manifest and Bootstrap v0.2 draft](specs/0003-pkr-manifest-bootstrap-v0.2.md):
-  project identity, genesis authority, and atomic initialization.
-- [PKR v0.2 Bootstrap Schema](schemas/v0.2/pkr-bootstrap.schema.json):
-  machine-readable contract for bootstrap requests, Manifests, and Genesis
-  Records.
-- [PKR Runtime Protocol v0.2 draft](specs/0004-pkr-runtime-protocol-v0.2.md):
-  logical Runtime API, governed mutations, events, results, and read
-  consistency.
-- [PKR v0.2 Runtime Schema](schemas/v0.2/pkr-runtime.schema.json):
-  machine-readable command, event, and result contract.
-- [PKR Steward and LPS Boundary v0.3 draft](specs/0005-pkr-steward-lps-boundary-v0.3.md):
-  human entry point, reference orchestration, authority, and recovery boundary.
-- [PKR Workflow and Verification Profile v0.3 draft](specs/0006-pkr-workflow-verification-v0.3.md):
-  portable custom state machines, deterministic guards, and evidence gates.
-- [PKR Agent Session Protocol v0.3 draft](specs/0007-pkr-agent-session-protocol-v0.3.md):
-  capability handshake, Assignment, Session, Lease, messages, and callbacks.
-- [PKR Workspace and Memory v0.3 draft](specs/0008-pkr-workspace-memory-v0.3.md):
-  bounded context, persistent derived Memory, retention, and promotion.
-- [PKR Package and Governed Evolution v0.3 draft](specs/0009-pkr-package-evolution-v0.3.md):
-  package compatibility, project profiles, canaries, promotion, and rollback.
-- [PKR v0.4 Coordination Record and Action Catalog](specs/0010-pkr-v0.4-record-action-catalog.md):
-  authority classes, control-record ownership, operations, reads, and stable
-  coordination errors.
+The public [specification index](specs/README.md) organizes the complete v0.1 to
+v1.2 evolution: the v0.2-v0.4 Draft RFCs, implemented v0.5-v0.6 milestones,
+public v0.7 Alpha, integrated v0.8-v0.9 stages, and stable v1.0-v1.2 source
+releases. It links each version to its schemas, companion contracts, and release
+status. Draft publication, milestone verification, and stable release
+acceptance are deliberately separate.
 
 ## Current boundary
 
@@ -505,7 +478,7 @@ node dist/cli.js adapter register --project C:\path\to\project `
 ## Repository layout
 
 - `src/`: TypeScript reference Runtime, CLI, adapters, and tests.
-- `specs/`: versioned specification and RFC documents.
+- `specs/`: indexed, versioned specification and RFC documents.
 - `schemas/`: machine-readable JSON Schema contracts by protocol version.
 - `conformance/`: Python validators and positive/negative fixtures.
 - `scripts/`: generation and architectural-boundary checks.
